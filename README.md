@@ -1,7 +1,7 @@
 # Aplicação de Previsão de Procura e S&OP
 
 Projeto de Tiago Dias: backend Java 17 / Spring Boot 4.1.2, MySQL 8.4,
-Docker Compose, migrações Flyway e autenticação por sessão com perfis. Inclui catálogo de produtos e importação de históricos CSV protegidos por perfis. Previsões e planeamento vêm nos próximos blocos.
+Docker Compose, migrações Flyway e autenticação por sessão com perfis. Inclui catálogo de produtos e importação de históricos CSV protegidos por perfis. Inclui previsões base por Média Móvel; ETS, cenários e planeamento vêm nos próximos blocos.
 
 ## Iniciar
 
@@ -80,6 +80,19 @@ Os originais ficam num volume Docker próprio, `sop_imports`; as observações e
 metadados ficam no MySQL. Uma cópia completa inclui ambos. Ver
 [contratos, limites e exemplos](docs/importacao-historicos.md).
 
+## Gerar a primeira previsão
+
+```bash
+python3 scripts/testar_previsao.py
+```
+
+Autenticar com ADMIN ou PLANEADOR e escolher um lote histórico validado. O script
+propõe VENDAS, último mês completo, janela 3 e horizonte 3. Guarda uma execução nova,
+mostra as previsões/diagnósticos e faz logout. Não altera o histórico nem execuções
+anteriores. Meses em falta na janela não são preenchidos com zero.
+
+Ver [Média Móvel: algoritmo, contratos e exemplo SKU001](docs/previsao-media-movel.md).
+
 ## Adotar a base anterior ao Flyway
 
 Na instalação deste projeto, a base já foi verificada e adotada. Numa outra instalação
@@ -138,4 +151,5 @@ As versões de Flyway e Connector/J são geridas pelo parent Spring Boot.
 - [Autenticação por sessão](docs/autenticacao.md)
 - [Catálogo de produtos](docs/catalogo.md)
 - [Importação de históricos](docs/importacao-historicos.md)
+- [Previsão por Média Móvel](docs/previsao-media-movel.md)
 - [Marco anterior do backend](docs/backend-primeiro-marco.md)
