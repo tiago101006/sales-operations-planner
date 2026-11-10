@@ -18,7 +18,7 @@ const modal = page => page.getByRole('dialog');
 test('percurso completo com APIs reais, auditoria, aprovação independente e monitorização', async ({ page, context }) => {
   const errors = [];page.on('pageerror', error => errors.push(error.message));
   await page.goto('/');
-  await expect(page).toHaveTitle(/Procura/);
+  await expect(page).toHaveTitle(/NexoPlan/);
   await test.step('login inválido e sessão correta', async () => {
     await page.getByLabel('Email', { exact: true }).fill('admin@ui.test');
     await page.getByLabel('Password', { exact: true }).fill('password-errada');

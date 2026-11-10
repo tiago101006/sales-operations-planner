@@ -1,6 +1,6 @@
-# Interface web integrada
+# NexoPlan — Interface web integrada
 
-A aplicação já pode ser usada no navegador em `http://localhost:8080/`.
+A NexoPlan já pode ser usada no navegador em `http://localhost:8080/`.
 Usa a conta ADMIN existente ou outra conta criada para a equipa, incluindo o
 APROVADOR dos ensaios anteriores. Não há dados de demonstração nem contas criadas
 automaticamente na base de desenvolvimento.

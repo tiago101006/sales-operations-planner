@@ -11,8 +11,8 @@
 	<groupId>pt.tiagodias</groupId>
 	<artifactId>sales-operations-planner</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>SalesOperationsPlanner</name>
-	<description>Aplicacao de previsao de procura e planeamento S&amp;OP</description>
+	<name>NexoPlan</name>
+	<description>NexoPlan - Aplicacao de previsao de procura e planeamento S&amp;OP</description>
 	<properties>
 		<java.version>17</java.version>
 	</properties>

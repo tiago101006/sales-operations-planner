@@ -1,4 +1,6 @@
-# Aplicação de Previsão de Procura e S&OP
+# NexoPlan — Previsão de Procura e Planeamento S&OP
+
+**NexoPlan** é a marca da aplicação de planeamento desenvolvida neste projeto.
 
 Projeto de Tiago Dias: backend Java 17 / Spring Boot 4.1.2, MySQL 8.4,
 Docker Compose, migrações Flyway e autenticação por sessão com perfis. Inclui interface web integrada, catálogo, importação de históricos/realizados/operacionais, previsões por Média Móvel e ETS(A,A,N), backtesting, cenários/revisões/ajustes auditados, aprovação/publicação por API e CSV e monitorização com MAE/MAPE, cobertura e indicadores operacionais. Segue-se a avaliação final do projeto.
