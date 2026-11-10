@@ -1,0 +1,66 @@
+package pt.tiagodias.sop.security;
+
+import java.util.List;
+import jakarta.servlet.DispatcherType;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
+import org.springframework.context.annotation.*;
+import org.springframework.security.authentication.*;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.session.*;
+import org.springframework.security.web.context.*;
+import org.springframework.security.web.csrf.*;
+import org.springframework.security.web.savedrequest.NullRequestCache;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
+import pt.tiagodias.sop.identity.UtilizadorRepository;
+
+@Configuration
+@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
+public class SecurityConfiguration {
+    @Bean
+    AuthenticationManager authenticationManager(UserDetailsService users, PasswordEncoder encoder) {
+        var provider = new DaoAuthenticationProvider(users);
+        provider.setPasswordEncoder(encoder);
+        return new ProviderManager(provider);
+    }
+
+    @Bean
+    SecurityContextRepository securityContextRepository() { return new HttpSessionSecurityContextRepository(); }
+
+    @Bean
+    CsrfTokenRepository csrfTokenRepository() { return new HttpSessionCsrfTokenRepository(); }
+
+    @Bean
+    SessionAuthenticationStrategy loginSessionStrategy(CsrfTokenRepository csrf) {
+        return new CompositeSessionAuthenticationStrategy(List.of(
+                new ChangeSessionIdAuthenticationStrategy(), new CsrfAuthenticationStrategy(csrf)));
+    }
+
+    @Bean
+    SecurityFilterChain securityFilterChain(HttpSecurity http, SecurityContextRepository context, CsrfTokenRepository csrf,
+                                          UtilizadorRepository users) throws Exception {
+        return http
+                .addFilterBefore(new CurrentAccountFilter(users, context), AuthorizationFilter.class)
+                .csrf(config -> config.csrfTokenRepository(csrf))
+                .securityContext(config -> config.securityContextRepository(context))
+                .requestCache(config -> config.requestCache(new NullRequestCache()))
+                .formLogin(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(auth -> auth
+                        .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
+                        .requestMatchers("/api/v1/status", "/actuator/health", "/actuator/health/**", "/api/v1/auth/csrf", "/api/v1/auth/login").permitAll()
+                        .requestMatchers("/api/v1/utilizadores", "/api/v1/utilizadores/**").hasRole("ADMIN")
+                        .anyRequest().authenticated())
+                .exceptionHandling(errors -> errors
+                        .authenticationEntryPoint((req, res, ex) -> SecurityErrors.write(res, 401, "AUTHENTICATION_REQUIRED", "Autenticação necessária."))
+                        .accessDeniedHandler((req, res, ex) -> SecurityErrors.write(res, 403, "ACCESS_DENIED", "Acesso recusado ou token CSRF inválido.")))
+                .logout(logout -> logout.logoutUrl("/api/v1/auth/logout")
+                        .invalidateHttpSession(true).clearAuthentication(true).deleteCookies("JSESSIONID")
+                        .logoutSuccessHandler((req, res, auth) -> res.setStatus(204)))
+                .build();
+    }
+}

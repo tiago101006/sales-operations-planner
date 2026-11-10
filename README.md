@@ -1,8 +1,8 @@
 # Aplicação de Previsão de Procura e S&OP
 
 Projeto de Tiago Dias: backend Java 17 / Spring Boot 4.1.2, MySQL 8.4,
-Docker Compose e migrações Flyway. Autenticação e funcionalidades de negócio
-serão implementadas nos próximos blocos.
+Docker Compose, migrações Flyway e autenticação por sessão com perfis. As funcionalidades
+de planeamento serão implementadas nos próximos blocos.
 
 ## Iniciar
 
@@ -29,7 +29,7 @@ monta scripts em `/docker-entrypoint-initdb.d`.
 O endpoint de identificação responde `{"application":"sales-operations-planner"}`.
 O endpoint de saúde inclui `"status":"UP"` e verifica a ligação ao MySQL; pode listar
 os grupos `liveness` e `readiness`. Backend publicado em `127.0.0.1:8080`, MySQL em
-`127.0.0.1:3307`. Sem autenticação neste marco, para desenvolvimento local.
+`127.0.0.1:3307`. Autenticação por sessão com CSRF, para desenvolvimento local.
 
 ```bash
 docker compose logs --tail=100 backend
@@ -38,6 +38,19 @@ docker compose stop
 
 `stop` conserva os dados. `BACKEND_PORT` e `MYSQL_PORT` permitem alterar as portas
 publicadas; entre contentores mantêm-se as portas internas. `.env` não entra no Git.
+
+## Criar a primeira conta e testar login
+
+Depois de construir/iniciar o backend:
+
+```bash
+bash scripts/criar_admin.sh
+python3 scripts/testar_login.py
+```
+
+A primeira conta recebe apenas ADMIN e só pode ser criada se não existir nenhum
+utilizador. Email e password são introduzidos no terminal, sem passwords no código.
+Ver [autenticação e contratos](docs/autenticacao.md) para os endpoints e perfis.
 
 ## Adotar a base anterior ao Flyway
 
@@ -94,4 +107,5 @@ As versões de Flyway e Connector/J são geridas pelo parent Spring Boot.
 - [Plano por fases](docs/plano-implementacao.md)
 - [SQL inicial](backend/src/main/resources/db/migration/V1__schema_inicial.sql)
 - [Integração Flyway](docs/flyway.md)
+- [Autenticação por sessão](docs/autenticacao.md)
 - [Marco anterior do backend](docs/backend-primeiro-marco.md)
