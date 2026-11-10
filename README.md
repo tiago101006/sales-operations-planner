@@ -1,7 +1,7 @@
 # Aplicação de Previsão de Procura e S&OP
 
 Projeto de Tiago Dias: backend Java 17 / Spring Boot 4.1.2, MySQL 8.4,
-Docker Compose, migrações Flyway e autenticação por sessão com perfis. Inclui catálogo de produtos protegido por perfis; importação e planeamento vêm nos próximos blocos.
+Docker Compose, migrações Flyway e autenticação por sessão com perfis. Inclui catálogo de produtos e importação de históricos CSV protegidos por perfis. Previsões e planeamento vêm nos próximos blocos.
 
 ## Iniciar
 
@@ -65,6 +65,21 @@ Ver [contratos e regras do catálogo](docs/catalogo.md).
 A migração V2 acrescenta o controlo de versão por produto. O Flyway aplica-a no
 arranque, preservando contas e dados. Código e unidade ficam fixos após uso.
 
+## Importar históricos CSV
+
+```bash
+python3 scripts/testar_importacao.py
+```
+
+Usar a conta ADMIN existente. Enter no caminho seleciona o exemplo sintético para
+SKU001 (24 meses); Enter no lote anterior cria um lote novo. O produto deve estar
+ativo e ter unidade `un`. O script mostra lote e observações ou os diagnósticos de
+rejeição. Nenhum histórico é importado automaticamente.
+
+Os originais ficam num volume Docker próprio, `sop_imports`; as observações e os
+metadados ficam no MySQL. Uma cópia completa inclui ambos. Ver
+[contratos, limites e exemplos](docs/importacao-historicos.md).
+
 ## Adotar a base anterior ao Flyway
 
 Na instalação deste projeto, a base já foi verificada e adotada. Numa outra instalação
@@ -122,4 +137,5 @@ As versões de Flyway e Connector/J são geridas pelo parent Spring Boot.
 - [Integração Flyway](docs/flyway.md)
 - [Autenticação por sessão](docs/autenticacao.md)
 - [Catálogo de produtos](docs/catalogo.md)
+- [Importação de históricos](docs/importacao-historicos.md)
 - [Marco anterior do backend](docs/backend-primeiro-marco.md)

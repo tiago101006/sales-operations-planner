@@ -7,9 +7,14 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ProblemDetail uploadTooLarge(MaxUploadSizeExceededException exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.PAYLOAD_TOO_LARGE, "O ficheiro excede o limite de 10 MiB.");
+    }
     @ExceptionHandler(AuthenticationException.class)
     public ProblemDetail authentication(AuthenticationException exception) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, "Credenciais inválidas.");

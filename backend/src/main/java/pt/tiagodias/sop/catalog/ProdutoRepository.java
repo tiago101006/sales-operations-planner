@@ -1,6 +1,8 @@
 package pt.tiagodias.sop.catalog;
 
 import java.util.Optional;
+import java.util.Collection;
+import java.util.List;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
@@ -12,6 +14,10 @@ public interface ProdutoRepository extends JpaRepository<Produto, Long>, JpaSpec
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select p from Produto p where p.id = :id")
     Optional<Produto> findForUpdate(@Param("id") Long id);
+
+    @Lock(LockModeType.PESSIMISTIC_READ)
+    @Query("select p from Produto p where p.codigo in :codigos order by p.id")
+    List<Produto> findForImport(@Param("codigos") Collection<String> codigos);
 
     // As restantes linhas de previsao/cenario/plano dependem destes registos por FK.
     @Query(value = """
