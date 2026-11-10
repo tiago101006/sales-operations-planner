@@ -48,7 +48,7 @@ class SalesOperationsPlannerApplicationTests {
 	void startsWithRealMysqlSchemaAndExposesHealthWithoutDatabaseDetails() throws Exception {
 		assertThat(jdbc.queryForObject(
 				"SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE()",
-				Integer.class)).isEqualTo(22);
+				Integer.class)).isEqualTo(24);
 		assertThat(jdbc.queryForObject(
 				"SELECT COUNT(*) FROM flyway_schema_history WHERE version='1' AND type='SQL' AND success=1",
 				Integer.class)).isEqualTo(1);

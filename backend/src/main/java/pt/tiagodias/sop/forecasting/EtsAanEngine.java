@@ -27,7 +27,10 @@ public class EtsAanEngine implements ForecastEngine {
             }
         }
         if (!Double.isFinite(bestScore)) { throw new ArithmeticException("Não foi encontrado ajuste finito."); }
-        return fitFixed(history, horizon, bestAlpha, bestBeta);
+        var fit = fitFixed(history, horizon, bestAlpha, bestBeta);
+        var parameters = new LinkedHashMap<>(fit.parameters());
+        parameters.put("criterio", "SSE_TREINO_GRELHA_81");
+        return new Fit(fit.predictions(), Collections.unmodifiableMap(parameters), fit.diagnostic());
     }
 
     /** Tambem permite verificacao contra um modelo de referencia com coeficientes fixos. */
@@ -51,7 +54,7 @@ public class EtsAanEngine implements ForecastEngine {
         parameters.put("nivelFinal", state.level()); parameters.put("tendenciaFinal", state.trend());
         parameters.put("sseTreino", state.sse()); parameters.put("numeroObservacoes", history.size());
         parameters.put("inicializacao", "PRIMEIRO_VALOR_E_DIFERENCA_INICIAL");
-        parameters.put("criterio", "SSE_TREINO_GRELHA_81"); parameters.put("previsoesTruncadasEmZero", clipped);
+        parameters.put("criterio", "COEFICIENTES_FIXOS_REFERENCIA"); parameters.put("previsoesTruncadasEmZero", clipped);
         return new Fit(List.copyOf(predictions), Collections.unmodifiableMap(parameters),
                 clipped == 0 ? null : "PREVISOES_TRUNCADAS_EM_ZERO: " + clipped);
     }

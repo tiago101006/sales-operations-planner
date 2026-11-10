@@ -1,5 +1,8 @@
 # Primeira previsão: Média Móvel recursiva
 
+Este documento regista o primeiro bloco de previsão. Foi posteriormente acrescentado
+[ETS(A,A,N)](previsao-ets.md), preservando o cálculo e os parâmetros da Média Móvel.
+
 ## Âmbito
 
 Execuções síncronas e reproduzíveis, a partir de um lote histórico validado, com

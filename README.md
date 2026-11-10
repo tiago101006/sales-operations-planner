@@ -1,7 +1,7 @@
 # Aplicação de Previsão de Procura e S&OP
 
 Projeto de Tiago Dias: backend Java 17 / Spring Boot 4.1.2, MySQL 8.4,
-Docker Compose, migrações Flyway e autenticação por sessão com perfis. Inclui catálogo de produtos e importação de históricos CSV protegidos por perfis. Inclui previsões base por Média Móvel; ETS, cenários e planeamento vêm nos próximos blocos.
+Docker Compose, migrações Flyway e autenticação por sessão com perfis. Inclui catálogo de produtos e importação de históricos CSV protegidos por perfis. Inclui previsões base por Média Móvel e ETS(A,A,N). Inclui backtesting com MAE/MAPE e cobertura. Cenários e planeamento vêm nos próximos blocos.
 
 ## Iniciar
 
@@ -93,6 +93,32 @@ anteriores. Meses em falta na janela não são preenchidos com zero.
 
 Ver [Média Móvel: algoritmo, contratos e exemplo SKU001](docs/previsao-media-movel.md).
 
+## Previsão ETS
+
+```bash
+python3 scripts/testar_ets.py
+```
+
+O script propõe ETS(A,A,N), até 24 meses de treino e SEM_RECURSO. São necessárias
+pelo menos 6 observações consecutivas. Coeficientes e estados aprendidos ficam
+visíveis nos diagnósticos. O recurso a Média Móvel é opcional e explicitamente
+identificado. A variante deste bloco não tem sazonalidade.
+
+Ver [algoritmo, referência independente e contratos ETS](docs/previsao-ets.md).
+
+## Comparar os modelos por backtesting
+
+```bash
+python3 scripts/testar_backtest.py
+```
+
+O script propõe cortes históricos para o lote escolhido, compara os mesmos pares
+produto/período/horizonte e mostra MAE, MAPE e cobertura. Os resultados são simulações
+retrospectivas separadas das execuções operacionais. A migração V3 acrescenta duas
+tabelas próprias e preserva o catálogo, históricos e previsões existentes.
+
+Ver [contratos e interpretação do backtesting](docs/backtesting.md).
+
 ## Adotar a base anterior ao Flyway
 
 Na instalação deste projeto, a base já foi verificada e adotada. Numa outra instalação
@@ -139,7 +165,8 @@ Não alteram os dados do volume de desenvolvimento. Requerem Docker ativo.
 
 A única V1 está em `backend/src/main/resources/db/migration/V1__schema_inicial.sql`.
 As próximas alterações criam V2, V3, etc. Não editar migrações já aplicadas.
-Existem 21 tabelas de negócio e uma tabela técnica `flyway_schema_history`.
+A V3 acrescenta duas tabelas de backtesting às 21 tabelas iniciais; existe ainda
+a tabela técnica `flyway_schema_history`.
 As versões de Flyway e Connector/J são geridas pelo parent Spring Boot.
 
 ## Documentação
@@ -152,4 +179,6 @@ As versões de Flyway e Connector/J são geridas pelo parent Spring Boot.
 - [Catálogo de produtos](docs/catalogo.md)
 - [Importação de históricos](docs/importacao-historicos.md)
 - [Previsão por Média Móvel](docs/previsao-media-movel.md)
+- [Previsão ETS(A,A,N)](docs/previsao-ets.md)
+- [Backtesting e métricas](docs/backtesting.md)
 - [Marco anterior do backend](docs/backend-primeiro-marco.md)

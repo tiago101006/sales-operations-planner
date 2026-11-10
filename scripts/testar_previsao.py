@@ -1,4 +1,4 @@
-"""Cria uma execucao de media movel, consulta previsoes e diagnosticos e faz logout."""
+"""Cria uma execucao MEDIA_MOVEL ou ETS, consulta resultados e faz logout."""
 import datetime
 import getpass
 import http.cookiejar
@@ -8,7 +8,7 @@ import urllib.error
 import urllib.request
 
 
-def main():
+def main(default_method="MEDIA_MOVEL"):
     base = input('URL do backend [http://localhost:8080]: ').strip() or 'http://localhost:8080'
     email = input('Email: ').strip()
     password = getpass.getpass('Password: ')
@@ -44,6 +44,9 @@ def main():
         lot_id = input(f'ID numerico do lote (nao e o SKU) [{default_id}]: ').strip() or default_id
         if not lot_id.isdigit() or int(lot_id) <= 0:
             raise SystemExit('Indica um ID numerico de lote validado. Importa primeiro um historico, se necessario.')
+        method = input(f'Metodo [{default_method}]: ').strip().upper() or default_method
+        if method not in ('MEDIA_MOVEL', 'ETS'):
+            raise SystemExit('Usa MEDIA_MOVEL ou ETS.')
         series = input('Tipo de serie [VENDAS]: ').strip().upper() or 'VENDAS'
         if series not in ('VENDAS', 'CONSUMO'):
             raise SystemExit('Usa VENDAS ou CONSUMO.')
@@ -53,15 +56,32 @@ def main():
         month = input(f'Ultimo mes de treino [{default_month}]: ').strip() or default_month
         if not re.fullmatch(r'[1-9][0-9]{3}-(0[1-9]|1[0-2])', month):
             raise SystemExit('O mes deve usar AAAA-MM.')
-        window = input('Janela em meses [3]: ').strip() or '3'
+        if method == 'MEDIA_MOVEL':
+            window = input('Janela em meses [3]: ').strip() or '3'
+            if not window.isdigit() or not 1 <= int(window) <= 36:
+                raise SystemExit('Janela entre 1 e 36.')
+            params = {'janela': int(window), 'multiplosPassos': 'RECURSIVO'}
+        else:
+            history = input('Maximo de meses de historico ETS [24]: ').strip() or '24'
+            if not history.isdigit() or not 6 <= int(history) <= 120:
+                raise SystemExit('Historico ETS entre 6 e 120 meses.')
+            fallback = input('Recurso para historico insuficiente [SEM_RECURSO]: ').strip().upper() or 'SEM_RECURSO'
+            if fallback not in ('SEM_RECURSO', 'MEDIA_MOVEL'):
+                raise SystemExit('Usa SEM_RECURSO ou MEDIA_MOVEL.')
+            params = {'variante': 'AAN', 'historicoMeses': int(history), 'recurso': fallback}
+            if fallback == 'MEDIA_MOVEL':
+                fallback_window = input('Janela de recurso [3]: ').strip() or '3'
+                if not fallback_window.isdigit() or not 1 <= int(fallback_window) <= 36:
+                    raise SystemExit('Janela de recurso entre 1 e 36.')
+                params['janelaRecurso'] = int(fallback_window)
         horizon = input('Horizonte em meses [3]: ').strip() or '3'
-        if not window.isdigit() or not 1 <= int(window) <= 36 or not horizon.isdigit() or not 1 <= int(horizon) <= 12:
-            raise SystemExit('Janela entre 1 e 36; horizonte entre 1 e 12.')
+        if not horizon.isdigit() or not 1 <= int(horizon) <= 12:
+            raise SystemExit('Horizonte entre 1 e 12.')
         body = {
             'loteHistoricoId': lot_id, 'tipoSerie': series,
             'corteTemporal': datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='microseconds').replace('+00:00', 'Z'),
-            'ultimoPeriodoTreino': month, 'horizonteMeses': int(horizon), 'metodo': 'MEDIA_MOVEL',
-            'parametros': {'janela': int(window), 'multiplosPassos': 'RECURSIVO'},
+            'ultimoPeriodoTreino': month, 'horizonteMeses': int(horizon), 'metodo': method,
+            'parametros': params,
         }
         execution = request('POST', '/api/v1/execucoes-previsao', body)
         print('Execucao:')

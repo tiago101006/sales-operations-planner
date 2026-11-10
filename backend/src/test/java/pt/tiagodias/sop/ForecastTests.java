@@ -147,7 +147,7 @@ class ForecastTests {
 
     @Test
     void rejectsInvalidParametersCutoffsAndLotStates() throws Exception {
-        for (var change : List.of(Map.<String, Object>of("metodo", "ETS"), Map.<String, Object>of("horizonteMeses", 13),
+        for (var change : List.of(Map.<String, Object>of("metodo", "MODELO_INEXISTENTE"), Map.<String, Object>of("horizonteMeses", 13),
                 Map.<String, Object>of("parametros", Map.of("janela", 0)), Map.<String, Object>of("ultimoPeriodoTreino", "2025-13"),
                 Map.<String, Object>of("corteTemporal", Instant.now().plusSeconds(86400).toString()))) {
             var body = request(); body.putAll(change);
