@@ -1,6 +1,7 @@
 package pt.tiagodias.sop.security;
 
 import java.util.List;
+import org.springframework.http.HttpMethod;
 import jakarta.servlet.DispatcherType;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.*;
@@ -54,6 +55,11 @@ public class SecurityConfiguration {
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers("/api/v1/status", "/actuator/health", "/actuator/health/**", "/api/v1/auth/csrf", "/api/v1/auth/login").permitAll()
                         .requestMatchers("/api/v1/utilizadores", "/api/v1/utilizadores/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/produtos", "/api/v1/produtos/**")
+                            .hasAnyRole("ADMIN", "PLANEADOR", "COMERCIAL", "APROVADOR", "CONSUMIDOR")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/produtos").hasAnyRole("ADMIN", "PLANEADOR")
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/produtos/*").hasAnyRole("ADMIN", "PLANEADOR")
+                        .requestMatchers("/api/v1/produtos", "/api/v1/produtos/**").denyAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(errors -> errors
                         .authenticationEntryPoint((req, res, ex) -> SecurityErrors.write(res, 401, "AUTHENTICATION_REQUIRED", "Autenticação necessária."))

@@ -27,12 +27,17 @@ class FlywayAdoptionTests {
                         .baselineVersion("1").baselineOnMigrate(false).cleanDisabled(true).load();
                 assertThatThrownBy(flyway::migrate).isInstanceOf(FlywayException.class);
                 flyway.baseline();
-                assertThat(flyway.migrate().migrationsExecuted).isZero();
+                assertThat(flyway.migrate().migrationsExecuted).isEqualTo(1);
                 assertThat(flyway.migrate().migrationsExecuted).isZero();
                 try (var statement = connection.createStatement();
                      var result = statement.executeQuery("SELECT nome FROM produto WHERE codigo='TESTE'")) {
                     assertThat(result.next()).isTrue();
                     assertThat(result.getString(1)).isEqualTo("Produto existente");
+                }
+                try (var statement = connection.createStatement();
+                     var result = statement.executeQuery("SELECT versao_lock FROM produto WHERE codigo='TESTE'")) {
+                    assertThat(result.next()).isTrue();
+                    assertThat(result.getLong(1)).isZero();
                 }
             }
         }

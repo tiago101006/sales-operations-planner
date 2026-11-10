@@ -1,8 +1,7 @@
 # Aplicação de Previsão de Procura e S&OP
 
 Projeto de Tiago Dias: backend Java 17 / Spring Boot 4.1.2, MySQL 8.4,
-Docker Compose, migrações Flyway e autenticação por sessão com perfis. As funcionalidades
-de planeamento serão implementadas nos próximos blocos.
+Docker Compose, migrações Flyway e autenticação por sessão com perfis. Inclui catálogo de produtos protegido por perfis; importação e planeamento vêm nos próximos blocos.
 
 ## Iniciar
 
@@ -51,6 +50,20 @@ python3 scripts/testar_login.py
 A primeira conta recebe apenas ADMIN e só pode ser criada se não existir nenhum
 utilizador. Email e password são introduzidos no terminal, sem passwords no código.
 Ver [autenticação e contratos](docs/autenticacao.md) para os endpoints e perfis.
+
+## Catálogo de produtos
+
+```bash
+python3 scripts/testar_catalogo.py
+```
+
+Autenticar com a conta criada. O script lista os produtos e permite criar um por
+escolha explícita. ADMIN e PLANEADOR podem criar/alterar; os cinco perfis podem
+consultar. Não há produtos de demonstração inseridos automaticamente.
+Ver [contratos e regras do catálogo](docs/catalogo.md).
+
+A migração V2 acrescenta o controlo de versão por produto. O Flyway aplica-a no
+arranque, preservando contas e dados. Código e unidade ficam fixos após uso.
 
 ## Adotar a base anterior ao Flyway
 
@@ -108,4 +121,5 @@ As versões de Flyway e Connector/J são geridas pelo parent Spring Boot.
 - [SQL inicial](backend/src/main/resources/db/migration/V1__schema_inicial.sql)
 - [Integração Flyway](docs/flyway.md)
 - [Autenticação por sessão](docs/autenticacao.md)
+- [Catálogo de produtos](docs/catalogo.md)
 - [Marco anterior do backend](docs/backend-primeiro-marco.md)
