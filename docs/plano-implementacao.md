@@ -2,11 +2,13 @@
 
 Cada fase termina com uma demonstração verificável. Duração indicativa: uma a duas
 semanas por fase, a ajustar ao calendário académico. O backend já implementa as fases
-0 a 4: infraestrutura, autenticação/catálogo, históricos, previsões/backtesting e
-cenários com ajustes auditados. Seguem-se aprovação/publicação e monitorização/interface.
+0 a 5: infraestrutura, autenticação/catálogo, históricos, previsões/backtesting,
+cenários com ajustes auditados e aprovação/publicação por API/CSV. Seguem-se
+monitorização com realizados e interface gráfica.
 Este documento conserva o desenho geral; os contratos efetivos e limites de cada
 bloco estão nos documentos específicos ligados no README, incluindo
-[cenários e revisões](cenarios-ajustes.md). Importações de realizados/operacionais,
+[cenários e revisões](cenarios-ajustes.md) e
+[aprovação/publicação](aprovacao-publicacao.md). Importações de realizados/operacionais,
 calendários e promoções descritas abaixo ainda não estão implementadas.
 
 ## Convenções comuns
@@ -184,7 +186,8 @@ git push
 | `POST /revisoes/{id}/devolucao` | APROVADOR devolve com motivo obrigatório |
 | `POST /revisoes/{id}/aprovacao` | APROVADOR aprova e publica numa transação |
 | `GET /planos` | Listar apenas planos publicados acessíveis |
-| `GET /planos/{id}` | Snapshot estável com linhas e informação de aprovação |
+| `GET /planos/{id}` | Metadados do snapshot e informação de aprovação |
+| `GET /planos/{id}/linhas` | Linhas do snapshot, paginadas |
 | `GET /planos/{id}/exportacao.csv` | Mesmas linhas da API em CSV |
 
 Usar `@Transactional`, bloqueio da revisão e `versaoEsperada`. Aprovação exige papel
@@ -297,26 +300,29 @@ Submissão/aprovação: corpo `{"versaoEsperada": 1}` com a versão atual em cad
 Devolução acrescenta `"motivo"`. Uma aprovação responde com `planoId`, `revisaoId`
 e `versaoAtual`, sem permitir escolher as quantidades nessa operação.
 
-Plano: `GET /api/v1/planos/1`:
+Plano: `GET /api/v1/planos/1` (linhas em endpoint separado):
 
 ```json
 {
-  "planoId": "1",
+  "id": "1",
   "revisaoId": "1",
+  "cenarioId": "1",
+  "execucaoId": "1",
   "versaoContrato": "v1",
   "aprovadoPor": "2",
   "aprovadoEm": "2026-10-31T19:00:00Z",
-  "linhas": [
-    {"produto": "SKU01", "periodo": "2026-11", "unidade": "un", "quantidade": "120.0000"}
-  ]
+  "publicadoEm": "2026-10-31T19:00:00.001Z",
+  "totalLinhas": 1
 }
 ```
 
-CSV equivalente:
+`GET /api/v1/planos/1/linhas` devolve `items`, `page`, `size`, `totalElements` e
+`totalPages`. Cada célula inclui produtoId, produto, periodo, unidade, quantidadeBase
+e quantidade aprovada no campo `quantidade`. CSV equivalente, sem paginação:
 
 ```csv
-plano_id;produto;periodo;unidade;quantidade
-1;SKU01;2026-11;un;120.0000
+plano_id;produto;periodo;unidade;quantidade_base;quantidade
+1;SKU01;2026-11;un;100.0000;120.0000
 ```
 
 Erro de ajuste:

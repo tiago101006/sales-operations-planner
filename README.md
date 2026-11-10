@@ -1,7 +1,7 @@
 # Aplicação de Previsão de Procura e S&OP
 
 Projeto de Tiago Dias: backend Java 17 / Spring Boot 4.1.2, MySQL 8.4,
-Docker Compose, migrações Flyway e autenticação por sessão com perfis. Inclui catálogo de produtos e importação de históricos CSV protegidos por perfis. Inclui previsões base por Média Móvel e ETS(A,A,N), backtesting com MAE/MAPE e cobertura, cenários comparáveis, revisões e ajustes manuais auditados. Aprovação e publicação de planos vêm no próximo bloco.
+Docker Compose, migrações Flyway e autenticação por sessão com perfis. Inclui catálogo de produtos e importação de históricos CSV protegidos por perfis. Inclui previsões base por Média Móvel e ETS(A,A,N), backtesting com MAE/MAPE e cobertura, cenários comparáveis, revisões, ajustes auditados e aprovação/publicação por API e CSV. Monitorização com realizados e interface gráfica seguem nos próximos blocos.
 
 ## Iniciar
 
@@ -133,6 +133,23 @@ A previsão base é preservada. Não altera o esquema existente.
 
 Ver [contratos, concorrência e auditoria das revisões](docs/cenarios-ajustes.md).
 
+## Aprovar e publicar planos
+
+```bash
+python3 scripts/testar_aprovacao.py
+```
+
+O ensaio pede a conta ADMIN existente e outra conta APROVADOR. Na primeira utilização,
+permite criar essa segunda conta, com email/password escolhidos no terminal; nas
+seguintes, escolher `n` para usar a conta já criada. ADMIN não aprova automaticamente.
+
+Cria um cenário de ensaio, submete, devolve, corrige numa revisão nova e aprova com
+a segunda conta. Verifica o congelamento, a recusa de aprovação repetida e a igualdade
+entre todas as linhas da API e o CSV, guardado em `tmp/exports/plano-<id>.csv`.
+Planos publicados ficam disponíveis aos cinco perfis, incluindo CONSUMIDOR.
+
+Ver [estados, contratos e separação de funções](docs/aprovacao-publicacao.md).
+
 ## Adotar a base anterior ao Flyway
 
 Na instalação deste projeto, a base já foi verificada e adotada. Numa outra instalação
@@ -174,6 +191,9 @@ Os testes usam MySQL temporário por Testcontainers: criação de uma base vazia
 Flyway, saúde HTTP, deteção de checksum alterado, recusa de base não vazia sem baseline,
 adoção explícita com preservação de dados e repetição sem reaplicar migrações.
 Não alteram os dados do volume de desenvolvimento. Requerem Docker ativo.
+Incluem ainda autenticação/perfis, importações, previsões, backtesting, cenários e
+workflow de aprovação: concorrência, rollback integral, auditoria herdada e
+equivalência entre API e CSV de planos publicados.
 
 ## Migrações
 
@@ -196,4 +216,5 @@ As versões de Flyway e Connector/J são geridas pelo parent Spring Boot.
 - [Previsão ETS(A,A,N)](docs/previsao-ets.md)
 - [Backtesting e métricas](docs/backtesting.md)
 - [Cenários, revisões e ajustes auditados](docs/cenarios-ajustes.md)
+- [Aprovação e publicação por API/CSV](docs/aprovacao-publicacao.md)
 - [Marco anterior do backend](docs/backend-primeiro-marco.md)

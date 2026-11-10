@@ -2,7 +2,8 @@
 
 Este bloco implementa a fase 4 do backend. Usa previsões operacionais concluídas
 (Média Móvel ou ETS); resultados de backtest não são previsões para planeamento.
-O fluxo de aprovação e a publicação de planos pertencem à fase seguinte.
+O fluxo de aprovação e a publicação de planos estão documentados no bloco seguinte,
+[aprovação e publicação](aprovacao-publicacao.md), já implementado no backend.
 
 ## Experimentar
 
@@ -40,8 +41,9 @@ As quantidades dependem da execução escolhida; não são os resultados do back
 - Cada ajuste é uma substituição absoluta da quantidade final, não um incremento.
   Regista o valor final anterior, novo valor, sequência por célula, motivo, autor
   autenticado, instante UTC e evento. O cliente não escolhe o autor nem o instante.
-- Apenas RASCUNHO aceita ajustes. Neste bloco, as revisões criadas permanecem nesse
-  estado; não há endpoint genérico para mudar estado ou editar/apagar a auditoria.
+- Apenas RASCUNHO aceita ajustes. As revisões são criadas nesse estado; o fluxo de
+  aprovação usa comandos próprios. Não há endpoint genérico para mudar estado ou
+  editar/apagar a auditoria.
 
 Para uma base de 100: otimista 1,10 → calculada/final 110; ajuste para 120 →
 anterior 110, novo 120. A base continua 100 e o conservador 0,90 continua 90.
@@ -88,7 +90,7 @@ e [leituras com bloqueio MySQL](https://dev.mysql.com/doc/refman/8.4/en/innodb-l
 ## Endpoints
 
 Todos têm prefixo `/api/v1`. Escrita: ADMIN e PLANEADOR. Consulta: ADMIN, PLANEADOR,
-COMERCIAL e APROVADOR. CONSUMIDOR terá acesso a planos publicados, numa fase posterior.
+COMERCIAL e APROVADOR. CONSUMIDOR acede aos planos publicados no módulo de publicação.
 Escritas exigem sessão e CSRF, como nos outros módulos.
 
 | Método e caminho | Resultado |

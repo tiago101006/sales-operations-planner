@@ -41,7 +41,7 @@ public class ScenarioQueries {
     }
     private RevisaoDto mapRevisao(ResultSet rs,int n)throws SQLException {
         return new RevisaoDto(rs.getString("id"),rs.getString("cenario_id"),rs.getString("execucao_id"),rs.getInt("numero"),rs.getString("revisao_origem_id"),
-                rs.getBigDecimal("fator").setScale(6).toPlainString(),json.readTree(rs.getString("pressupostos")),rs.getString("estado"),rs.getString("criado_por"),ImportQueries.instant(rs,"criado_em"),rs.getLong("versao_lock"),rs.getInt("linhas"),rs.getInt("ajustes"));
+                rs.getBigDecimal("fator").setScale(6).toPlainString(),json.readTree(rs.getString("pressupostos")),rs.getString("estado"),rs.getString("criado_por"),ImportQueries.instant(rs,"criado_em"),ImportQueries.instant(rs,"submetido_em"),ImportQueries.instant(rs,"decidido_em"),rs.getLong("versao_lock"),rs.getInt("linhas"),rs.getInt("ajustes"));
     }
     public CenarioDto cenario(long id) { return jdbc.query(CENARIO+"WHERE c.id=?",this::mapCenario,id).stream().findFirst().orElseThrow(()->missing("Cenário")); }
     public RevisaoDto revisao(long id) { return jdbc.query(REVISAO+"WHERE r.id=?",this::mapRevisao,id).stream().findFirst().orElseThrow(()->missing("Revisão")); }
@@ -81,6 +81,15 @@ public class ScenarioQueries {
         long count=jdbc.queryForObject("SELECT COUNT(*) FROM evento_revisao WHERE revisao_id=?",Long.class,revision);
         return new Pagina<>(jdbc.query("SELECT e.*,u.nome autor_nome FROM evento_revisao e JOIN utilizador u ON u.id=e.autor_id WHERE e.revisao_id=? ORDER BY e.id LIMIT ? OFFSET ?",
                 (rs,n)->new EventoDto(rs.getString("id"),rs.getString("revisao_id"),rs.getString("tipo"),rs.getString("autor_id"),rs.getString("autor_nome"),ImportQueries.instant(rs,"ocorrido_em"),rs.getString("motivo")),revision,size,offset),page,size,count,pages(count,size));
+    }
+    public boolean autorDeAjustes(long revision,long author) {
+        // Reuse the exact inheritance boundaries used by the audit API.
+        return Boolean.TRUE.equals(jdbc.queryForObject(CHAIN+"""
+                SELECT EXISTS(SELECT 1 FROM ajuste a
+                JOIN cadeia c ON c.id=a.revisao_id
+                JOIN evento_revisao e ON e.id=a.evento_id
+                WHERE a.id<=c.limite AND e.autor_id=?)
+                """,Boolean.class,revision,true,author));
     }
     private record Product(long id,String code,String unit) {}
     public ComparacaoDto comparar(List<Long> revisions,int page,int size) {
