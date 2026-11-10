@@ -32,7 +32,7 @@ Para um ensaio que não altere os teus dados, usar o teste isolado descrito abai
 
 | Área | Comportamento |
 |---|---|
-| Visão geral | Contagens reais da API, planos recentes e percurso do planeamento |
+| Visão geral | ADMIN: indicadores, gráfico previsão/plano, acessos rápidos e últimas importações. Outros perfis: contagens e percurso do planeamento |
 | Produtos | Pesquisa/paginação; criar/editar com versão; código/unidade sujeitos às regras do backend |
 | Importações | HISTORICO/REALIZADOS/OPERACIONAL, origem, ficheiro, correção opcional; diagnósticos e dados do lote |
 | Previsões | Média Móvel/ETS, histórico, corte, último treino e horizonte; linhas/gráfico/diagnósticos |
@@ -42,6 +42,16 @@ Para um ensaio que não altere os teus dados, usar o teste isolado descrito abai
 | Planos publicados | Metadados de aprovação, células paginadas, CSV completo e entrada para avaliação |
 | Monitorização | Plano/lotes/corte, seleção de produto, precisão por horizonte, operação e motivos de exclusão |
 | Equipa | ADMIN cria contas com papéis explícitos e consulta utilizadores por ID |
+
+O painel ADMIN usa cartões de produtos, execuções, cenários e planos, sem variações
+percentuais artificiais. O gráfico mostra até 12 meses do primeiro produto do
+último plano publicado, comparando base e aprovado na mesma unidade. Sem planos,
+usa uma execução concluída com linhas entre as cinco mais recentes; sem dados,
+apresenta instruções para começar. O produto, a unidade e o plano/execução são
+identificados. Os acessos rápidos, planos e importações recentes usam as rotas
+existentes. Os restantes perfis conservam o seu conteúdo e permissões, com a mesma
+linguagem visual em verde floresta, sálvia, areia e terracota. Em ecrãs pequenos, os
+cartões passam a duas colunas e o gráfico/tabelas permitem deslocação horizontal.
 
 As comparações selecionam a última revisão de cada cenário listado. O histórico
 permite consultar todas as revisões, incluindo as anteriores/devolvidas/aprovadas.
@@ -167,6 +177,12 @@ foi reconstruído: página/módulo/saúde responderam 200, APIs privadas sem ses
 e backend/MySQL ficaram saudáveis. A comparação SHA-256 dos dados de todas as
 tabelas antes/depois do arranque confirmou preservação dos dados locais.
 A página de login publicada foi ainda verificada no navegador da aplicação.
+
+O redesenho do painel ADMIN foi validado com os 8 testes Node e os 2 testes
+Playwright, incluindo painel vazio, previsão sem plano, valores aprovados iguais
+à API e largura móvel de 390 px. A imagem Docker foi reconstruída e os recursos
+servidos comparados com os ficheiros locais. As tabelas da base de desenvolvimento
+mantiveram a mesma impressão SHA-256 antes e depois do arranque.
 
 Depois da revisão manual, na raiz do repositório:
 

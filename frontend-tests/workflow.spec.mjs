@@ -27,6 +27,7 @@ test('percurso completo com APIs reais, auditoria, aprovação independente e mo
     await expect(page.getByLabel('Password', { exact: true })).toHaveValue('');
     await login(page, 'admin@ui.test');
     await expect(page.getByRole('heading', { name: 'Visão geral', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'O teu planeamento começa aqui', exact: true })).toBeVisible();
   });
   await test.step('catálogo e texto não interpretado como HTML', async () => {
     await page.getByRole('link', { name: 'Produtos', exact: true }).click();
@@ -80,6 +81,10 @@ test('percurso completo com APIs reais, auditoria, aprovação independente e mo
     const value = await (await response).json();expect(value.totalLinhas).toBe(3);executionId = value.id;
     await expect(page).toHaveURL(new RegExp('#/previsao/' + executionId + '$'));
     await expect(page.getByRole('heading', { name: 'Quantidades base', exact: true })).toBeVisible();
+    await page.getByRole('link', { name: 'Visão geral', exact: true }).click();
+    await expect(page.locator('.dashboard-chart .legend')).toContainText('Previsão base');
+    await expect(page.locator('.dashboard-chart .legend')).not.toContainText('Plano aprovado');
+    await expect(page.locator('.dashboard-chart')).toContainText(`Execução #${executionId}`);
   });
   await test.step('backtesting com sugestões e resultados por horizonte', async () => {
     await page.getByRole('link', { name: 'Comparar modelos', exact: true }).click();
@@ -188,6 +193,16 @@ test('percurso completo com APIs reais, auditoria, aprovação independente e mo
   await test.step('vista geral e adaptação a ecrã pequeno', async () => {
     await page.getByRole('link', { name: 'Visão geral', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Planos recentes', exact: true })).toBeVisible();
+    const dashboard = page.locator('.admin-dashboard');
+    await expect(dashboard).toContainText('SKU_UI_ONE · un');
+    await expect(dashboard.locator('.dashboard-chart .legend')).toContainText('Plano aprovado');
+    const published = await (await context.request.get(`/api/v1/planos/${planId}/linhas`)).json();
+    const chartValues = await dashboard.locator('.chart svg circle title').allTextContents();
+    for (const line of published.items) {
+      expect(chartValues).toContain(`Plano aprovado · ${line.periodo}: ${line.quantidade.replace('.', ',')}`);
+    }
+    await expect(page.locator('#notice')).not.toHaveClass(/visible/, { timeout: 8000 });
+    await page.mouse.move(1400, 80);
     await page.screenshot({ path: '../tmp/ui-preview/visao-geral.png', fullPage: true });
     await page.setViewportSize({ width: 390, height: 844 });
     await expect(page.getByRole('heading', { name: 'Visão geral', exact: true })).toBeVisible();

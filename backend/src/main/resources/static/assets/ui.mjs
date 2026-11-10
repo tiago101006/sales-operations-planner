@@ -36,6 +36,7 @@ const paths = {
   logout: '<path d="M9 3H3v18h6m5-4 5-5-5-5M8 12h12"/>',
   plus: '<path d="M12 4v16M4 12h16"/>',
   refresh: '<path d="M20 8a9 9 0 1 0 1 8M20 2v6h-6"/>',
+  calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 11h18m-13 4h2m4 0h2"/>',
 };
 export const icon = (name, size = 20) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name] || paths.chart}</svg>`;
 export const button = (text, action, data = '', style = '') => `<button type="button" class="btn ${style}" data-action="${action}" ${data}>${text}</button>`;
@@ -52,7 +53,7 @@ export const table = (headers, rows, title = 'Ainda não há registos', detail =
 export const panel = (title, subtitle, content, actions = '') => `<section class="panel"><div class="panel-head"><div><h2>${title}</h2>${subtitle ? `<p>${subtitle}</p>` : ''}</div><div class="actions">${actions}</div></div>${content}</section>`;
 export const metric = (name, value, note, tone = '') => `<article class="metric ${tone}"><p>${esc(name)}</p><strong>${esc(value)}</strong><small>${esc(note)}</small></article>`;
 export const pager = (data, key) => `<div class="pagination"><span>${esc(data.totalElements)} registos · Página ${data.page + 1} de ${Math.max(1, data.totalPages)}</span><div>${button('Anterior', 'page', `data-key="${key}" data-page="${data.page - 1}" ${data.page <= 0 ? 'disabled' : ''}`)}${button('Seguinte', 'page', `data-key="${key}" data-page="${data.page + 1}" ${data.page + 1 >= data.totalPages ? 'disabled' : ''}`)}</div></div>`;
-export function lineChart(periods, series, description = 'Quantidades por mês') {
+export function lineChart(periods, series, description = 'Quantidades por mês', { area = false } = {}) {
   const numbers = series.flatMap(s => s.values).filter(v => v !== null && v !== undefined).map(Number).filter(Number.isFinite);
   if (!numbers.length) return empty('Sem valores para representar', 'Consulta a cobertura e os motivos de exclusão.');
   const width = 800, height = 250, left = 70, right = 22, top = 20, bottom = 45;
@@ -63,12 +64,16 @@ export function lineChart(periods, series, description = 'Quantidades por mês')
     const v = min + (max - min) * i / 4;
     return `<line x1="${left}" x2="${width - right}" y1="${y(v)}" y2="${y(v)}" stroke="#e8eeec"/><text x="${left - 12}" y="${y(v) + 4}" text-anchor="end">${esc(new Intl.NumberFormat('pt-PT', { maximumFractionDigits: 1 }).format(v))}</text>`;
   }).join('');
-  const colors = ['#23786a', '#82a7a5', '#ca8a46', '#7769ad', '#be6670'];
+  const colors = ['#23786a', '#b28142', '#7b9b92', '#7769ad', '#be6670'];
   const paths = series.map((s, index) => {
     let path = '', gap = true;
     const color = colors[index % colors.length];
     s.values.forEach((v, i) => { if (v == null || !Number.isFinite(Number(v))) { gap = true; return; } path += `${gap ? 'M' : 'L'}${x(i)} ${y(v)} `; gap = false; });
-    return `<path d="${path}" fill="none" stroke="${color}" stroke-width="2.5" ${index === 1 ? 'stroke-dasharray="5 4"' : ''}/>` + s.values.map((v, i) => v == null || !Number.isFinite(Number(v)) ? '' : `<circle cx="${x(i)}" cy="${y(v)}" r="4" fill="white" stroke="${color}" stroke-width="2"><title>${esc(s.name)} · ${esc(periods[i])}: ${esc(quantity(v))}</title></circle>`).join('');
+    const fills = area && index === 0 ? path.trim().split('M').filter(Boolean).map(segment => {
+      const coords = segment.trim().split(/[ L]+/).map(Number);
+      return `<path d="M${segment}L${coords.at(-2)} ${height - bottom}L${coords[0]} ${height - bottom}Z" fill="${color}" opacity=".07"/>`;
+    }).join('') : '';
+    return fills + `<path d="${path}" fill="none" stroke="${color}" stroke-width="2.5" ${index === 1 ? 'stroke-dasharray="5 4"' : ''}/>` + s.values.map((v, i) => v == null || !Number.isFinite(Number(v)) ? '' : `<circle cx="${x(i)}" cy="${y(v)}" r="4" fill="white" stroke="${color}" stroke-width="2"><title>${esc(s.name)} · ${esc(periods[i])}: ${esc(quantity(v))}</title></circle>`).join('');
   }).join('');
   return `<div class="chart"><div class="legend">${series.map((s, i) => `<span><i class="line-${i % colors.length}"></i>${esc(s.name)}</span>`).join('')}</div><svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${esc(description)}">${grid}${periods.map((p, i) => `<text x="${x(i)}" y="${height - 12}" text-anchor="middle">${esc(month(p))}</text>`).join('')}${paths}</svg></div>`;
 }

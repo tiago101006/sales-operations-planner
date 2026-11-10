@@ -1,4 +1,4 @@
-import { esc, quantity as q, percent, date, month, label, badge, icon, button as b, field, select, input, table, panel, metric, pager, empty, lineChart, independent } from './ui.mjs';
+import { esc, quantity as q, percent, date, month, label, badge, icon, button as b, field, select, input, table, panel, metric, pager, empty, lineChart, independent, role } from './ui.mjs';
 
 const rowAction = (text, action, id) => b(text, action, `data-id="${esc(id)}"`, 'small');
 const meta = values => `<div class="detail-meta">${values.map(([name, value]) => `<div><small>${name}</small><p>${value}</p></div>`).join('')}</div>`;
@@ -14,6 +14,7 @@ export function createViews(ctx) {
   const back = (route, text) => `<a class="back" href="#/${route}">← ${text}</a>`;
 
   async function overview() {
+    if (role(state.user, 'ADMIN')) return adminOverview();
     const internal = ctx.internal();
     const [plans, assessments, cases, lots] = await Promise.all([
       api.get('/planos?size=5'), api.get('/avaliacoes?size=5'),
@@ -27,6 +28,39 @@ export function createViews(ctx) {
       `<section class="hero"><div class="hero-copy"><div class="eyebrow">Planeamento com contexto</div><h2>Melhores decisões começam<br>com uma visão de conjunto.</h2><p>Transforma históricos em previsões, explora cenários e acompanha o resultado de cada plano.</p><a class="btn dark" href="#/${internal ? 'cenarios' : 'planos'}">${internal ? 'Explorar cenários' : 'Consultar planos'}${icon('arrow', 16)}</a></div><div class="hero-art">${miniChart}<div class="hero-note">Antecipar · Planear · Acompanhar</div></div></section>` +
       `<div class="metrics">${cards.join('')}</div><div class="two-columns">` + panel('Planos recentes', 'As últimas decisões publicadas.', table(['Plano', 'Publicação', 'Linhas', ''], plans.items.map(p => [`<strong>Plano #${esc(p.id)}</strong><small>Revisão #${esc(p.revisaoId)}</small>`, esc(date(p.publicadoEm)), esc(p.totalLinhas), `<a class="btn small" href="#/plano/${esc(p.id)}">Consultar</a>`])), '<a class="btn link" href="#/planos">Ver todos →</a>') +
       panel('O ciclo de planeamento', 'Um percurso, com decisões rastreáveis.', `<div class="workflow">${workflow.filter(([route]) => internal || ['planos', 'monitorizacao'].includes(route)).map(([route, title, desc], i) => `<a class="workflow-step" href="#/${route}"><span class="step-number">${String(i + 1).padStart(2, '0')}</span><div><strong>${title}</strong><p>${desc}</p></div><span class="next">${icon('arrow', 16)}</span></a>`).join('')}</div>`) + '</div>';
+  }
+
+  async function adminOverview() {
+    const [products, executions, cases, plans, lots] = await Promise.all([
+      api.get('/produtos?size=1'), api.get('/execucoes-previsao?size=5'),
+      api.get('/cenarios?size=1'), api.get('/planos?size=5'), api.get('/lotes?size=4'),
+    ]);
+    const latestPlan = plans.items[0];
+    const execution = executions.items.find(e => e.estado === 'CONCLUIDA' && e.totalLinhas > 0);
+    let chart = empty('O teu planeamento começa aqui', 'Importa um histórico e gera uma previsão. O gráfico aparece assim que existirem quantidades previstas.');
+    let chartSubtitle = 'Previsão base e quantidades aprovadas, por produto e mês.';
+    let chartAction = '', chartFoot = '';
+    if (latestPlan || execution) {
+      const lines = await api.get(latestPlan ? `/planos/${latestPlan.id}/linhas?size=12` : `/execucoes-previsao/${execution.id}/linhas?size=12`);
+      const first = lines.items[0];
+      if (first) {
+        const points = lines.items.filter(l => l.produtoId === first.produtoId);
+        const series = [{ name: 'Previsão base', values: points.map(l => l.quantidadeBase) }];
+        if (latestPlan) series.push({ name: 'Plano aprovado', values: points.map(l => l.quantidade) });
+        chartSubtitle = `${esc(first.produto)} · ${esc(first.unidade)} · ${latestPlan ? 'Plano #' + esc(latestPlan.id) : 'Execução #' + esc(execution.id)} · primeiro produto`;
+        chart = lineChart(points.map(l => l.periodo), series, `Previsão e planeamento de ${first.produto}, em ${first.unidade}`, { area: true });
+        chartAction = `<a class="btn small" href="#/${latestPlan ? 'plano/' + esc(latestPlan.id) : 'previsao/' + esc(execution.id)}">Ver detalhe ${icon('arrow', 14)}</a>`;
+        chartFoot = `<div class="chart-context"><span>${icon('box', 15)} ${esc(first.produto)} · ${esc(first.unidade)}</span><span>${esc(month(points[0].periodo))} — ${esc(month(points.at(-1).periodo))}</span><span>${points.length} meses representados</span></div>`;
+      }
+    }
+    const dashboardMetric = (title, value, note, glyph, tone, route) => `<a class="dashboard-metric ${tone}" href="#/${route}"><div class="metric-top"><span>${title}</span><span class="metric-symbol">${icon(glyph, 22)}</span></div><strong>${esc(q(value))}</strong><div class="metric-bottom"><span>${note}</span>${icon('arrow', 15)}</div></a>`;
+    const today = new Intl.DateTimeFormat('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
+    const shortcuts = [['importacoes', 'upload', 'Organizar os dados', 'Importar e validar históricos'], ['previsoes', 'trend', 'Antecipar a procura', 'Gerar e consultar previsões'], ['cenarios', 'layers', 'Explorar cenários', 'Comparar alternativas e ajustes'], ['monitorizacao', 'chart', 'Acompanhar resultados', 'Consultar precisão e operação']];
+    return `<div class="admin-dashboard">` + heading('Painel de administração', 'Visão geral', 'O teu planeamento, numa só perspetiva.', `<span class="dashboard-date">${icon('calendar', 16)}${esc(today)}</span>${newButton('Importar CSV', 'import')}`) +
+      `<div class="dashboard-metrics">${dashboardMetric('Produtos', products.totalElements, 'No catálogo da equipa', 'box', 'sage', 'produtos')}${dashboardMetric('Previsões', executions.totalElements, 'Execuções registadas', 'trend', 'sand', 'previsoes')}${dashboardMetric('Cenários', cases.totalElements, 'Alternativas de planeamento', 'layers', 'clay', 'cenarios')}${dashboardMetric('Planos publicados', plans.totalElements, 'Decisões aprovadas', 'check', 'forest', 'planos')}</div>` +
+      `<div class="dashboard-main"><div class="dashboard-chart">${panel('Da previsão ao plano', chartSubtitle, chart + chartFoot, chartAction)}</div><aside class="dashboard-guide"><div class="guide-heading"><span class="guide-mark">${icon('layers', 22)}</span><span>O teu espaço S&OP</span></div><h2>Mais clareza.<br>Melhores decisões.</h2><p>Cada etapa aproxima os dados de um plano com confiança.</p><div class="dashboard-shortcuts">${shortcuts.map(([route, glyph, title, note]) => `<a href="#/${route}"><span class="shortcut-symbol">${icon(glyph, 18)}</span><span><strong>${title}</strong><small>${note}</small></span>${icon('arrow', 16)}</a>`).join('')}</div><a class="guide-team" href="#/equipa">${icon('people', 16)} Gerir a equipa ${icon('arrow', 15)}</a></aside></div>` +
+      `<div class="dashboard-bottom">${panel('Planos recentes', 'As últimas decisões publicadas pela equipa.', table(['Plano', 'Publicado em', 'Linhas', 'Estado', ''], plans.items.map(p => [`<span class="plan-name"><span class="plan-symbol">${icon('check', 18)}</span><span><strong>Plano #${esc(p.id)}</strong><small>Revisão #${esc(p.revisaoId)}</small></span></span>`, esc(date(p.publicadoEm)), esc(p.totalLinhas), badge('APROVADA').replace('Aprovada', 'Publicado'), `<a class="btn small" href="#/plano/${esc(p.id)}">Consultar</a>`])), '<a class="btn link" href="#/planos">Ver todos →</a>')}` +
+      panel('Últimas importações', 'Qualidade dos dados à entrada.', lots.items.length ? `<div class="dashboard-imports">${lots.items.map(l => `<a href="#/lote/${esc(l.id)}"><span class="import-symbol ${l.estado === 'REJEITADO' ? 'rejected' : ''}">${icon('upload', 18)}</span><span class="import-name"><strong>${esc(l.nomeFicheiro)}</strong><small>${esc(label(l.tipo))} · ${esc(date(l.importadoEm))}</small></span>${badge(l.estado)}</a>`).join('')}</div>` : empty('Ainda não há importações', 'Começa por importar um histórico CSV.'), '<a class="btn link" href="#/importacoes">Ver todas →</a>') + `</div><footer class="dashboard-footer"><span><span class="status-dot"></span>Dados da equipa · Consulta atualizada ao abrir o painel</span><span>procura / Planeamento S&OP</span></footer></div>`;
   }
 
   async function products() {

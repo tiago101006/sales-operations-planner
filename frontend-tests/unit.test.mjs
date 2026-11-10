@@ -28,6 +28,9 @@ test('chart does not turn missing values into zero or join across gaps', () => {
   assert.equal((html.match(/<circle/g) || []).length, 2);assert.ok(!html.includes('<Realizado>'));assert.ok(html.includes('&lt;Realizado&gt;'));
   assert.match(html, /<path d="M[^L]*M/);assert.ok(!html.includes('NaN'));
   assert.ok(lineChart(['2026-11'], [{ name: 'Realizado', values: [null] }]).includes('Sem valores para representar'));
+  const area = lineChart(['2026-11', '2026-12', '2027-01'], [{ name: 'Plano', values: ['1', null, '3'] }], 'Plano por mês', { area: true });
+  assert.equal((area.match(/opacity=".07"/g) || []).length, 2);
+  assert.ok(!area.includes('NaN'));
 });
 test('API obtains a fresh CSRF token for each mutation and never retries a conflict', async () => {
   const calls = [];
