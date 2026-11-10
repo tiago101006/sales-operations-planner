@@ -1,41 +1,18 @@
 # Aplicação de Previsão de Procura e S&OP
 
-Proposta inicial de arquitetura e base de dados para o MVP de Tiago Dias.
-Já contém o backend inicial Spring Boot. A interface web e as funcionalidades de negócio serão implementadas nos próximos blocos.
+Projeto de Tiago Dias: backend Java 17 / Spring Boot 4.1.2, MySQL 8.4,
+Docker Compose e migrações Flyway. Autenticação e funcionalidades de negócio
+serão implementadas nos próximos blocos.
 
-- [Arquitetura e regras de integridade](docs/arquitetura.md)
-- [Fases, endpoints, contratos e interface](docs/plano-implementacao.md)
-- [Esquema SQL MySQL 8.4](database/migrations/V1__schema_inicial.sql)
-- [Validação executada e respetivos limites](docs/validacao-inicial.md)
+## Iniciar
 
-## Iniciar apenas a base de dados
+Executar na raiz deste repositório. Na primeira configuração:
 
 ```bash
-# Executar na raiz deste repositório
-cp .env.example .env
-nano .env
-docker compose up -d --wait db
-docker compose exec db sh -c 'MYSQL_PWD="$MYSQL_PASSWORD" mysql -u "$MYSQL_USER" "$MYSQL_DATABASE" -e "SHOW TABLES"'
+cp -n .env.example .env
 ```
 
-Definir as duas passwords locais em `.env` antes de iniciar. O ficheiro está ignorado
-pelo Git. A porta local predefinida é `3307`; a porta entre contentores é `3306`.
-O SQL é aplicado automaticamente **apenas na inicialização de um volume vazio**.
-Não o executar uma segunda vez na mesma base.
-
-O backend ainda conserva a inicialização SQL do Compose. Antes da primeira evolução
-do esquema, a gestão das migrações passará para Flyway, com um baseline explícito e
-verificado da base existente. Não executar dois mecanismos em paralelo.
-`spring.jpa.hibernate.ddl-auto=validate` impede alterações automáticas do esquema;
-ainda não existem entidades JPA de negócio nesta etapa.
-
-Não foram criados utilizadores de aplicação nem dados de demonstração na base persistente.
-`MYSQL_USER` é aqui uma conta de desenvolvimento criada pelo entrypoint; na fase de
-segurança separar a conta de migrações da conta de execução com permissões mínimas.
-
-## Iniciar o backend
-
-O projeto usa Java 17 e Spring Boot 4.1.2. Com o `.env` já configurado, executar na raiz:
+Editar as passwords em `.env` e iniciar:
 
 ```bash
 docker compose up -d --build --wait
@@ -44,20 +21,43 @@ curl http://localhost:8080/api/v1/status
 curl http://localhost:8080/actuator/health
 ```
 
-O primeiro endpoint responde `{"application":"sales-operations-planner"}`; o segundo
-inclui `"status":"UP"` e verifica também a ligação ao MySQL; pode apresentar os grupos
-`liveness` e `readiness`. A primeira construção
-descarrega imagens e dependências. O backend fica em `127.0.0.1:8080`, configurável por
-`BACKEND_PORT`. Não existe autenticação nesta etapa; os endpoints são para uso local.
+Uma base vazia é criada automaticamente pelo Flyway. Uma base criada antes desta
+integração precisa de adoção explícita, descrita abaixo. O Hibernate apenas valida
+os mapeamentos (`ddl-auto=validate`); não cria nem altera tabelas. O Compose já não
+monta scripts em `/docker-entrypoint-initdb.d`.
 
-Para consultar os logs e parar conservando os dados:
+O endpoint de identificação responde `{"application":"sales-operations-planner"}`.
+O endpoint de saúde inclui `"status":"UP"` e verifica a ligação ao MySQL; pode listar
+os grupos `liveness` e `readiness`. Backend publicado em `127.0.0.1:8080`, MySQL em
+`127.0.0.1:3307`. Sem autenticação neste marco, para desenvolvimento local.
 
 ```bash
 docker compose logs --tail=100 backend
 docker compose stop
 ```
 
-Para desenvolver diretamente com Maven e usar o MySQL do Compose:
+`stop` conserva os dados. `BACKEND_PORT` e `MYSQL_PORT` permitem alterar as portas
+publicadas; entre contentores mantêm-se as portas internas. `.env` não entra no Git.
+
+## Adotar a base anterior ao Flyway
+
+Na instalação deste projeto, a base já foi verificada e adotada. Numa outra instalação
+que ainda tenha as 21 tabelas antigas sem histórico Flyway:
+
+```bash
+docker compose up -d --wait db
+python3 scripts/adotar_flyway.py
+python3 scripts/adotar_flyway.py --baseline
+docker compose up -d --build --wait
+```
+
+O script compara a estrutura com V1 num MySQL temporário, recusa divergências, para
+o backend e guarda um backup privado em `tmp/backups/` antes de registar V1 como
+baseline. Confirma que os dados de negócio não mudaram. Requer JDK 17, Python 3 e
+Docker. Não cria outro baseline se a tabela de histórico já existir. Não usar este
+procedimento num servidor com outras aplicações a escrever na mesma base.
+
+## Executar pelo Maven
 
 ```bash
 docker compose stop backend
@@ -66,21 +66,32 @@ cd backend
 ./mvnw spring-boot:run
 ```
 
-O Maven Wrapper requer JDK 17 ou superior e descarrega a sua versão de Maven no primeiro
-uso. A aplicação lê o `.env` da raiz como propriedades; variáveis de ambiente têm
-precedência. Terminar com `Ctrl+C`. Para regressar ao Docker, executar
-`docker compose up -d --build --wait` na raiz.
+A aplicação lê `.env` na raiz como propriedades; variáveis de ambiente têm precedência.
+Requer JDK 17 ou superior; o Wrapper descarrega Maven no primeiro uso. Parar com Ctrl+C.
 
-## Testes do backend
+## Testes
 
 ```bash
 cd backend
 ./mvnw verify
 ```
 
-O teste de integração usa Testcontainers para iniciar um MySQL 8.4 temporário, aplicar
-o SQL inicial, confirmar as 21 tabelas e verificar o endpoint de saúde por HTTP.
-Não altera o volume de desenvolvimento. Requer Docker ativo.
+Os testes usam MySQL temporário por Testcontainers: criação de uma base vazia pelo
+Flyway, saúde HTTP, deteção de checksum alterado, recusa de base não vazia sem baseline,
+adoção explícita com preservação de dados e repetição sem reaplicar migrações.
+Não alteram os dados do volume de desenvolvimento. Requerem Docker ativo.
 
-Ver [primeiro marco do backend](docs/backend-primeiro-marco.md) para os ficheiros,
-limites deste bloco e comandos Git. Autenticação, catálogo e importação vêm a seguir.
+## Migrações
+
+A única V1 está em `backend/src/main/resources/db/migration/V1__schema_inicial.sql`.
+As próximas alterações criam V2, V3, etc. Não editar migrações já aplicadas.
+Existem 21 tabelas de negócio e uma tabela técnica `flyway_schema_history`.
+As versões de Flyway e Connector/J são geridas pelo parent Spring Boot.
+
+## Documentação
+
+- [Arquitetura](docs/arquitetura.md)
+- [Plano por fases](docs/plano-implementacao.md)
+- [SQL inicial](backend/src/main/resources/db/migration/V1__schema_inicial.sql)
+- [Integração Flyway](docs/flyway.md)
+- [Marco anterior do backend](docs/backend-primeiro-marco.md)

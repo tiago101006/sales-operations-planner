@@ -1,5 +1,8 @@
 # Primeiro marco do backend
 
+Este documento regista o marco anterior. A inicialização SQL e os testes aqui
+descritos foram posteriormente substituídos pela [integração Flyway](flyway.md).
+
 ## Objetivo
 
 Arrancar o backend, ligá-lo ao MySQL e disponibilizar um primeiro endpoint REST.

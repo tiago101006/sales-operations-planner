@@ -53,7 +53,7 @@ na primeira versão suportam contexto e pressupostos humanos identificáveis.
 
 ## Modelo relacional
 
-O SQL executável encontra-se em `database/migrations/V1__schema_inicial.sql`.
+O SQL executável encontra-se em `backend/src/main/resources/db/migration/V1__schema_inicial.sql`.
 São 21 tabelas, agrupadas por responsabilidade:
 
 | Área | Tabelas | Finalidade |
