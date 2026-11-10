@@ -1,0 +1,10 @@
+.env
+.env.*
+!.env.example
+target/
+.idea/
+*.iml
+node_modules/
+dist/
+tmp/
+__pycache__/
