@@ -1,8 +1,13 @@
 # Plano de implementação do MVP
 
 Cada fase termina com uma demonstração verificável. Duração indicativa: uma a duas
-semanas por fase, a ajustar ao calendário académico. A fase atual entrega o modelo e
-a infraestrutura de base; as APIs abaixo são contratos propostos, ainda não implementados.
+semanas por fase, a ajustar ao calendário académico. O backend já implementa as fases
+0 a 4: infraestrutura, autenticação/catálogo, históricos, previsões/backtesting e
+cenários com ajustes auditados. Seguem-se aprovação/publicação e monitorização/interface.
+Este documento conserva o desenho geral; os contratos efetivos e limites de cada
+bloco estão nos documentos específicos ligados no README, incluindo
+[cenários e revisões](cenarios-ajustes.md). Importações de realizados/operacionais,
+calendários e promoções descritas abaixo ainda não estão implementadas.
 
 ## Convenções comuns
 
@@ -276,13 +281,14 @@ Resposta `201 Created`:
 
 ```json
 {
-  "ajusteId": "1",
-  "eventoId": "2",
-  "revisaoId": "1",
-  "valorAnterior": "110.0000",
-  "valorNovo": "120.0000",
-  "autorId": "1",
-  "ocorridoEm": "2026-10-31T18:00:00Z",
+  "ajuste": {
+    "id": "1", "eventoId": "2", "revisaoId": "1", "produtoId": "1",
+    "periodo": "2026-11", "sequencia": 1,
+    "valorAnterior": "110.0000", "valorNovo": "120.0000",
+    "justificacao": "Campanha confirmada pelo departamento comercial",
+    "autorId": "1", "autorNome": "Administrador",
+    "ocorridoEm": "2026-10-31T18:00:00Z", "herdado": false
+  },
   "versaoAtual": 1
 }
 ```

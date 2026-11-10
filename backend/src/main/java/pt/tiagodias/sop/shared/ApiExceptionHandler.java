@@ -11,6 +11,12 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
+    @ExceptionHandler(VersionConflictException.class)
+    public ProblemDetail version(VersionConflictException exception) {
+        var problem=ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,exception.getMessage());
+        problem.setProperty("code","VERSION_CONFLICT");problem.setProperty("currentVersion",exception.getCurrentVersion());
+        return problem;
+    }
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ProblemDetail uploadTooLarge(MaxUploadSizeExceededException exception) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.PAYLOAD_TOO_LARGE, "O ficheiro excede o limite de 10 MiB.");

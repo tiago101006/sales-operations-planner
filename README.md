@@ -1,7 +1,7 @@
 # Aplicação de Previsão de Procura e S&OP
 
 Projeto de Tiago Dias: backend Java 17 / Spring Boot 4.1.2, MySQL 8.4,
-Docker Compose, migrações Flyway e autenticação por sessão com perfis. Inclui catálogo de produtos e importação de históricos CSV protegidos por perfis. Inclui previsões base por Média Móvel e ETS(A,A,N). Inclui backtesting com MAE/MAPE e cobertura. Cenários e planeamento vêm nos próximos blocos.
+Docker Compose, migrações Flyway e autenticação por sessão com perfis. Inclui catálogo de produtos e importação de históricos CSV protegidos por perfis. Inclui previsões base por Média Móvel e ETS(A,A,N), backtesting com MAE/MAPE e cobertura, cenários comparáveis, revisões e ajustes manuais auditados. Aprovação e publicação de planos vêm no próximo bloco.
 
 ## Iniciar
 
@@ -119,6 +119,20 @@ tabelas próprias e preserva o catálogo, históricos e previsões existentes.
 
 Ver [contratos e interpretação do backtesting](docs/backtesting.md).
 
+## Cenários e ajustes manuais
+
+```bash
+python3 scripts/testar_cenarios.py
+```
+
+O script usa uma execução operacional concluída para criar cenários otimista (+10%)
+e conservador (−10%). Permite ajustar uma célula com justificação, copia a revisão
+e verifica a auditoria herdada e a comparação. Enter usa os valores propostos;
+ficam guardados dois cenários de ensaio, uma revisão adicional e um ajuste.
+A previsão base é preservada. Não altera o esquema existente.
+
+Ver [contratos, concorrência e auditoria das revisões](docs/cenarios-ajustes.md).
+
 ## Adotar a base anterior ao Flyway
 
 Na instalação deste projeto, a base já foi verificada e adotada. Numa outra instalação
@@ -181,4 +195,5 @@ As versões de Flyway e Connector/J são geridas pelo parent Spring Boot.
 - [Previsão por Média Móvel](docs/previsao-media-movel.md)
 - [Previsão ETS(A,A,N)](docs/previsao-ets.md)
 - [Backtesting e métricas](docs/backtesting.md)
+- [Cenários, revisões e ajustes auditados](docs/cenarios-ajustes.md)
 - [Marco anterior do backend](docs/backend-primeiro-marco.md)
