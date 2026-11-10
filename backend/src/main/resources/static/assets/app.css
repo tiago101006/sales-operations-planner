@@ -8,3 +8,15 @@
 .legend .line-0{--line:#23786a}.legend .line-1{--line:#82a7a5}.legend .line-2{--line:#ca8a46}.legend .line-3{--line:#7769ad}.legend .line-4{--line:#be6670}
 
 .field>label{font-weight:550}.sidebar{min-width:0}.sidebar nav{min-width:0}@media(max-width:800px){.shell{grid-template-columns:minmax(0,1fr)}.sidebar{width:100%}.sidebar nav{width:100%}}
+
+@media (min-width: 801px) {
+  .sidebar nav {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .sidebar .nav-link {
+    margin: 0;
+  }
+}
