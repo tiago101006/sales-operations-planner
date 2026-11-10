@@ -15,19 +15,56 @@ export function createViews(ctx) {
 
   async function overview() {
     if (role(state.user, 'ADMIN')) return adminOverview();
-    const internal = ctx.internal();
-    const [plans, assessments, cases, lots] = await Promise.all([
-      api.get('/planos?size=5'), api.get('/avaliacoes?size=5'),
-      internal ? api.get('/cenarios?size=1') : null, internal ? api.get('/lotes?size=1') : null,
+    if (ctx.approver()) return approvalOverview();
+    if (writer()) return planningOverview();
+    return consultationOverview();
+  }
+
+  const planRows = plans => table(['Plano', 'Publicação', 'Linhas', ''], plans.items.map(p => [
+    `<strong>Plano #${esc(p.id)}</strong><small>Revisão #${esc(p.revisaoId)}</small>`, esc(date(p.publicadoEm)), esc(p.totalLinhas), `<a class="btn small" href="#/plano/${esc(p.id)}">Consultar</a>`,
+  ]));
+  const revisionRows = (data, decision = false) => table(['Cenário / revisão', 'Preparada por', decision ? 'Submetida em' : 'Criada em', 'Células', ''], data.items.map(item => {
+    const r = item.revisao;
+    return [`<strong>${esc(item.cenarioNome)}</strong><small>Revisão ${r.numero} · #${esc(r.id)}${r.criadoPor === state.user.id ? ' · Criada por ti' : ''}</small>`, esc(item.autorNome), esc(date(decision ? r.submetidoEm : r.criadoEm)), esc(r.totalLinhas), `<a class="btn small" href="#/revisao/${esc(r.id)}">${decision ? 'Analisar' : 'Abrir revisão'}</a>`];
+  }), decision ? 'Sem revisões à espera de decisão' : 'Sem revisões neste estado', decision ? 'As revisões submetidas pela equipa aparecem aqui, das mais antigas para as mais recentes.' : 'O trabalho da equipa aparece aqui à medida que as revisões são criadas.');
+
+  async function approvalOverview() {
+    const [pending, returned, approved, plans] = await Promise.all([
+      page('pendingRevisions', '/revisoes?estado=EM_REVISAO'), api.get('/revisoes?estado=DEVOLVIDA&size=1'),
+      api.get('/revisoes?estado=APROVADA&size=1'), api.get('/planos?size=5'),
     ]);
-    const cards = [metric('Planos publicados', plans.totalElements, 'Versões aprovadas e preservadas', 'highlight'),
-      ...(internal ? [metric('Cenários', cases.totalElements, 'Alternativas para o planeamento'), metric('Lotes de dados', lots.totalElements, 'Históricos e resultados recebidos')] : []),
-      metric('Avaliações', assessments.totalElements, 'Precisão e resultados operacionais')];
-    const workflow = [['importacoes', 'Organizar os dados', 'Importa históricos e consulta a qualidade dos registos.'], ['previsoes', 'Antecipar a procura', 'Gera previsões base e compara os modelos.'], ['cenarios', 'Construir alternativas', 'Revê pressupostos e justifica cada ajuste.'], ['planos', 'Publicar o plano', 'Aprovação independente e uma versão estável.'], ['monitorizacao', 'Aprender com os resultados', 'Acompanha a precisão, cobertura e operação.']];
-    return heading('O teu espaço de planeamento', 'Visão geral', 'Da procura prevista à decisão aprovada. Tudo ligado, com histórico.') +
-      `<section class="hero"><div class="hero-copy"><div class="eyebrow">Planeamento com contexto</div><h2>Melhores decisões começam<br>com uma visão de conjunto.</h2><p>Transforma históricos em previsões, explora cenários e acompanha o resultado de cada plano.</p><a class="btn dark" href="#/${internal ? 'cenarios' : 'planos'}">${internal ? 'Explorar cenários' : 'Consultar planos'}${icon('arrow', 16)}</a></div><div class="hero-art">${miniChart}<div class="hero-note">Antecipar · Planear · Acompanhar</div></div></section>` +
-      `<div class="metrics">${cards.join('')}</div><div class="two-columns">` + panel('Planos recentes', 'As últimas decisões publicadas.', table(['Plano', 'Publicação', 'Linhas', ''], plans.items.map(p => [`<strong>Plano #${esc(p.id)}</strong><small>Revisão #${esc(p.revisaoId)}</small>`, esc(date(p.publicadoEm)), esc(p.totalLinhas), `<a class="btn small" href="#/plano/${esc(p.id)}">Consultar</a>`])), '<a class="btn link" href="#/planos">Ver todos →</a>') +
-      panel('O ciclo de planeamento', 'Um percurso, com decisões rastreáveis.', `<div class="workflow">${workflow.filter(([route]) => internal || ['planos', 'monitorizacao'].includes(route)).map(([route, title, desc], i) => `<a class="workflow-step" href="#/${route}"><span class="step-number">${String(i + 1).padStart(2, '0')}</span><div><strong>${title}</strong><p>${desc}</p></div><span class="next">${icon('arrow', 16)}</span></a>`).join('')}</div>`) + '</div>';
+    return heading('Decisão e responsabilidade', 'Centro de aprovações', 'As revisões que aguardam análise e as decisões já publicadas.', b(icon('refresh', 15) + 'Atualizar fila', 'refresh')) +
+      `<div class="metrics">${metric('Em revisão', pending.totalElements, 'Aguardam decisão na equipa', 'highlight')}${metric('Devolvidas', returned.totalElements, 'Revisões preservadas com motivo')}${metric('Aprovadas', approved.totalElements, 'Revisões com decisão de aprovação')}${metric('Planos publicados', plans.totalElements, 'Versões disponíveis para consulta')}</div>` +
+      info('Abre uma revisão para analisar as quantidades, os pressupostos e os ajustes com justificação. A decisão exige independência: não podes aprovar ou devolver uma revisão criada por ti ou com ajustes teus preservados na auditoria.') +
+      panel('Revisões à espera de decisão', 'Toda a equipa · submissões mais antigas primeiro · inclui revisões anteriores do mesmo cenário.', revisionRows(pending, true) + pager(pending, 'pendingRevisions')) +
+      panel('Planos recentes', 'Consulta das decisões publicadas, sem alterar as quantidades aprovadas.', planRows(plans), '<a class="btn link" href="#/planos">Ver todos →</a>');
+  }
+
+  async function planningOverview() {
+    const [drafts, returned, pending, plans] = await Promise.all([
+      page('draftRevisions', '/revisoes?estado=RASCUNHO'), page('returnedRevisions', '/revisoes?estado=DEVOLVIDA'),
+      api.get('/revisoes?estado=EM_REVISAO&size=1'), api.get('/planos?size=1'),
+    ]);
+    return heading('Preparar e acompanhar', 'Espaço de planeamento', 'Continua os rascunhos e prepara a correção das revisões devolvidas.', '<a class="btn" href="#/importacoes">Importar dados</a><a class="btn primary" href="#/previsoes">Gerar previsões</a>') +
+      `<div class="metrics">${metric('Rascunhos', drafts.totalElements, 'Revisões em preparação na equipa', 'highlight')}${metric('Devolvidas', returned.totalElements, 'Consulta o motivo e cria uma revisão')}${metric('Em revisão', pending.totalElements, 'Congeladas enquanto aguardam decisão')}${metric('Planos publicados', plans.totalElements, 'Decisões concluídas pela equipa')}</div>` +
+      panel('Revisões em preparação', 'Rascunhos de toda a equipa · mais recentes primeiro.', revisionRows(drafts) + pager(drafts, 'draftRevisions'), '<a class="btn link" href="#/cenarios">Explorar cenários →</a>') +
+      panel('Revisões devolvidas', 'A revisão original fica preservada. Abre o detalhe, consulta o motivo e cria uma nova revisão para corrigir.', revisionRows(returned) + pager(returned, 'returnedRevisions'));
+  }
+
+  async function consultationOverview() {
+    const commercial = role(state.user, 'COMERCIAL');
+    const [plans, assessments, forecasts, cases, products] = await Promise.all([
+      api.get('/planos?size=5'), api.get('/avaliacoes?size=5'),
+      commercial ? api.get('/execucoes-previsao?size=5') : null,
+      commercial ? api.get('/cenarios?size=1') : null, commercial ? null : api.get('/produtos?size=1'),
+    ]);
+    const cards = commercial ? [metric('Previsões', forecasts.totalElements, 'Execuções para acompanhar a procura', 'highlight'), metric('Cenários', cases.totalElements, 'Alternativas preparadas pela equipa')]
+      : [metric('Produtos', products.totalElements, 'Produtos disponíveis no catálogo', 'highlight'), metric('Avaliações', assessments.totalElements, 'Precisão e operação dos planos')];
+    cards.push(metric('Planos publicados', plans.totalElements, 'Quantidades aprovadas e preservadas'), metric(commercial ? 'Avaliações' : 'Último plano', commercial ? assessments.totalElements : (plans.items[0] ? '#' + plans.items[0].id : '—'), commercial ? 'Resultados com cobertura identificada' : 'Publicação mais recente da equipa'));
+    const focus = commercial ? panel('Previsões recentes', 'Métodos, horizonte e resultados disponíveis para consulta.', table(['Execução', 'Método', 'Horizonte', 'Estado', ''], forecasts.items.map(e => [`#${esc(e.id)}`, esc(label(e.metodo)), `${e.horizonteMeses} meses`, badge(e.estado), `<a class="btn small" href="#/previsao/${esc(e.id)}">Consultar</a>`])), '<a class="btn link" href="#/backtests">Comparar modelos →</a>')
+      : panel('Avaliações recentes', 'Uma métrica sem dados elegíveis continua identificada como indisponível.', table(['Avaliação', 'Plano', 'Período', ''], assessments.items.map(a => [`#${esc(a.id)}`, `Plano #${esc(a.planoId)}`, `${esc(month(a.periodoInicio))} — ${esc(month(a.periodoFim))}`, `<a class="btn small" href="#/avaliacao/${esc(a.id)}">Consultar</a>`])), '<a class="btn link" href="#/monitorizacao">Monitorização →</a>');
+    return heading(commercial ? 'Visão comercial' : 'Consulta da operação', commercial ? 'Acompanhamento comercial' : 'Planos e resultados', commercial ? 'Acompanha a procura prevista, compara alternativas e consulta as decisões da equipa.' : 'Encontra o plano aprovado e acompanha os resultados disponíveis.', commercial ? '<a class="btn primary" href="#/cenarios">Comparar cenários</a>' : '<a class="btn primary" href="#/planos">Consultar planos</a>') +
+      `<div class="metrics">${cards.join('')}</div>` + panel('Planos recentes', 'Versões aprovadas, disponíveis para consulta e exportação CSV.', planRows(plans), '<a class="btn link" href="#/planos">Ver todos →</a>') + focus;
   }
 
   async function adminOverview() {

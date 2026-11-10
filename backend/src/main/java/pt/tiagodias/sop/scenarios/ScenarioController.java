@@ -30,6 +30,11 @@ public class ScenarioController {
     }
     @GetMapping("/api/v1/revisoes/{id}")
     public RevisaoDto revision(@PathVariable long id) { return queries.revisao(id); }
+    @GetMapping("/api/v1/revisoes")
+    public Pagina<ResumoRevisaoDto> queue(@RequestParam(defaultValue="EM_REVISAO")String estado,
+            @RequestParam(defaultValue="0")int page,@RequestParam(defaultValue="50")int size) {
+        return queries.fila(estado,page,size);
+    }
     @GetMapping("/api/v1/revisoes/{id}/linhas")
     public Pagina<LinhaDto> lines(@PathVariable long id,@RequestParam(defaultValue="0")int page,@RequestParam(defaultValue="50")int size) { return queries.linhas(id,page,size); }
     @PostMapping("/api/v1/revisoes/{id}/ajustes")

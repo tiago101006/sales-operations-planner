@@ -130,6 +130,12 @@ test('percurso completo com APIs reais, auditoria, aprovação independente e mo
   });
   await test.step('devolução independente e correção numa revisão nova', async () => {
     await logout(page);await login(page, 'approver@ui.test');
+    await page.getByRole('link', { name: 'Visão geral', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Centro de aprovações', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Revisões à espera de decisão', exact: true })).toBeVisible();
+    await expect(page.locator(`a[href="#/revisao/${revisionId}"]`)).toBeVisible();
+    await page.screenshot({ path: '../tmp/ui-preview/aprovador.png', fullPage: true });
+    await page.locator(`a[href="#/revisao/${revisionId}"]`).click();
     await expect(page.getByRole('button', { name: 'Aprovar e publicar', exact: true })).toBeVisible();
     await page.getByRole('button', { name: 'Devolver', exact: true }).click();
     await modal(page).getByLabel('Motivo da devolução').fill('Ensaio: confirmar pressupostos antes de publicar.');
@@ -210,11 +216,31 @@ test('percurso completo com APIs reais, auditoria, aprovação independente e mo
     await page.screenshot({ path: '../tmp/ui-preview/mobile.png', fullPage: true });
     await page.setViewportSize({ width: 1440, height: 1000 });
   });
+  await test.step('painéis de planeador e comercial com ações adequadas ao papel', async () => {
+    await logout(page);await login(page, 'planner@ui.test');
+    await page.getByRole('link', { name: 'Visão geral', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Espaço de planeamento', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Revisões em preparação', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Revisões devolvidas', exact: true })).toBeVisible();
+    expect(await page.getByRole('link', { name: 'Equipa', exact: true }).count()).toBe(0);
+    await page.screenshot({ path: '../tmp/ui-preview/planeador.png', fullPage: true });
+    await logout(page);await login(page, 'commercial@ui.test');
+    await page.getByRole('link', { name: 'Visão geral', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Acompanhamento comercial', exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Comparar cenários', exact: true })).toBeVisible();
+    await page.getByRole('link', { name: 'Previsões', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Execuções de previsão', exact: true })).toBeVisible();
+    expect(await page.getByRole('button', { name: 'Gerar previsão', exact: true }).count()).toBe(0);
+  });
   await test.step('consumidor e expiração da sessão', async () => {
     await logout(page);await login(page, 'consumer@ui.test');
+    await page.getByRole('link', { name: 'Visão geral', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Planos e resultados', exact: true })).toBeVisible();
+    expect((await context.request.get('/api/v1/revisoes?estado=EM_REVISAO')).status()).toBe(403);
     expect(await page.getByRole('link', { name: 'Importações', exact: true }).count()).toBe(0);
     expect(await page.getByRole('link', { name: 'Equipa', exact: true }).count()).toBe(0);
     await page.getByRole('link', { name: 'Planos publicados', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Planos publicados', exact: true })).toBeVisible();
     await expect(page.getByText(`Plano #${planId}`, { exact: true })).toBeVisible();
     await page.goto('/#/cenarios');await expect(page.getByRole('alert')).toContainText('O teu perfil não tem acesso');
     await context.clearCookies();await page.goto('/#/planos');

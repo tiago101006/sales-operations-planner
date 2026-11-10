@@ -25,6 +25,7 @@ public final class ScenarioDtos {
     public record RevisaoDto(String id,String cenarioId,String execucaoId,int numero,String revisaoOrigemId,
             String fator,JsonNode pressupostos,String estado,String criadoPor,Instant criadoEm,Instant submetidoEm,Instant decididoEm,long versao,
             int totalLinhas,int totalAjustesLocais) {}
+    public record ResumoRevisaoDto(RevisaoDto revisao,String cenarioNome,String autorNome) {}
     public record CenarioCriado(CenarioDto cenario,RevisaoDto revisao) {}
     public record LinhaDto(String produtoId,String produto,String unidade,String periodo,String quantidadeBase,
             String quantidadeCalculada,String quantidadeFinal,String desvioAbsoluto,String desvioPercentual) {}

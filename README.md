@@ -242,4 +242,5 @@ As versões de Flyway e Connector/J são geridas pelo parent Spring Boot.
 - [Aprovação e publicação por API/CSV](docs/aprovacao-publicacao.md)
 - [Monitorização e importação de resultados](docs/monitorizacao.md)
 - [Interface web, navegação e testes](docs/interface-web.md)
+- [Painéis e tarefas por perfil](docs/paineis-perfil.md)
 - [Marco anterior do backend](docs/backend-primeiro-marco.md)

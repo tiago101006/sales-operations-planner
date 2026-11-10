@@ -65,7 +65,7 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.POST, "/api/v1/revisoes/*/aprovacao", "/api/v1/revisoes/*/devolucao").hasRole("APROVADOR")
                         .requestMatchers(HttpMethod.GET, "/api/v1/planos", "/api/v1/planos/**").hasAnyRole("ADMIN", "PLANEADOR", "COMERCIAL", "APROVADOR", "CONSUMIDOR")
                         .requestMatchers("/api/v1/planos", "/api/v1/planos/**").denyAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/cenarios", "/api/v1/cenarios/**", "/api/v1/revisoes/**", "/api/v1/comparacao-cenarios")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/cenarios", "/api/v1/cenarios/**", "/api/v1/revisoes", "/api/v1/revisoes/**", "/api/v1/comparacao-cenarios")
                             .hasAnyRole("ADMIN", "PLANEADOR", "COMERCIAL", "APROVADOR")
                         .requestMatchers(HttpMethod.POST, "/api/v1/cenarios", "/api/v1/cenarios/*/revisoes", "/api/v1/revisoes/*/ajustes").hasAnyRole("ADMIN", "PLANEADOR")
                         .requestMatchers("/api/v1/cenarios", "/api/v1/cenarios/**", "/api/v1/revisoes", "/api/v1/revisoes/**", "/api/v1/comparacao-cenarios").denyAll()

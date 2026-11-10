@@ -103,7 +103,7 @@ def main():
                 return json.loads(raw) if raw else None
 
         request('POST', '/api/v1/auth/login', {'email': 'admin@ui.test', 'password': password})
-        for name, role in [('approver', 'APROVADOR'), ('consumer', 'CONSUMIDOR')]:
+        for name, role in [('approver', 'APROVADOR'), ('consumer', 'CONSUMIDOR'), ('commercial', 'COMERCIAL')]:
             request('POST', '/api/v1/utilizadores', {'nome': name.title(), 'email': name + '@ui.test', 'password': password, 'papeis': [role]})
         request('POST', '/api/v1/produtos', {'codigo': 'SKU_UI_ONE', 'nome': 'Produto de ensaio', 'unidade': 'un'})
         now = datetime.now(timezone.utc)

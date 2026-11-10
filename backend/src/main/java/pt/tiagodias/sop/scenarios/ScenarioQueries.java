@@ -57,6 +57,18 @@ public class ScenarioQueries {
         long count=jdbc.queryForObject("SELECT COUNT(*) FROM revisao_cenario WHERE cenario_id=?",Long.class,scenario);
         return new Pagina<>(jdbc.query(REVISAO+"WHERE r.cenario_id=? ORDER BY r.numero DESC LIMIT ? OFFSET ?",this::mapRevisao,scenario,size,offset),page,size,count,pages(count,size));
     }
+    public Pagina<ResumoRevisaoDto> fila(String state,int page,int size) {
+        int offset=ImportQueries.offset(page,size);
+        if(!Set.of("RASCUNHO","EM_REVISAO","DEVOLVIDA","APROVADA").contains(state)) {
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,"Estado de revisão inválido.");
+        }
+        long count=jdbc.queryForObject("SELECT COUNT(*) FROM revisao_cenario WHERE estado=?",Long.class,state);
+        String order=state.equals("EM_REVISAO")?"r.submetido_em ASC,r.id ASC":"r.criado_em DESC,r.id DESC";
+        var rows=jdbc.query(REVISAO.replace("SELECT r.*", "SELECT c.nome cenario_nome,u.nome autor_nome,r.*")+
+                "JOIN cenario c ON c.id=r.cenario_id JOIN utilizador u ON u.id=r.criado_por WHERE r.estado=? ORDER BY "+order+" LIMIT ? OFFSET ?",
+                (rs,n)->new ResumoRevisaoDto(mapRevisao(rs,n),rs.getString("cenario_nome"),rs.getString("autor_nome")),state,size,offset);
+        return new Pagina<>(rows,page,size,count,pages(count,size));
+    }
     private LinhaDto line(ResultSet rs,int n)throws SQLException {
         var base=rs.getBigDecimal("quantidade_base");var value=rs.getBigDecimal("quantidade_final");
         return new LinhaDto(rs.getString("produto_id"),rs.getString("codigo"),rs.getString("unidade"),month(rs,"periodo"),decimal(base),decimal(rs.getBigDecimal("quantidade_calculada")),decimal(value),decimal(value.subtract(base)),percent(base,value));

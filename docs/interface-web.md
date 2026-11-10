@@ -32,7 +32,7 @@ Para um ensaio que não altere os teus dados, usar o teste isolado descrito abai
 
 | Área | Comportamento |
 |---|---|
-| Visão geral | ADMIN: indicadores, gráfico previsão/plano, acessos rápidos e últimas importações. Outros perfis: contagens e percurso do planeamento |
+| Visão geral | ADMIN: painel global; APROVADOR: fila de decisões; PLANEADOR: rascunhos/devoluções; COMERCIAL: previsões/cenários; CONSUMIDOR: planos/resultados |
 | Produtos | Pesquisa/paginação; criar/editar com versão; código/unidade sujeitos às regras do backend |
 | Importações | HISTORICO/REALIZADOS/OPERACIONAL, origem, ficheiro, correção opcional; diagnósticos e dados do lote |
 | Previsões | Média Móvel/ETS, histórico, corte, último treino e horizonte; linhas/gráfico/diagnósticos |
@@ -49,8 +49,9 @@ percentuais artificiais. O gráfico mostra até 12 meses do primeiro produto do
 usa uma execução concluída com linhas entre as cinco mais recentes; sem dados,
 apresenta instruções para começar. O produto, a unidade e o plano/execução são
 identificados. Os acessos rápidos, planos e importações recentes usam as rotas
-existentes. Os restantes perfis conservam o seu conteúdo e permissões, com a mesma
-linguagem visual em verde floresta, sálvia, areia e terracota. Em ecrãs pequenos, os
+existentes. Os restantes perfis têm painéis próprios, descritos em
+[painéis por perfil](paineis-perfil.md), com a mesma linguagem visual em verde
+floresta, sálvia, areia e terracota. Em ecrãs pequenos, os
 cartões passam a duas colunas e o gráfico/tabelas permitem deslocação horizontal.
 
 As comparações selecionam a última revisão de cada cenário listado. O histórico

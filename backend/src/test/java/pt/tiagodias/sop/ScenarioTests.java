@@ -94,6 +94,34 @@ class ScenarioTests {
     }
 
     @Test
+    void listsAllPendingRevisionsIncludingOlderRevisionsOfTheSameScenarioAndProtectsTheQueue()throws Exception {
+        int before=admin.get("/api/v1/revisoes?estado=EM_REVISAO").get("totalElements").asInt();
+        var scenario=create("BASE","1");String root=revision(scenario);
+        String child=copy(admin,scenario,root,0,null).get("id").asText();
+        for(String id:List.of(root,child)) {
+            assertThat(admin.request("POST","/api/v1/revisoes/"+id+"/submissao",Map.of("versaoEsperada",0),true).statusCode()).isEqualTo(200);
+        }
+        var queue=login("aprovador@scenario.test").get("/api/v1/revisoes?estado=EM_REVISAO&size=200");
+        assertThat(queue.get("totalElements").asInt()).isEqualTo(before+2);
+        var ids=new ArrayList<String>();
+        for(var item:queue.get("items")) {
+            assertThat(item.get("revisao").get("estado").asText()).isEqualTo("EM_REVISAO");
+            ids.add(item.get("revisao").get("id").asText());
+            if(item.get("revisao").get("id").asText().equals(root)) {
+                assertThat(item.get("cenarioNome").asText()).isEqualTo(scenario.get("cenario").get("nome").asText());
+                assertThat(item.get("autorNome").asText()).isEqualTo("Admin");
+            }
+        }
+        assertThat(ids).contains(root,child);assertThat(ids.indexOf(root)).isLessThan(ids.indexOf(child));
+        assertThat(admin.get("/api/v1/revisoes?estado=EM_REVISAO&size=1").get("items").size()).isEqualTo(1);
+        for(String query:List.of("estado=INVALIDO","page=-1","size=201")) {
+            assertThat(admin.request("GET","/api/v1/revisoes?"+query,null,false).statusCode()).isEqualTo(422);
+        }
+        assertThat(new Browser().request("GET","/api/v1/revisoes",null,false).statusCode()).isEqualTo(401);
+        assertThat(login("consumidor@scenario.test").request("GET","/api/v1/revisoes",null,false).statusCode()).isEqualTo(403);
+        assertThat(login("comercial@scenario.test").get("/api/v1/revisoes?estado=RASCUNHO").get("items")).isNotNull();
+    }
+    @Test
     void preservesBaselineAndOtherScenarioAndAuditsSequentialOverrides()throws Exception {
         var optimistic=create("OTIMISTA","1.1");var conservative=create("CONSERVADOR","0.9");String revision=revision(optimistic);
         assertThat(line(revision,"SCENARIO").get("quantidadeCalculada").asText()).isEqualTo("110.0000");

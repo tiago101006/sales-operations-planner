@@ -100,6 +100,7 @@ Escritas exigem sessão e CSRF, como nos outros módulos.
 | `GET /cenarios/{id}` | Cabeçalho, total de revisões e última revisão |
 | `GET /cenarios/{id}/revisoes` | Revisões, da mais recente para a mais antiga |
 | `POST /cenarios/{id}/revisoes` | 201: nova revisão a partir da origem |
+| `GET /revisoes?estado=EM_REVISAO` | Fila paginada de todas as revisões no estado, incluindo versões anteriores do mesmo cenário |
 | `GET /revisoes/{id}` | Estado, versão, fator, pressupostos e contagens |
 | `GET /revisoes/{id}/linhas` | Base, calculada, final e desvios por célula |
 | `POST /revisoes/{id}/ajustes` | 201: ajuste registado e versão atual |
@@ -113,6 +114,14 @@ A comparação exige a mesma execução; pagina produtos e mantém todos os mese
 revisões selecionadas de cada produto. Mantém a ordem de `revisaoIds` nas colunas.
 
 IDs são strings nas respostas. Quantidades têm quatro casas; fatores seis.
+
+A fila aceita `RASCUNHO`, `EM_REVISAO` (predefinição), `DEVOLVIDA` e `APROVADA`.
+Um estado inválido devolve 422. Cada item contém `revisao` (o DTO completo),
+`cenarioNome` e `autorNome`. Submissões pendentes ordenam-se por `submetidoEm` e ID
+ascendentes; os outros estados por criação e ID descendentes. A fila abrange toda a
+equipa e não implica elegibilidade do utilizador para decidir: a independência
+continua a ser verificada no detalhe e no comando de aprovação/devolução.
+
 `desvioAbsoluto` = final − base (diferença com sinal); `desvioPercentual` =
 100 × (final − base) / base. Com base zero, o percentual é `null`, mesmo que
 a quantidade final seja zero. Não se somam produtos com unidades diferentes.

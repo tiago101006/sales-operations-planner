@@ -8,6 +8,8 @@ avaliação final. O backend de monitorização da fase 6 já importa realizados
 e calcula precisão/operação com cobertura e exclusões temporais. A interface web
 integrada também já permite executar o percurso no navegador;
 ver [monitorização](monitorizacao.md) e [interface](interface-web.md).
+Os [painéis por perfil](paineis-perfil.md) distinguem as tarefas dos cinco papéis.
+O conjunto alargado de dados sintéticos fica para a fase final de demonstração.
 Este documento conserva o desenho geral; os contratos efetivos e limites de cada
 bloco estão nos documentos específicos ligados no README, incluindo
 [cenários e revisões](cenarios-ajustes.md) e
