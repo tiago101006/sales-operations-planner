@@ -19,14 +19,17 @@ public class ImportService {
     private final HistoricoCsvParser parser;
     private final ImportStorage storage;
     private final ImportWriter writer;
+    private final OutcomeCsvParser outcomes;
+    private final OutcomeImportWriter outcomeWriter;
 
-    public ImportService(HistoricoCsvParser parser, ImportStorage storage, ImportWriter writer) {
+    public ImportService(HistoricoCsvParser parser, ImportStorage storage, ImportWriter writer,OutcomeCsvParser outcomes,OutcomeImportWriter outcomeWriter) {
         this.parser = parser; this.storage = storage; this.writer = writer;
+        this.outcomes=outcomes;this.outcomeWriter=outcomeWriter;
     }
 
     public LoteDto upload(MultipartFile file, String tipo, String origem, String versao, Long previous, String email) {
-        if (!tipo.equals("HISTORICO") || !versao.equals("v1")) {
-            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Este endpoint suporta, nesta fase, tipo HISTORICO e esquema v1.");
+        if (!java.util.Set.of("HISTORICO","REALIZADOS","OPERACIONAL").contains(tipo) || !versao.equals("v1")) {
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Tipos suportados: HISTORICO, REALIZADOS e OPERACIONAL; esquema v1.");
         }
         if (origem.isBlank() || origem.strip().length() > 160) {
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Indica uma origem entre 1 e 160 caracteres.");
@@ -49,7 +52,8 @@ public class ImportService {
         try {
             Instant now = Instant.now().truncatedTo(ChronoUnit.MICROS);
             String hash = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
-            return writer.persist(parser.parse(bytes, now), origem.strip(), filename, stored, hash, previous, email, now);
+            if(tipo.equals("HISTORICO")) { return writer.persist(parser.parse(bytes, now), origem.strip(), filename, stored, hash, previous, email, now); }
+            return outcomeWriter.persist(outcomes.parse(bytes,tipo,now),tipo,origem.strip(),filename,stored,hash,previous,email,now);
         } catch (NoSuchAlgorithmException exception) {
             throw new IllegalStateException(exception);
         } catch (RuntimeException exception) {

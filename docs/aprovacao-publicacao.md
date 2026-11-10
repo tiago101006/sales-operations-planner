@@ -1,8 +1,9 @@
 # Aprovação e publicação de planos
 
 Este bloco implementa a fase 5 do backend. A aprovação cria um plano com uma cópia
-fixa das células, consumível por API e CSV. Realizados, indicadores operacionais e
-interface gráfica pertencem aos próximos blocos.
+fixa das células, consumível por API e CSV. Realizados e indicadores operacionais
+estão implementados no [bloco de monitorização](monitorizacao.md). A interface gráfica
+pertence aos próximos blocos.
 
 ## Ensaio manual
 

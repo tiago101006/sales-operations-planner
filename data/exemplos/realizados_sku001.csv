@@ -1,0 +1,3 @@
+produto;periodo;quantidade;unidade;disponivel_em
+SKU001;2025-02;100.0000;un;2025-03-01T00:00:00Z
+SKU001;2025-03;0.0000;un;2025-04-01T00:00:00Z

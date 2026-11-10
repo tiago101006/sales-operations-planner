@@ -3,8 +3,9 @@
 ## Âmbito deste bloco
 
 Importação síncrona de vendas/consumo mensais, com ficheiro original, SHA-256, autor,
-origem, esquema, estado e diagnósticos por lote. Calendário, promoções, realizados
-e dados operacionais terão contratos próprios; não são aceites neste endpoint ainda.
+origem, esquema, estado e diagnósticos por lote. Realizados e dados operacionais
+já têm [contratos próprios no módulo de monitorização](monitorizacao.md), usando
+o mesmo endpoint. Calendário e promoções ainda não são aceites.
 O esquema da V1 já contém as tabelas necessárias, sem nova migração nesta entrega.
 
 ADMIN e PLANEADOR podem importar. ADMIN, PLANEADOR, COMERCIAL e APROVADOR podem

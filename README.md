@@ -1,7 +1,7 @@
 # Aplicação de Previsão de Procura e S&OP
 
 Projeto de Tiago Dias: backend Java 17 / Spring Boot 4.1.2, MySQL 8.4,
-Docker Compose, migrações Flyway e autenticação por sessão com perfis. Inclui catálogo de produtos e importação de históricos CSV protegidos por perfis. Inclui previsões base por Média Móvel e ETS(A,A,N), backtesting com MAE/MAPE e cobertura, cenários comparáveis, revisões, ajustes auditados e aprovação/publicação por API e CSV. Monitorização com realizados e interface gráfica seguem nos próximos blocos.
+Docker Compose, migrações Flyway e autenticação por sessão com perfis. Inclui catálogo, importação de históricos/realizados/operacionais, previsões por Média Móvel e ETS(A,A,N), backtesting, cenários/revisões/ajustes auditados, aprovação/publicação por API e CSV e monitorização com MAE/MAPE, cobertura e indicadores operacionais. Interface gráfica e avaliação final seguem nos próximos blocos.
 
 ## Iniciar
 
@@ -150,6 +150,20 @@ Planos publicados ficam disponíveis aos cinco perfis, incluindo CONSUMIDOR.
 
 Ver [estados, contratos e separação de funções](docs/aprovacao-publicacao.md).
 
+## Monitorizar um plano
+
+```bash
+python3 scripts/testar_monitorizacao.py
+```
+
+Usar ADMIN/PLANEADOR e selecionar o plano publicado. O script importa dois CSV
+sintéticos de meses fechados e cria uma avaliação com lotes/corte explícitos.
+Mostra precisão, operação e motivos de exclusão. Se o plano ainda não tiver meses
+fechados, cobertura 0 e métricas `null` são esperadas; não se fabricam realizados
+futuros. CSV de ensaio ficam em `tmp/monitorizacao/`.
+
+Ver [contratos, fórmulas e regras temporais](docs/monitorizacao.md).
+
 ## Adotar a base anterior ao Flyway
 
 Na instalação deste projeto, a base já foi verificada e adotada. Numa outra instalação
@@ -194,6 +208,8 @@ Não alteram os dados do volume de desenvolvimento. Requerem Docker ativo.
 Incluem ainda autenticação/perfis, importações, previsões, backtesting, cenários e
 workflow de aprovação: concorrência, rollback integral, auditoria herdada e
 equivalência entre API e CSV de planos publicados.
+Na monitorização verificam o caso de aceitação MAE/MAPE, exclusões por corte e
+publicação tardia, ponderação operacional, faltas/zeros e preservação de avaliações.
 
 ## Migrações
 
@@ -217,4 +233,5 @@ As versões de Flyway e Connector/J são geridas pelo parent Spring Boot.
 - [Backtesting e métricas](docs/backtesting.md)
 - [Cenários, revisões e ajustes auditados](docs/cenarios-ajustes.md)
 - [Aprovação e publicação por API/CSV](docs/aprovacao-publicacao.md)
+- [Monitorização e importação de resultados](docs/monitorizacao.md)
 - [Marco anterior do backend](docs/backend-primeiro-marco.md)

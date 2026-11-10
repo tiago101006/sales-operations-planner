@@ -57,13 +57,25 @@ public class ImportQueries {
 
     public Pagina<ObservacaoDto> observations(long id, int page, int size) {
         int offset = offset(page, size);
-        if (!get(id).estado().equals("VALIDADO")) { throw new ResponseStatusException(HttpStatus.CONFLICT, "O lote não está validado."); }
+        var lot=get(id);
+        if (!lot.estado().equals("VALIDADO") || !(lot.tipo().equals("HISTORICO") || lot.tipo().equals("REALIZADOS"))) { throw new ResponseStatusException(HttpStatus.CONFLICT, "Consulta observações de HISTORICO/REALIZADOS validado."); }
         long total = jdbc.queryForObject("SELECT COUNT(*) FROM observacao WHERE lote_id=?", Long.class, id);
         return new Pagina<>(jdbc.query("SELECT o.*,p.codigo,p.unidade FROM observacao o JOIN produto p ON p.id=o.produto_id WHERE o.lote_id=? ORDER BY p.codigo,o.periodo,o.tipo LIMIT ? OFFSET ?",
                 (rs, n) -> new ObservacaoDto(rs.getString("id"), rs.getString("produto_id"), rs.getString("codigo"),
                         rs.getDate("periodo").toLocalDate().toString().substring(0, 7), rs.getString("tipo"),
                         rs.getBigDecimal("quantidade").setScale(4).toPlainString(), rs.getString("unidade"), instant(rs, "disponivel_em")),
                 id, size, offset), page, size, total, pages(total, size));
+    }
+    public Pagina<ResultadoDto> operational(long id,int page,int size) {
+        int offset=offset(page,size);var lot=get(id);
+        if(!lot.estado().equals("VALIDADO") || !lot.tipo().equals("OPERACIONAL")) { throw new ResponseStatusException(HttpStatus.CONFLICT,"Consulta resultados de um lote OPERACIONAL validado."); }
+        long count=jdbc.queryForObject("SELECT COUNT(*) FROM resultado_operacional WHERE lote_id=?",Long.class,id);
+        var rows=jdbc.query("SELECT o.*,p.codigo,p.unidade FROM resultado_operacional o JOIN produto p ON p.id=o.produto_id WHERE o.lote_id=? ORDER BY p.codigo,o.periodo LIMIT ? OFFSET ?",(rs,n)->{
+            var values=new java.util.LinkedHashMap<String,String>();
+            for(String field:OutcomeCsvParser.FIELDS) { var value=rs.getBigDecimal(field);values.put(field,value==null?null:value.toPlainString()); }
+            return new ResultadoDto(rs.getString("id"),rs.getString("produto_id"),rs.getString("codigo"),rs.getDate("periodo").toLocalDate().toString().substring(0,7),rs.getString("unidade"),instant(rs,"disponivel_em"),values);
+        },id,size,offset);
+        return new Pagina<>(rows,page,size,count,pages(count,size));
     }
 
     private static int pages(long total, int size) { return (int) ((total + size - 1) / size); }

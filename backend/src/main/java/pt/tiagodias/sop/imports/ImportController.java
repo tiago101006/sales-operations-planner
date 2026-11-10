@@ -23,7 +23,7 @@ public class ImportController {
         var lot = service.upload(ficheiro, tipo, origem, versaoEsquema, substituiLoteId, authentication.getName());
         var location = URI.create("/api/v1/lotes/" + lot.id());
         if (lot.estado().equals("REJEITADO")) {
-            var problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_ENTITY, "O histórico contém erros. Nenhuma observação foi publicada.");
+            var problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_ENTITY, "O lote contém erros. Nenhum registo foi publicado.");
             problem.setProperty("code", "LOTE_REJEITADO"); problem.setProperty("loteId", lot.id());
             problem.setProperty("totalErros", lot.totalErros());
             return ResponseEntity.unprocessableEntity().location(location).body(problem);
@@ -41,4 +41,6 @@ public class ImportController {
     @GetMapping("/{id}/observacoes")
     public Pagina<ObservacaoDto> observations(@PathVariable long id, @RequestParam(defaultValue = "0") int page,
                                              @RequestParam(defaultValue = "50") int size) { return queries.observations(id, page, size); }
+    @GetMapping("/{id}/operacionais")
+    public Pagina<ResultadoDto> operational(@PathVariable long id,@RequestParam(defaultValue="0")int page,@RequestParam(defaultValue="50")int size) { return queries.operational(id,page,size); }
 }

@@ -17,6 +17,8 @@ public final class ImportDtos {
                           Instant importadoEm, Instant disponivelEm, Instant validadoEm, int totalLinhas, int totalErros) {}
     public record ObservacaoDto(String id, String produtoId, String produto, String periodo, String tipo,
                                 String quantidade, String unidade, Instant disponivelEm) {}
+    public record ResultadoDto(String id,String produtoId,String produto,String periodo,String unidade,
+                                Instant disponivelEm,Map<String,String> valores) {}
 
     public static void erro(List<Diagnostico> erros, long linha, String campo, String codigo, String mensagem) {
         if (erros.size() < 1000) { erros.add(new Diagnostico(linha, campo, codigo, mensagem)); }
