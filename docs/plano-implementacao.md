@@ -4,9 +4,10 @@ Cada fase termina com uma demonstração verificável. Duração indicativa: uma
 semanas por fase, a ajustar ao calendário académico. O backend já implementa as fases
 0 a 5: infraestrutura, autenticação/catálogo, históricos, previsões/backtesting,
 cenários com ajustes auditados e aprovação/publicação por API/CSV. Seguem-se
-avaliação final e interface gráfica. O backend de monitorização da fase 6 já importa
-realizados/operacionais e calcula precisão/operação com cobertura e exclusões temporais;
-ver [contratos efetivos](monitorizacao.md).
+avaliação final. O backend de monitorização da fase 6 já importa realizados/operacionais
+e calcula precisão/operação com cobertura e exclusões temporais. A interface web
+integrada também já permite executar o percurso no navegador;
+ver [monitorização](monitorizacao.md) e [interface](interface-web.md).
 Este documento conserva o desenho geral; os contratos efetivos e limites de cada
 bloco estão nos documentos específicos ligados no README, incluindo
 [cenários e revisões](cenarios-ajustes.md) e

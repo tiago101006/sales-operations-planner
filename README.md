@@ -1,7 +1,7 @@
 # Aplicação de Previsão de Procura e S&OP
 
 Projeto de Tiago Dias: backend Java 17 / Spring Boot 4.1.2, MySQL 8.4,
-Docker Compose, migrações Flyway e autenticação por sessão com perfis. Inclui catálogo, importação de históricos/realizados/operacionais, previsões por Média Móvel e ETS(A,A,N), backtesting, cenários/revisões/ajustes auditados, aprovação/publicação por API e CSV e monitorização com MAE/MAPE, cobertura e indicadores operacionais. Interface gráfica e avaliação final seguem nos próximos blocos.
+Docker Compose, migrações Flyway e autenticação por sessão com perfis. Inclui interface web integrada, catálogo, importação de históricos/realizados/operacionais, previsões por Média Móvel e ETS(A,A,N), backtesting, cenários/revisões/ajustes auditados, aprovação/publicação por API e CSV e monitorização com MAE/MAPE, cobertura e indicadores operacionais. Segue-se a avaliação final do projeto.
 
 ## Iniciar
 
@@ -19,6 +19,11 @@ docker compose ps
 curl http://localhost:8080/api/v1/status
 curl http://localhost:8080/actuator/health
 ```
+
+Abrir **[http://localhost:8080](http://localhost:8080)** no navegador e entrar com
+uma conta existente. A interface é servida pelo Spring Boot, no mesmo Docker;
+não é necessário iniciar outro servidor nem instalar Node para utilizar a aplicação.
+Ver [guia da interface e testes no navegador](docs/interface-web.md).
 
 Uma base vazia é criada automaticamente pelo Flyway. Uma base criada antes desta
 integração precisa de adoção explícita, descrita abaixo. O Hibernate apenas valida
@@ -234,4 +239,5 @@ As versões de Flyway e Connector/J são geridas pelo parent Spring Boot.
 - [Cenários, revisões e ajustes auditados](docs/cenarios-ajustes.md)
 - [Aprovação e publicação por API/CSV](docs/aprovacao-publicacao.md)
 - [Monitorização e importação de resultados](docs/monitorizacao.md)
+- [Interface web, navegação e testes](docs/interface-web.md)
 - [Marco anterior do backend](docs/backend-primeiro-marco.md)

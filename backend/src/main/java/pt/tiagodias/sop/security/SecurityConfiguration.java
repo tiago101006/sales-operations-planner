@@ -51,8 +51,11 @@ public class SecurityConfiguration {
                 .requestCache(config -> config.requestCache(new NullRequestCache()))
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
+                .headers(headers -> headers.contentSecurityPolicy(csp -> csp.policyDirectives(
+                        "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; object-src 'none'")))
                 .authorizeHttpRequests(auth -> auth
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/", "/index.html", "/assets/**").permitAll()
                         .requestMatchers("/api/v1/status", "/actuator/health", "/actuator/health/**", "/api/v1/auth/csrf", "/api/v1/auth/login").permitAll()
                         .requestMatchers("/api/v1/utilizadores", "/api/v1/utilizadores/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/v1/avaliacoes", "/api/v1/avaliacoes/**").hasAnyRole("ADMIN", "PLANEADOR", "COMERCIAL", "APROVADOR", "CONSUMIDOR")
