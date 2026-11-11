@@ -7,6 +7,7 @@ const login = async (page, email) => {
   await page.getByLabel('Password', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
   await expect(page.locator('.shell')).toBeVisible();
+  await expect(page).toHaveURL(/#\/visao$/);
 };
 const logout = async page => {
   await page.getByRole('button', { name: 'Terminar sessão' }).click();
@@ -51,6 +52,16 @@ test('percurso completo com APIs reais, auditoria, aprovação independente e mo
     await page.getByLabel('Identificador', { exact: true }).fill(value.id);
     await page.getByRole('button', { name: 'Consultar', exact: true }).click();
     await expect(page.getByText('planner@ui.test', { exact: true })).toBeVisible();
+    await logout(page);await login(page, 'planner@ui.test');
+    await expect(page.getByRole('heading', { name: 'Espaço de planeamento', exact: true })).toBeVisible();
+    expect(await page.getByRole('alert').count()).toBe(0);
+    expect((await context.request.get('/api/v1/utilizadores/1')).status()).toBe(403);
+    await page.getByRole('link', { name: 'Produtos', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Catálogo de produtos', exact: true })).toBeVisible();
+    await page.reload();
+    await expect(page).toHaveURL(/#\/produtos$/);
+    await expect(page.getByRole('heading', { name: 'Catálogo de produtos', exact: true })).toBeVisible();
+    await logout(page);await login(page, 'admin@ui.test');
   });
   let historyId, executionId, scenarioId, revisionId, planId;
   await test.step('importação rejeitada com diagnósticos e importação válida', async () => {
@@ -142,6 +153,7 @@ test('percurso completo com APIs reais, auditoria, aprovação independente e mo
     await modal(page).getByRole('button', { name: 'Devolver a revisão', exact: true }).click();
     await expect(page.getByText('Devolvida', { exact: true })).toBeVisible();
     await logout(page);await login(page, 'admin@ui.test');
+    await page.goto(`/#/revisao/${revisionId}`);
     await page.getByRole('button', { name: 'Criar nova revisão', exact: true }).click();
     const response = postResponse(page, `/cenarios/${scenarioId}/revisoes`);
     await modal(page).getByRole('button', { name: 'Criar revisão', exact: true }).click();revisionId = (await (await response).json()).id;
@@ -150,6 +162,7 @@ test('percurso completo com APIs reais, auditoria, aprovação independente e mo
     await modal(page).getByRole('button', { name: 'Submeter para revisão', exact: true }).click();
     await expect(page.getByText('Em revisão', { exact: true })).toBeVisible();
     await logout(page);await login(page, 'approver@ui.test');
+    await page.locator(`a[href="#/revisao/${revisionId}"]`).click();
     await page.getByRole('button', { name: 'Aprovar e publicar', exact: true }).click();
     const responseApproval = postResponse(page, `/revisoes/${revisionId}/aprovacao`);
     await modal(page).getByRole('button', { name: 'Aprovar e publicar', exact: true }).click();planId = (await (await responseApproval).json()).planoId;
@@ -161,6 +174,7 @@ test('percurso completo com APIs reais, auditoria, aprovação independente e mo
     const value = await download;expect(value.suggestedFilename()).toBe(`plano-${planId}.csv`);
     const csv = await readFile(await value.path(), 'utf8');expect(csv).toContain('quantidade_base;quantidade');expect(csv.trim().split(/\r?\n/)).toHaveLength(4);
     await logout(page);await login(page, 'admin@ui.test');
+    await page.goto(`/#/plano/${planId}`);
     await page.getByRole('button', { name: 'Criar avaliação', exact: true }).click();
     await modal(page).getByLabel('Lote operacional', { exact: true }).selectOption({ index: 1 });
     await modal(page).getByRole('button', { name: 'Criar avaliação', exact: true }).click();

@@ -57,8 +57,11 @@ CONSUMIDOR: 403. Os quatro perfis internos têm consulta de revisões.
 5. PLANEADOR: consultar a devolução e criar uma nova revisão para corrigir.
 6. COMERCIAL/CONSUMIDOR: confirmar os painéis de consulta e ausência de ações de preparação.
 
-O login conserva a rota pedida, permitindo abrir ligações diretas. O painel próprio
-fica sempre acessível em **Visão geral**. Uma fila vazia significa que não existem
+Um novo login abre sempre `#/visao`, no painel do perfil autenticado, incluindo
+depois de trocar de conta ou de a sessão expirar. A página da conta anterior deixa
+de ser o destino do login. Com sessão válida, navegar para uma ligação direta ou
+atualizar a página conserva a rota atual e aplica as permissões habituais.
+O painel próprio fica sempre acessível em **Visão geral**. Uma fila vazia significa que não existem
 revisões submetidas; os planos já publicados não voltam para essa fila.
 
 ## Verificação
@@ -74,3 +77,8 @@ SHA-256 de todas as tabelas manteve-se igual antes/depois do arranque.
 
 O conjunto de dados sintéticos mais amplo fica para a fase final, por decisão do
 utilizador. Esta entrega não preenche nem limpa as tabelas existentes.
+
+Em 2026-11-11, a correção da navegação após login passou 10 testes Node, os dois
+percursos de navegador e o ensaio de desempenho. A regressão ADMIN na Equipa →
+logout → PLANEADOR confirma o painel inicial e conserva o HTTP 403 da API
+administrativa. Atualizar uma página autorizada com sessão válida mantém a rota.

@@ -230,7 +230,9 @@ document.addEventListener('submit', async event => {
   try {
     if (form.id === 'login-form') {
       const user = await api.send('/auth/login', { email: String(submission.get('email') || '').trim(), password: submission.get('password') });
-      form.reset();state.user = user;shell();await render();
+      form.reset();state.user = user;
+      history.replaceState(null, '', '#/visao');
+      shell();await render();
     } else if (form.id === 'command-form') {
       const result = await command(form, context);
       closeDialog();notify(result.message);

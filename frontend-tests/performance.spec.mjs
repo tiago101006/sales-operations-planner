@@ -18,6 +18,8 @@ test('guardar e mostrar ajuste: revisão de 300 células, 30 medições sem conc
     await page.getByLabel('Email', { exact: true }).fill('admin@ui.test');
     await page.getByLabel('Password', { exact: true }).fill(process.env.SOP_UI_PASSWORD);
     await page.getByRole('button', { name: 'Entrar', exact: true }).click();
+    await expect(page).toHaveURL(/#\/visao$/);
+    await page.goto(`/#/revisao/${revision}`);
     await expect(page.getByRole('heading', { name: 'Quantidades por mês', exact: true })).toBeVisible();
     const before = await (await context.request.get(`/api/v1/revisoes/${revision}`)).json();
     expect(before.totalLinhas).toBe(300);expect(before.versao).toBe(0);
