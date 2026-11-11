@@ -14,10 +14,21 @@ import org.springframework.web.server.ResponseStatusException;
 public class IdentityService {
     private final UtilizadorRepository repository;
     private final PasswordEncoder encoder;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbc;
 
-    public IdentityService(UtilizadorRepository repository, PasswordEncoder encoder) {
+    public IdentityService(UtilizadorRepository repository, PasswordEncoder encoder, org.springframework.jdbc.core.JdbcTemplate jdbc) {
         this.repository = repository;
-        this.encoder = encoder;
+        this.encoder = encoder;this.jdbc=jdbc;
+    }
+
+    @Transactional(readOnly=true)
+    public pt.tiagodias.sop.scenarios.ScenarioDtos.Pagina<UtilizadorDto> list(int page,int size) {
+        var result=pt.tiagodias.sop.shared.SearchPage.page(jdbc,
+                "SELECT u.id,u.nome,u.email,(SELECT GROUP_CONCAT(papel ORDER BY papel) FROM utilizador_papel WHERE utilizador_id=u.id) papeis FROM utilizador u",
+                "nome,id",(rs,n)->new UtilizadorDto(rs.getString("id"),rs.getString("nome"),rs.getString("email"),
+                    java.util.Arrays.stream(rs.getString("papeis").split(",")).map(Papel::valueOf).collect(java.util.stream.Collectors.toSet())),
+                page,size,"id,nome,email,papeis,REPLACE(papeis,'ADMIN','Administrador')",null);
+        return new pt.tiagodias.sop.scenarios.ScenarioDtos.Pagina<>(result.items(),page,size,result.total(),result.pages());
     }
 
     public static String normalizeEmail(String email) { return email.strip().toLowerCase(Locale.ROOT); }

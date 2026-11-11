@@ -58,12 +58,20 @@ test('percurso completo com APIs reais, auditoria, aprovação independente e mo
     await modal(page).getByRole('button', { name: 'Criar conta', exact: true }).click();
     const value = await (await created).json();
     await page.getByLabel('Identificador', { exact: true }).fill(value.id);
-    await page.getByRole('button', { name: 'Consultar', exact: true }).click();
-    await expect(page.getByText('planner@ui.test', { exact: true })).toBeVisible();
+    await page.locator('#user-lookup').getByRole('button', { name: 'Consultar', exact: true }).click();
+    await expect(page.locator('#user-result').getByText('planner@ui.test', { exact: true })).toBeVisible();
+    const teamSearch = page.locator('[data-search-key="team"]');
+    await teamSearch.getByLabel('Pesquisar nesta tabela').fill('planner@ui.test');
+    await teamSearch.getByRole('button', { name: 'Pesquisar', exact: true }).click();
+    const members = page.locator('.panel').filter({ has: page.getByRole('heading', { name: 'Membros da equipa', exact: true }) });
+    await expect(members.locator('tbody tr')).toHaveCount(1);
+    await expect(members).toContainText('Planeador de ensaio');
+    await page.screenshot({ path: '../tmp/ui-preview/equipa-pesquisa.png', fullPage: true });
     await logout(page);await login(page, 'planner@ui.test');
     await expect(page.getByRole('heading', { name: 'Espaço de planeamento', exact: true })).toBeVisible();
     expect(await page.getByRole('alert').count()).toBe(0);
     expect((await context.request.get('/api/v1/utilizadores/1')).status()).toBe(403);
+    expect((await context.request.get('/api/v1/utilizadores?busca=admin')).status()).toBe(403);
     await page.getByRole('link', { name: 'Produtos', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Catálogo de produtos', exact: true })).toBeVisible();
     await page.reload();
@@ -74,6 +82,13 @@ test('percurso completo com APIs reais, auditoria, aprovação independente e mo
   let historyId, secondHistoryId, executionId, scenarioId, revisionId, planId;
   const longHistoryName = 'historico_de_vendas_da_equipa_com_um_nome_muito_comprido_para_verificar_a_apresentacao.csv';
   const longHistoryOrigin = 'Histórico secundário da direção comercial — <b>dados de ensaio</b>';
+  await test.step('recuperação de filtros inválidos sem ficar preso na página', async () => {
+    await page.goto('/#/importacoes?f_lots_desde=11');
+    await expect(page.getByRole('alert')).toContainText('AAAA-MM');
+    await page.getByRole('button', { name: 'Limpar filtros e voltar à lista', exact: true }).click();
+    await expect(page.locator('[data-search-key="lots"]')).toBeVisible();
+    await expect(page).toHaveURL(/#\/importacoes$/);
+  });
   await test.step('importação rejeitada com diagnósticos e importação válida', async () => {
     await page.getByRole('link', { name: 'Importações', exact: true }).click();
     await page.getByRole('button', { name: 'Importar CSV', exact: true }).click();
@@ -111,6 +126,19 @@ test('percurso completo com APIs reais, auditoria, aprovação independente e mo
     historyId = (await (await response).json()).id;
     await expect(page).toHaveURL(new RegExp('#/lote/' + historyId + '$'));
     await expect(page.getByText('Validado', { exact: true })).toBeVisible();
+    const lotSearch = page.locator('[data-search-key="lotRows"]');
+    await lotSearch.getByLabel('Pesquisar nesta tabela').fill('Produto de ensaio');
+    await lotSearch.getByLabel('Mês inicial').fill('2020-01');
+    await lotSearch.getByLabel('Mês final').fill('2020-01');
+    await lotSearch.getByRole('button', { name: 'Pesquisar', exact: true }).click();
+    await expect(page.locator('[data-search-key="lotRows"] input[name=busca]')).toHaveValue('Produto de ensaio');
+    await expect(page.getByRole('heading', { name: 'Nenhum resultado para estes filtros', exact: true })).toBeVisible();
+    await page.reload();
+    await expect(page.locator('[data-search-key="lotRows"] input[name=desde]')).toHaveValue('2020-01');
+    await page.locator('[data-search-key="lotRows"]').getByRole('button', { name: 'Limpar filtros', exact: true }).click();
+    await expect(page.locator('tbody tr')).toHaveCount(20);
+    await page.screenshot({ path: '../tmp/ui-preview/pesquisa-lote.png', fullPage: true });
+
   });
   await test.step('outro histórico com o mesmo conteúdo e identificação comprida', async () => {
     await page.getByRole('link', { name: 'Importações', exact: true }).click();
@@ -238,6 +266,16 @@ test('percurso completo com APIs reais, auditoria, aprovação independente e mo
     await modal(page).getByRole('button', { name: 'Executar backtest', exact: true }).click();
     const value = await (await response).json();expect(value.totalCelulas).toBeGreaterThan(0);
     await expect(page.getByRole('heading', { name: 'Média Móvel vs. ETS', exact: true })).toBeVisible();
+    const cellsBefore = await (await context.request.get(`/api/v1/backtests/${value.id}/celulas?size=200`)).json();
+    const selectedMonth = cellsBefore.items[0].periodo;
+    const cellSearch = page.locator('[data-search-key="backtestCells"]');
+    await cellSearch.getByLabel('Pesquisar nesta tabela').fill('SKU_UI_ONE');
+    await cellSearch.getByLabel('Mês inicial').fill(selectedMonth);
+    await cellSearch.getByLabel('Mês final').fill(selectedMonth);
+    await cellSearch.getByRole('button', { name: 'Pesquisar', exact: true }).click();
+    const simulationPanel = page.locator('.panel').filter({ has: page.getByRole('heading', { name: 'Células da simulação', exact: true }) });
+    await expect(simulationPanel.locator('tbody tr')).toHaveCount(cellsBefore.items.filter(row => row.periodo === selectedMonth).length);
+    await page.screenshot({ path: '../tmp/ui-preview/simulacao-pesquisa.png', fullPage: true });
     await page.goto(`/#/previsao/${executionId}`);
   });
   await test.step('cenário otimista, ajuste justificado e cópia com auditoria', async () => {
@@ -373,6 +411,18 @@ test('percurso completo com APIs reais, auditoria, aprovação independente e mo
     const csv = await readFile(await value.path(), 'utf8');expect(csv).toContain('quantidade_base;quantidade');expect(csv.trim().split(/\r?\n/)).toHaveLength(4);
     await logout(page);await login(page, 'admin@ui.test');
     await page.goto(`/#/plano/${planId}`);
+    const planLines = await (await context.request.get(`/api/v1/planos/${planId}/linhas`)).json();
+    const lastPlanMonth = planLines.items.at(-1).periodo;
+    const planSearch = page.locator('[data-search-key="planLines"]');
+    await planSearch.getByLabel('Pesquisar nesta tabela').fill('Produto de ensaio');
+    await planSearch.getByLabel('Mês inicial').fill(lastPlanMonth);
+    await planSearch.getByLabel('Mês final').fill(lastPlanMonth);
+    await planSearch.getByRole('button', { name: 'Pesquisar', exact: true }).click();
+    await expect(page.locator('tbody tr')).toHaveCount(1);
+    const fullExport = await (await context.request.get(`/api/v1/planos/${planId}/exportacao.csv`)).text();
+    expect(fullExport.trim().split(/\r?\n/).length).toBe(planLines.items.length + 1);
+    await page.locator('[data-search-key="planLines"]').getByRole('button', { name: 'Limpar filtros', exact: true }).click();
+    await expect(page.locator('tbody tr')).toHaveCount(planLines.items.length);
     await page.getByRole('button', { name: 'Criar avaliação', exact: true }).click();
     await modal(page).getByLabel('Lote operacional', { exact: true }).selectOption({ index: 1 });
     await modal(page).getByRole('button', { name: 'Criar avaliação', exact: true }).click();

@@ -52,6 +52,7 @@ Não existe registo público de contas. As restantes contas são criadas por ADM
 | `GET /api/v1/auth/me` | Autenticado | ID, nome, email e papéis |
 | `POST /api/v1/auth/logout` | CSRF | HTTP 204, invalida sessão |
 | `POST /api/v1/utilizadores` | ADMIN + CSRF | HTTP 201, nova conta |
+| `GET /api/v1/utilizadores?busca=texto&page=0&size=50` | ADMIN | Lista paginada de ID, nome, email e perfis; sem credenciais |
 | `GET /api/v1/utilizadores/{id}` | ADMIN | DTO da conta ou 404 |
 
 Os endpoints de estado e saúde continuam públicos. Os restantes pedidos exigem

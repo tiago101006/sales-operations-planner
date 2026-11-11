@@ -1,5 +1,6 @@
 package pt.tiagodias.sop.monitoring;
 
+import pt.tiagodias.sop.shared.SearchPage;
 import java.sql.*;
 import java.time.*;
 import java.time.temporal.ChronoUnit;
@@ -22,13 +23,14 @@ public class MonitoringQueries {
     public MonitoringQueries(JdbcTemplate jdbc) { this.jdbc=jdbc;this.named=new NamedParameterJdbcTemplate(jdbc); }
     private static final String HEADER="SELECT a.*,(SELECT COUNT(*) FROM avaliacao_celula c WHERE c.avaliacao_id=a.id) celulas FROM avaliacao a ";
     private static final String CELLS="""
-            SELECT c.*,p.codigo_produto,p.unidade,p.quantidade_base,p.quantidade_aprovada,e.ultimo_periodo_treino,
+            SELECT c.*,produto_atual.nome nome_produto,p.codigo_produto,p.unidade,p.quantidade_base,p.quantidade_aprovada,e.ultimo_periodo_treino,
             o.quantidade realizado,o.disponivel_em realizado_disponivel,a.corte_realizados,a.lote_operacional_id,
             op.id operacional_id,op.disponivel_em operacional_disponivel,
             op.unidades_solicitadas,op.unidades_satisfeitas_no_prazo,op.dias_observados_com_procura,op.dias_com_procura_sem_stock,
             op.stock_fecho,op.limite_stock,op.unidades_perdidas,op.prazo_medio_dias
             FROM avaliacao_celula c JOIN avaliacao a ON a.id=c.avaliacao_id
             JOIN linha_plano p ON p.plano_id=c.plano_id AND p.produto_id=c.produto_id AND p.periodo=c.periodo
+            JOIN produto produto_atual ON produto_atual.id=c.produto_id
             JOIN plano_publicado pp ON pp.id=p.plano_id JOIN revisao_cenario r ON r.id=pp.revisao_id
             JOIN execucao_previsao e ON e.id=r.execucao_id
             LEFT JOIN observacao o ON o.id=c.observacao_id
@@ -39,9 +41,9 @@ public class MonitoringQueries {
     }
     public Avaliacao get(long id) { return jdbc.query(HEADER+"WHERE a.id=?",this::mapHeader,id).stream().findFirst().orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Avaliação não encontrada.")); }
     public Pagina<Avaliacao> list(Long plan,int page,int size) {
-        int offset=ImportQueries.offset(page,size);String filter=plan==null?"":"WHERE a.plano_id=? ";Object[] args=plan==null?new Object[0]:new Object[]{plan};
-        long count=jdbc.queryForObject("SELECT COUNT(*) FROM avaliacao a "+filter,Long.class,args);var params=new ArrayList<Object>(Arrays.asList(args));params.add(size);params.add(offset);
-        return new Pagina<>(jdbc.query(HEADER+filter+"ORDER BY a.id DESC LIMIT ? OFFSET ?",this::mapHeader,params.toArray()),page,size,count,pages(count,size));
+        String filter=plan==null?"":"WHERE a.plano_id=? ";Object[] args=plan==null?new Object[0]:new Object[]{plan};
+        var result=SearchPage.page(jdbc,HEADER+filter,"id DESC",this::mapHeader,page,size,"id,plano_id,lote_realizados_id","criado_em",args);
+        return new Pagina<>(result.items(),page,size,result.total(),result.pages());
     }
     private Celula mapCell(ResultSet rs,int n)throws SQLException {
         Instant cut=ImportQueries.instant(rs,"corte_realizados"),available=ImportQueries.instant(rs,"realizado_disponivel");
@@ -59,8 +61,9 @@ public class MonitoringQueries {
         return new Celula(rs.getString("produto_id"),rs.getString("codigo_produto"),rs.getString("unidade"),month(rs,"periodo"),horizon,decimal(rs.getBigDecimal("quantidade_base")),decimal(rs.getBigDecimal("quantidade_aprovada")),rs.getString("observacao_id"),known?decimal(rs.getBigDecimal("realizado")):null,available,temporal,reason==null,reason,op,opReason);
     }
     public Pagina<Celula> cells(long id,int page,int size) {
-        int offset=ImportQueries.offset(page,size);long count=get(id).totalCelulas();
-        return new Pagina<>(jdbc.query(CELLS+"WHERE c.avaliacao_id=? ORDER BY p.codigo_produto,c.periodo LIMIT ? OFFSET ?",this::mapCell,id,size,offset),page,size,count,pages(count,size));
+        get(id);
+        var result=SearchPage.page(jdbc,CELLS+"WHERE c.avaliacao_id=?","codigo_produto,periodo",this::mapCell,page,size,"codigo_produto,nome_produto,motivo_exclusao","periodo",id);
+        return new Pagina<>(result.items(),page,size,result.total(),result.pages());
     }
     private record Groups(List<List<Celula>> cells,long count) {}
     private Groups groups(long id,int page,int size) {

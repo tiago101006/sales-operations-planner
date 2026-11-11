@@ -1,5 +1,6 @@
 package pt.tiagodias.sop.planning;
 
+import pt.tiagodias.sop.shared.SearchPage;
 import java.io.*;
 import java.sql.*;
 import org.apache.commons.csv.*;
@@ -45,13 +46,14 @@ public class PlanQueries {
                 .orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Plano publicado não encontrado."));
     }
     public Pagina<PlanoDto> list(int page,int size) {
-        int offset=ImportQueries.offset(page,size);
-        long count=jdbc.queryForObject("SELECT COUNT(*) "+FROM,Long.class);
-        return new Pagina<>(jdbc.query(HEADER+" ORDER BY p.id DESC LIMIT ? OFFSET ?",this::mapPlan,size,offset),page,size,count,pages(count,size));
+
+        var result=SearchPage.page(jdbc,HEADER,"id DESC",this::mapPlan,page,size,"id,revisao_id,cenario_id,autor_id","publicado_em");
+        return new Pagina<>(result.items(),page,size,result.total(),result.pages());
     }
     public Pagina<LinhaPlanoDto> lines(long id,int page,int size) {
-        int offset=ImportQueries.offset(page,size);long count=get(id).totalLinhas();
-        return new Pagina<>(jdbc.query(LINES+" LIMIT ? OFFSET ?",this::mapLine,id,size,offset),page,size,count,pages(count,size));
+        get(id);
+        var result=SearchPage.page(jdbc,"SELECT l.*,p.nome nome_produto FROM linha_plano l JOIN produto p ON p.id=l.produto_id WHERE l.plano_id=?","codigo_produto,periodo,produto_id",this::mapLine,page,size,"codigo_produto,nome_produto","periodo",id);
+        return new Pagina<>(result.items(),page,size,result.total(),result.pages());
     }
     public void export(long id,Writer writer)throws IOException {
         get(id);

@@ -20,6 +20,12 @@ public class UtilizadorController {
         this.repository = repository;
     }
 
+    @GetMapping
+    public pt.tiagodias.sop.scenarios.ScenarioDtos.Pagina<IdentityService.UtilizadorDto> list(
+            @RequestParam(defaultValue="0") int page,@RequestParam(defaultValue="50") int size) {
+        return service.list(page,size);
+    }
+
     @GetMapping("/{id}")
     public IdentityService.UtilizadorDto get(@PathVariable Long id) {
         return repository.findById(id).map(IdentityService::dto)

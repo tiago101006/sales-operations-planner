@@ -1,5 +1,6 @@
 package pt.tiagodias.sop.forecasting;
 
+import pt.tiagodias.sop.shared.SearchPage;
 import java.sql.*;
 import java.time.*;
 import java.time.temporal.ChronoUnit;
@@ -40,28 +41,21 @@ public class ForecastQueries {
     }
 
     public Pagina<ExecucaoDto> list(int page, int size) {
-        int offset = ImportQueries.offset(page, size);
-        long count = jdbc.queryForObject("SELECT COUNT(*) FROM execucao_previsao", Long.class);
-        return new Pagina<>(jdbc.query(HEADER + " ORDER BY e.id DESC LIMIT ? OFFSET ?", this::map, size, offset), page, size, count, pages(count, size));
+
+        var result=SearchPage.page(jdbc,HEADER,"id DESC",this::map,page,size,"id,metodo_pedido,estado,tipo_serie,lote_historico_id","criado_em");
+        return new Pagina<>(result.items(),page,size,result.total(),result.pages());
     }
 
     public Pagina<LinhaDto> lines(long id, int page, int size) {
-        int offset = ImportQueries.offset(page, size);
-        YearMonth last = YearMonth.parse(get(id).ultimoPeriodoTreino());
-        long count = jdbc.queryForObject("SELECT COUNT(*) FROM linha_previsao WHERE execucao_id=?", Long.class, id);
-        return new Pagina<>(jdbc.query("SELECT l.*,p.codigo,p.unidade FROM linha_previsao l JOIN produto p ON p.id=l.produto_id WHERE l.execucao_id=? ORDER BY p.codigo,l.periodo LIMIT ? OFFSET ?",
-                (rs, n) -> new LinhaDto(rs.getString("produto_id"), rs.getString("codigo"), rs.getString("unidade"),
-                        rs.getDate("periodo").toLocalDate().toString().substring(0, 7),
-                        (int) ChronoUnit.MONTHS.between(last, YearMonth.from(rs.getDate("periodo").toLocalDate())),
-                        rs.getBigDecimal("quantidade_base").setScale(4).toPlainString()), id, size, offset), page, size, count, pages(count, size));
+        YearMonth last=YearMonth.parse(get(id).ultimoPeriodoTreino());
+        var result=SearchPage.page(jdbc,"SELECT l.*,p.codigo,p.nome nome_produto,p.unidade FROM linha_previsao l JOIN produto p ON p.id=l.produto_id WHERE l.execucao_id=?","codigo,periodo",(rs,n)->new LinhaDto(rs.getString("produto_id"),rs.getString("codigo"),rs.getString("unidade"),rs.getDate("periodo").toLocalDate().toString().substring(0,7),(int)ChronoUnit.MONTHS.between(last,YearMonth.from(rs.getDate("periodo").toLocalDate())),rs.getBigDecimal("quantidade_base").setScale(4).toPlainString()),page,size,"codigo,nome_produto","periodo",id);
+        return new Pagina<>(result.items(),page,size,result.total(),result.pages());
     }
 
     public Pagina<DiagnosticoDto> diagnostics(long id, int page, int size) {
-        int offset = ImportQueries.offset(page, size); get(id);
-        long count = jdbc.queryForObject("SELECT COUNT(*) FROM execucao_produto WHERE execucao_id=?", Long.class, id);
-        return new Pagina<>(jdbc.query("SELECT ep.*,p.codigo FROM execucao_produto ep JOIN produto p ON p.id=ep.produto_id WHERE ep.execucao_id=? ORDER BY p.codigo LIMIT ? OFFSET ?",
-                (rs, n) -> new DiagnosticoDto(rs.getString("produto_id"), rs.getString("codigo"), rs.getString("estado"), rs.getString("metodo_aplicado"), rs.getString("diagnostico"), json.readTree(rs.getString("parametros_aplicados"))),
-                id, size, offset), page, size, count, pages(count, size));
+        get(id);
+        var result=SearchPage.page(jdbc,"SELECT ep.*,p.codigo,p.nome nome_produto FROM execucao_produto ep JOIN produto p ON p.id=ep.produto_id WHERE ep.execucao_id=?","codigo",(rs,n)->new DiagnosticoDto(rs.getString("produto_id"),rs.getString("codigo"),rs.getString("estado"),rs.getString("metodo_aplicado"),rs.getString("diagnostico"),json.readTree(rs.getString("parametros_aplicados"))),page,size,"codigo,nome_produto,estado,metodo_aplicado,diagnostico",null,id);
+        return new Pagina<>(result.items(),page,size,result.total(),result.pages());
     }
     private static int pages(long total, int size) { return (int) ((total + size - 1) / size); }
 }

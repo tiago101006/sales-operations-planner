@@ -102,6 +102,11 @@ async function render() {
   if (!document.querySelector('.shell')) shell();
   const current = route(), active = aliases[current.name] || current.name;
   const permission = routes.find(r => r[0] === active);
+  state.tableFilters = {};
+  for (const [name, value] of current.params) {
+    const match = /^f_([A-Za-z]+)_(busca|desde|ate)$/.exec(name);
+    if (match) (state.tableFilters[match[1]] ||= {})[match[2]] = value;
+  }
   const main = document.querySelector('#conteudo');const version = ++epoch;
   hideChartTooltip();
   document.querySelectorAll('[data-nav]').forEach(el => { el.classList.toggle('active', el.dataset.nav === active); if (el.dataset.nav === active) el.setAttribute('aria-current', 'page'); else el.removeAttribute('aria-current'); });
@@ -114,7 +119,7 @@ async function render() {
     const html = await views[current.name](current.name === 'cenarios' ? current.params : current.id, current.params);
     if (version === epoch && state.user) { if (typeof html === 'string') main.innerHTML = html; else { Object.assign(state, html.context);main.innerHTML = html.html; } }
   } catch (error) {
-    if (version === epoch && state.user) main.innerHTML = `<div class="info error" role="alert">${esc(error.message)}</div>${b('Tentar atualizar', 'refresh')}`;
+    if (version === epoch && state.user) main.innerHTML = `<div class="info error" role="alert">${esc(error.message)}</div>${b('Tentar atualizar', 'refresh')}${Object.keys(state.tableFilters).length ? b('Limpar filtros e voltar à lista', 'reset-search') : ''}`;
   }
 }
 api.onUnauthorized = () => { if (state.user) logoutView('A sessão terminou. Volta a entrar para continuar.'); };
@@ -350,6 +355,18 @@ async function command(form, context) {
 document.addEventListener('submit', async event => {
   const form = event.target;if (!(form instanceof HTMLFormElement)) return;
   event.preventDefault();if (form.dataset.busy || !form.reportValidity()) return;
+  if (form.dataset.searchKey) {
+    const key = form.dataset.searchKey, values = new FormData(form), current = route();
+    const from = String(values.get('desde') || ''), to = String(values.get('ate') || '');
+    if ([from, to].some(value => value && (!/^[1-9][0-9]{3}-(0[1-9]|1[0-2])$/.test(value) || value === '9999-12'))) { notify('Indica um mês completo no formato AAAA-MM.');return; }
+    if (from && to && from > to) { notify('O mês inicial não pode ser posterior ao final.');return; }
+    for (const field of ['busca', 'desde', 'ate']) {
+      const value = String(values.get(field) || '').trim();
+      if (value) current.params.set(`f_${key}_${field}`, value);else current.params.delete(`f_${key}_${field}`);
+    }
+    state.pages[key] = 0;
+    return navigate(current.name + (current.id ? '/' + current.id : '') + (current.params.toString() ? '?' + current.params : ''));
+  }
   if (form.id === 'product-search') { state.search = String(new FormData(form).get('q') || '').trim();state.pages.products = 0;return render(); }
   if (form.id === 'user-lookup') {
     try { const value = await api.get('/utilizadores/' + encodeURIComponent(new FormData(form).get('userId')));const box = document.querySelector('#user-result');if (box) box.innerHTML = table(['ID', 'Nome', 'Email', 'Papéis'], [[esc(value.id), esc(value.nome), esc(value.email), value.papeis.map(p => esc(label(p))).join(', ')]]); }
@@ -400,6 +417,20 @@ document.addEventListener('click', async event => {
       case 'edit-product': await dialog('product', { id: target.dataset.id });break;
       case 'adjust': await dialog('adjust', { cell: state.revisionCells[Number(target.dataset.index)] });break;
       case 'download': target.disabled = true;await api.download(target.dataset.id);notify('Download do CSV preparado.');break;
+      case 'reset-search': {
+        const current = route();
+        for (const key of [...current.params.keys()]) if (/^f_/.test(key)) current.params.delete(key);
+        state.pages = {};
+        navigate(current.name + (current.id ? '/' + current.id : '') + (current.params.toString() ? '?' + current.params : ''));break;
+      }
+      case 'clear-table-search': {
+        const current = route(), key = target.dataset.key;
+        for (const field of ['busca', 'desde', 'ate']) current.params.delete(`f_${key}_${field}`);
+        state.pages[key] = 0;navigate(current.name + (current.id ? '/' + current.id : '') + (current.params.toString() ? '?' + current.params : ''));break;
+      }
+      case 'lookup-user': {
+        const form = document.querySelector('#user-lookup');form.querySelector('[name=userId]').value = target.dataset.id;form.requestSubmit();break;
+      }
       case 'clear-search': state.search = '';state.pages.products = 0;await render();break;
       case 'remove-compare': state.compareIds = state.compareIds.filter(id => id !== target.dataset.id);if (state.compareIds.length < 2) state.comparison = null;await render();break;
       case 'compare': if (state.compareIds.length < 2) throw new Error('Seleciona pelo menos duas revisões.');state.comparison = true;state.pages.comparison = 0;await render();break;

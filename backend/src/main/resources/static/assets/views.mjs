@@ -9,7 +9,15 @@ export { miniChart };
 
 export function createViews(ctx) {
   const { api, state, writer } = ctx;
-  const page = (key, path) => api.get(`${path}${path.includes('?') ? '&' : '?'}size=20&page=${state.pages[key] || 0}`);
+  const noMonths = new Set(['products', 'diagnostics', 'lotRowsErrors', 'backtestGroups', 'team']);
+  const filterParams = key => {
+    const values = state.tableFilters?.[key] || {};
+    const params = new URLSearchParams();
+    for (const field of ['busca', 'desde', 'ate']) if (values[field]) params.set(field, values[field]);
+    return params.toString();
+  };
+  const searchable = (data, key) => ({ ...data, search: key === 'products' ? null : { key, values: state.tableFilters?.[key] || {}, months: !noMonths.has(key) } });
+  const page = async (key, path) => searchable(await api.get(`${path}${path.includes('?') ? '&' : '?'}size=20&page=${state.pages[key] || 0}&${filterParams(key)}`), key);
   const heading = (eyebrow, title, subtitle, actions = '', attributes = '') => `<div class="page-heading" ${attributes}><div><div class="eyebrow">${eyebrow}</div><h1>${title}</h1>${subtitle ? (/^(Cenário #|Origem:|Otimista ·|Conservador ·|Base ·|Personalizado ·)/.test(subtitle) ? `<p class="heading-context">${subtitle}</p>` : `<details class="page-context"><summary>Sobre esta área</summary><p>${subtitle}</p></details>`) : ''}</div><div class="actions">${actions}</div></div>`;
   const newButton = (text, kind, extra = '') => writer() ? b(icon('plus', 16) + text, 'dialog', `data-kind="${kind}" ${extra}`, 'primary') : '';
   const back = (route, text) => `<a class="back" href="#/${route}">← ${text}</a>`;
@@ -53,7 +61,7 @@ export function createViews(ctx) {
     return `<div class="workbench">` + heading('Planear', 'Espaço de planeamento', '', '<a class="btn" href="#/importacoes">Importar dados</a><a class="btn primary" href="#/previsoes">Gerar previsões</a>') +
       hero('Em preparação', hasDrafts ? 'O planeamento<br>continua aqui.' : 'Prepara<br>a primeira previsão.', hasDrafts ? 'Retoma um rascunho ou explora outra hipótese.' : 'Começa com os dados. Constrói as tuas alternativas.', (hasDrafts ? '<a class="btn" href="#/cenarios">Explorar cenários ' : '<a class="btn" href="#/previsoes">Gerar previsões ') + icon('arrow', 16) + '</a>', drafts.totalElements, 'rascunhos da equipa') +
       planningRoute([['importacoes', 'Dados', lots.totalElements, 'lotes'], ['previsoes', 'Previsão', forecasts.totalElements, 'execuções'], ['cenarios', 'Cenários', cases.totalElements, 'hipóteses'], ['planos', 'Plano', plans.totalElements, 'publicados']]) +
-      `<div class="overview-columns"><div>${panel('Revisões em preparação', 'Mais recentes primeiro · toda a equipa', revisionRows(drafts) + pager(drafts, 'draftRevisions'))}</div><aside>${panel('Revisões devolvidas', returned.totalElements ? 'A corrigir numa nova revisão' : '', revisionRows(returned) + (returned.totalElements ? pager(returned, 'returnedRevisions') : ''))}${workSummary([['A aguardar aprovação', pending.totalElements], ['Planos publicados', plans.totalElements]])}${overviewHelp('Como continuo uma revisão devolvida?', 'Abre a revisão, consulta o motivo e cria uma nova revisão para corrigir. A anterior fica preservada.')}</aside></div></div>`;
+      `<div class="overview-columns"><div>${panel('Revisões em preparação', 'Mais recentes primeiro · toda a equipa', revisionRows(drafts) + pager(drafts, 'draftRevisions'))}</div><aside>${panel('Revisões devolvidas', returned.totalElements ? 'A corrigir numa nova revisão' : '', revisionRows(returned) + pager(returned, 'returnedRevisions'))}${workSummary([['A aguardar aprovação', pending.totalElements], ['Planos publicados', plans.totalElements]])}${overviewHelp('Como continuo uma revisão devolvida?', 'Abre a revisão, consulta o motivo e cria uma nova revisão para corrigir. A anterior fica preservada.')}</aside></div></div>`;
   }
 
   async function consultationOverview() {
@@ -119,7 +127,7 @@ export function createViews(ctx) {
     const lot = await api.get(`/lotes/${id}`);
     const rejected = lot.estado === 'REJEITADO';
     const kind = rejected ? 'erros' : lot.tipo === 'OPERACIONAL' ? 'operacionais' : 'observacoes';
-    const data = await page('lotRows', `/lotes/${id}/${kind}`);
+    const data = await page(rejected ? 'lotRowsErrors' : 'lotRows', `/lotes/${id}/${kind}`);
     let rows, headers;
     if (rejected) { headers = ['Registo CSV', 'Campo', 'Diagnóstico']; rows = data.items.map(e => [esc(e.numeroLinha), esc(e.campo), `<strong>${esc(e.codigo)}</strong><small>${esc(e.mensagem)}</small>`]); }
     else if (kind === 'operacionais') {
@@ -129,7 +137,7 @@ export function createViews(ctx) {
     const forecastAction = lot.tipo === 'HISTORICO' && lot.estado === 'VALIDADO' ? newButton('Gerar previsão', 'forecast', `data-history="${esc(lot.id)}"`) : '';
     return back('importacoes', 'Importações') + heading('Lote #' + esc(id), esc(lot.nomeFicheiro), 'Origem: ' + esc(lot.origem), badge(lot.estado) + forecastAction) +
       panel('Proveniência', '', meta([['Tipo', esc(label(lot.tipo))], ['Recebido', esc(date(lot.importadoEm))], ['Registos', esc(lot.totalLinhas)], ['Erros', esc(lot.totalErros)], ['Corrige lote', esc(lot.substituiLoteId || '—')]]) + `<div class="detail-description"><small>SHA-256</small><br><code>${esc(lot.sha256)}</code></div>`) +
-      panel(rejected ? 'Diagnósticos da importação' : 'Registos validados', rejected ? 'Corrige o ficheiro e importa um lote novo.' : 'Consulta dos dados, sem alterar o lote.', table(headers, rows) + pager(data, 'lotRows'));
+      panel(rejected ? 'Diagnósticos da importação' : 'Registos validados', rejected ? 'Corrige o ficheiro e importa um lote novo.' : 'Consulta dos dados, sem alterar o lote.', table(headers, rows) + pager(data, rejected ? 'lotRowsErrors' : 'lotRows'));
   }
 
   async function forecasts() {
@@ -170,12 +178,12 @@ export function createViews(ctx) {
     for (const c of data.items) state.compareNames[c.ultimaRevisaoId] = c.nome;
     let result = '';
     if (state.comparison && state.compareIds.length >= 2) {
-      const comparison = await api.get(`/comparacao-cenarios?revisaoIds=${state.compareIds.map(encodeURIComponent).join(',')}&size=10&page=${state.pages.comparison || 0}`);
+      const comparison = await api.get(`/comparacao-cenarios?revisaoIds=${state.compareIds.map(encodeURIComponent).join(',')}&size=10&page=${state.pages.comparison || 0}&${filterParams('comparison')}`);
       const revisions = await Promise.all(comparison.revisoes.map(async r => ({ ...r, cenarioNome: state.compareNames[r.id] || (await api.get(`/cenarios/${r.cenarioId}`)).nome })));
       const headers = ['Produto / mês', 'Previsão base', ...revisions.map(r => `${esc(r.cenarioNome)}<br><small>${esc(revisionCaption(r))}</small>`)];
       const first = comparison.produtos.items[0];
       result = panel('Comparação de cenários', 'Compara as quantidades finais das revisões selecionadas. Os desvios são calculados face à previsão base.', (first ? lineChart(first.periodos.map(p => p.periodo), [{ name: 'Previsão base · ' + first.produto, values: first.periodos.map(p => p.quantidadeBase) }, ...revisions.map((r, i) => ({ name: r.cenarioNome + ' · revisão #' + r.id, values: first.periodos.map(p => p.cenarios[i].quantidadeFinal) }))]) : '') +
-        `<div class="comparison">${table(headers, comparison.produtos.items.flatMap(p => p.periodos.map(period => [`<strong>${esc(p.produto)}</strong><small>${esc(month(period.periodo))} · ${esc(p.unidade)}</small>`, q(period.quantidadeBase), ...period.cenarios.map(c => `<strong class="num">${q(c.quantidadeFinal)}</strong><small>Desvio ${percent(c.desvioPercentual)}</small>`)])))}</div>` + pager(comparison.produtos, 'comparison'));
+        `<div class="comparison">${table(headers, comparison.produtos.items.flatMap(p => p.periodos.map(period => [`<strong>${esc(p.produto)}</strong><small>${esc(month(period.periodo))} · ${esc(p.unidade)}</small>`, q(period.quantidadeBase), ...period.cenarios.map(c => `<strong class="num">${q(c.quantidadeFinal)}</strong><small>Desvio ${percent(c.desvioPercentual)}</small>`)])))}</div>` + pager(searchable(comparison.produtos, 'comparison'), 'comparison'));
     }
     return heading('Explorar alternativas', 'Cenários', 'Cria hipóteses de procura e compara-as com a previsão base.', newButton('Novo cenário', 'scenario', `data-execution="${esc(id)}"`)) + scenarioHelp() +
       panel('Cenários da previsão #' + esc(id), 'Seleciona de 2 a 5 cenários. A comparação usa a última revisão de cada um.', `<div class="scenario-source">${field('Previsão de origem', select('scenarioExecution', executions.map(e => [e.id, `#${e.id} · ${label(e.metodo)} · treino até ${e.ultimoPeriodoTreino}`]), id))}<a class="btn small" href="#/previsao/${esc(id)}">Ver previsão</a></div>` + table(['Comparar', 'Cenário', 'Tipo', 'Revisões guardadas', 'Criado', ''], data.items.map(c => [`<input aria-label="Comparar última revisão de ${esc(c.nome)}" type="checkbox" data-compare="${esc(c.ultimaRevisaoId)}" ${state.compareIds.includes(c.ultimaRevisaoId) ? 'checked' : ''}>`, `<strong>${esc(c.nome)}</strong><small>Cenário #${esc(c.id)}</small>`, esc(label(c.tipo)), esc(c.numeroRevisoes), esc(date(c.criadoEm)), `<a class="btn small" href="#/revisao/${esc(c.ultimaRevisaoId)}">Ver cenário</a>`])) + pager(data, 'scenarios') + `<div class="panel-body"><div class="actions">${state.compareIds.map(r => b(esc(state.compareNames[r] || 'Revisão #' + r) + ' ×', 'remove-compare', `data-id="${esc(r)}"`, 'small')).join('')}${b('Comparar selecionadas', 'compare', state.compareIds.length < 2 ? 'disabled' : '', 'primary')}</div></div>`) + result;
@@ -197,6 +205,7 @@ export function createViews(ctx) {
   async function revision(id) {
     const [r, lines, adjustments, events] = await Promise.all([api.get(`/revisoes/${id}`), page('revisionLines', `/revisoes/${id}/linhas`), api.all(`/revisoes/${id}/ajustes?incluirHerdados=true`), page('events', `/revisoes/${id}/eventos`)]);
     const c = await api.get(`/cenarios/${r.cenarioId}`);
+    const audit = await page('audit', `/revisoes/${id}/ajustes?incluirHerdados=true`);
     const canDecide = ctx.approver() && independent(state.user, r, adjustments);
     const actions = (writer() ? b('Novo cenário', 'dialog', `data-kind="scenario" data-execution="${esc(r.execucaoId)}"`) + b('Criar nova revisão', 'dialog', 'data-kind="copy" title="Guardar outra versão deste mesmo cenário"') : '') + (writer() && r.estado === 'RASCUNHO' ? b('Enviar para aprovação', 'dialog', 'data-kind="submit"', 'primary') : '') +
       (canDecide && r.estado === 'EM_REVISAO' ? b('Devolver', 'dialog', 'data-kind="return"', 'danger') + b('Aprovar e publicar', 'dialog', 'data-kind="approve"', 'primary') : '');
@@ -207,8 +216,8 @@ export function createViews(ctx) {
       panel('Pressupostos desta revisão', '', meta([['Estado', badge(r.estado)], ['Fator', q(factorValue(r.fator))], ['Previsão', '#' + esc(r.execucaoId)], ['Origem', r.revisaoOrigemId ? `<a href="#/revisao/${esc(r.revisaoOrigemId)}">Revisão #${esc(r.revisaoOrigemId)}</a>` : 'Previsão base'], ['Enviada para aprovação', esc(date(r.submetidoEm))]]) + `<p class="detail-description">${esc(r.pressupostos.descricao)}</p><div class="panel-body"><a class="btn small" href="#/cenario/${esc(c.id)}?revisaoId=${esc(r.id)}">Histórico de revisões deste cenário</a></div>`) +
       panel('Evolução do cenário' + (first ? ' · ' + esc(first.produto) : ''), first ? 'Primeiro produto da página · ' + esc(first.unidade) : '', first ? lineChart(points.map(p => p.periodo), [{ name: 'Base', values: points.map(p => p.quantidadeBase) }, { name: 'Calculada', values: points.map(p => p.quantidadeCalculada) }, { name: 'Final', values: points.map(p => p.quantidadeFinal) }]) : empty('Sem linhas')) +
       panel('Quantidades por mês', 'Ajustes disponíveis apenas em rascunho.', table(['Produto / mês', 'Base', 'Calculada', 'Final', 'Desvio', ''], lines.items.map((l, i) => [`<strong>${esc(l.produto)}</strong><small>${esc(month(l.periodo))} · ${esc(l.unidade)}</small>`, q(l.quantidadeBase), q(l.quantidadeCalculada), `<strong class="num">${q(l.quantidadeFinal)}</strong>`, percent(l.desvioPercentual), writer() && r.estado === 'RASCUNHO' ? b('Ajustar', 'adjust', `data-index="${i}"`, 'small') : '<span class="muted">Consulta</span>'])) + pager(lines, 'revisionLines')) +
-      panel('Auditoria dos ajustes', 'Inclui os ajustes herdados que foram conservados no momento da cópia.', table(['Mês / produto', 'Anterior → novo', 'Justificação', 'Autor', 'Origem'], adjustments.map(a => [esc(month(a.periodo)) + '<small>Produto #' + esc(a.produtoId) + '</small>', `<span class="num">${q(a.valorAnterior)} → ${q(a.valorNovo)}</span>`, esc(a.justificacao), esc(a.autorNome) + '<small>' + esc(date(a.ocorridoEm)) + '</small>', a.herdado ? `<a href="#/revisao/${esc(a.revisaoId)}">Herdado · #${esc(a.revisaoId)}</a>` : 'Esta revisão'])), '', ) +
-      panel('Linha temporal', 'Eventos locais desta revisão.', events.items.length ? `<div class="timeline">${events.items.map(e => `<div class="event"><i class="dot"></i><div><p><strong>${esc(label(e.tipo))}</strong> · ${esc(e.autorNome)}</p><small>${esc(e.motivo || '')}</small></div><time>${esc(date(e.ocorridoEm))}</time></div>`).join('')}</div>` + pager(events, 'events') : empty('Sem eventos')) };
+      panel('Auditoria dos ajustes', 'Inclui os ajustes herdados que foram conservados no momento da cópia.', table(['Mês / produto', 'Anterior → novo', 'Justificação', 'Autor', 'Origem'], audit.items.map(a => [esc(month(a.periodo)) + '<small>Produto #' + esc(a.produtoId) + '</small>', `<span class="num">${q(a.valorAnterior)} → ${q(a.valorNovo)}</span>`, esc(a.justificacao), esc(a.autorNome) + '<small>' + esc(date(a.ocorridoEm)) + '</small>', a.herdado ? `<a href="#/revisao/${esc(a.revisaoId)}">Herdado · #${esc(a.revisaoId)}</a>` : 'Esta revisão'])) + pager(audit, 'audit'), '', ) +
+      panel('Linha temporal', 'Eventos locais desta revisão.', (events.items.length ? `<div class="timeline">${events.items.map(e => `<div class="event"><i class="dot"></i><div><p><strong>${esc(label(e.tipo))}</strong> · ${esc(e.autorNome)}</p><small>${esc(e.motivo || '')}</small></div><time>${esc(date(e.ocorridoEm))}</time></div>`).join('')}</div>` : empty('Sem eventos')) + pager(events, 'events')) };
   }
 
   async function plans() {
@@ -247,7 +256,9 @@ export function createViews(ctx) {
   }
 
   async function team() {
+    const users = await page('team', '/utilizadores');
     return heading('Acesso e responsabilidades', 'Equipa', 'Cria contas com os papéis necessários. A aprovação exige independência de quem preparou ou ajustou a revisão.', b(icon('plus', 16) + 'Criar utilizador', 'dialog', 'data-kind="user"', 'primary')) +
+      panel('Membros da equipa', 'Consulta reservada ao administrador.', table(['Nome', 'Email', 'Perfis', ''], users.items.map(u => [esc(u.nome), esc(u.email), esc(u.papeis.map(label).join(' · ')), rowAction('Consultar', 'lookup-user', u.id)])) + pager(users, 'team')) +
       panel('Consultar utilizador', 'A consulta é feita por identificador.', `<form id="user-lookup" class="toolbar">${field('Identificador', input('userId', 'text', '', 'required pattern="[1-9][0-9]*" inputmode="numeric" placeholder="Ex.: 2"'))}<button class="btn" type="submit">Consultar</button></form><div id="user-result"></div>`) +
       panel('Responsabilidades', '', table(['Papel', 'Responsabilidade'], [['Administrador', 'Gere contas e prepara dados e planos. Não aprova automaticamente.'], ['Planeador', 'Importa, prevê, cria cenários, ajusta e submete revisões.'], ['Comercial', 'Consulta dados, cenários e resultados.'], ['Aprovador', 'Aprova ou devolve revisões em que não interveio.'], ['Consumidor', 'Consulta catálogo, planos publicados e monitorização.']].map(r => r.map(esc))));
   }

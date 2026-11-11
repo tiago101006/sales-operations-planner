@@ -196,6 +196,15 @@ primeiro produto da página. Consultar a tabela para os restantes registos.
 As ajudas **Sobre esta área**, os ícones de informação e as explicações expansíveis
 podem ser abertas quando necessário. A tabela e a auditoria mantêm o detalhe.
 
+## Encontrar registos nas tabelas
+
+Usar a pesquisa da própria tabela para procurar em todas as páginas. Nos registos
+de produtos, pesquisar pelo código ou nome e limitar os meses quando necessário.
+Pesquisar reinicia a primeira página; Limpar filtros recupera os resultados.
+Os filtros permanecem ao atualizar a página e não alteram os dados originais.
+O CSV do plano continua a exportar todas as linhas. Ver [campos por secção](pesquisa-filtros.md).
+Na Equipa, o ADMIN pode procurar membros pelo nome, email ou perfil.
+
 ## Problemas frequentes
 
 | Situação | Como proceder |

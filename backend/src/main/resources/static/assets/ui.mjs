@@ -60,22 +60,42 @@ export const empty = (title, detail = '') => `<div class="empty">${icon('layers'
 export const table = (headers, rows, title = 'Ainda não há registos', detail = 'Os registos aparecem aqui depois de serem criados.') => rows.length ? `<div class="table-wrap"><table><thead><tr>${headers.map(h => `<th scope="col">${h}</th>`).join('')}</tr></thead><tbody>${rows.map(row => `<tr>${row.map(cell => `<td>${cell ?? '—'}</td>`).join('')}</tr>`).join('')}</tbody></table></div>` : empty(title, detail);
 export const panel = (title, subtitle, content, actions = '') => {
   const context = subtitle && subtitle.length <= 80 && !/[.!?]$/.test(subtitle);
-  return `<section class="panel"><div class="panel-head"><div><h2>${title}</h2>${context ? `<p class="panel-caption">${subtitle}</p>` : ''}</div><div class="actions">${subtitle && !context ? `<details class="panel-context"><summary aria-label="Sobre esta secção: ${esc(title)}" title="Sobre esta secção">${icon('info', 15)}<span>Sobre esta secção</span></summary><p>${subtitle}</p></details>` : ''}${actions}</div></div>${content}</section>`;
+  const filters = [];
+  content = content.replace(/<form class="table-search"[\s\S]*?<\/form>/g, form => { filters.push(form);return ''; });
+  if (filters.some(form => /value="[^"<>]+"/.test(form)) && content.includes('class="empty"')) {
+    content = content.replace(/<div class="empty">[\s\S]*?<\/div>/g, empty('Nenhum resultado para estes filtros', 'Altera a pesquisa ou usa Limpar filtros.'));
+  }
+  return `<section class="panel"><div class="panel-head"><div><h2>${title}</h2>${context ? `<p class="panel-caption">${subtitle}</p>` : ''}</div><div class="actions">${subtitle && !context ? `<details class="panel-context"><summary aria-label="Sobre esta secção: ${esc(title)}" title="Sobre esta secção">${icon('info', 15)}<span>Sobre esta secção</span></summary><p>${subtitle}</p></details>` : ''}${actions}</div></div>${filters.join('')}${content}</section>`;
 };
 export const metric = (name, value, note, tone = '') => `<article class="metric ${tone}"><p>${esc(name)}</p><strong>${esc(value)}</strong><small>${esc(note)}</small></article>`;
-export const pager = (data, key) => `<div class="pagination"><span>${esc(data.totalElements)} registos · Página ${data.page + 1} de ${Math.max(1, data.totalPages)}</span><div>${button('Anterior', 'page', `data-key="${key}" data-page="${data.page - 1}" ${data.page <= 0 ? 'disabled' : ''}`)}${button('Seguinte', 'page', `data-key="${key}" data-page="${data.page + 1}" ${data.page + 1 >= data.totalPages ? 'disabled' : ''}`)}</div></div>`;
+const tableSearch = search => {
+  if (!search) return '';
+  const { key, values, months } = search;
+  const hint = key === 'lots' ? 'N.º do lote (ex.: #1), ficheiro ou origem' : key === 'team' ? 'Nome, email, perfil ou ID (ex.: #1)' : ['forecastLines', 'lotRows', 'revisionLines', 'planLines', 'comparison', 'backtestCells', 'backtestGroups', 'assessmentCells', 'diagnostics', 'audit'].includes(key) ? 'Código de produto (ex.: SKU001 ou DEMO100), nome ou texto' : 'Número (ex.: #1), nome ou texto';
+  return `<form class="table-search" data-search-key="${esc(key)}">${field('Pesquisar nesta tabela', input('busca', 'search', values.busca || '', `maxlength="160" placeholder="${esc(hint)}"`))}${months ? field('Mês inicial', input('desde', 'month', values.desde || '')) + field('Mês final', input('ate', 'month', values.ate || '')) : ''}<button type="submit" class="btn">Pesquisar</button>${button('Limpar filtros', 'clear-table-search', `data-key="${esc(key)}"`)}<span class="search-scope">Pesquisa em todas as páginas</span></form>`;
+};
+export const pager = (data, key) => `${tableSearch(data.search)}<div class="pagination"><span>${esc(data.totalElements)} registos · Página ${data.page + 1} de ${Math.max(1, data.totalPages)}</span><div>${button('Anterior', 'page', `data-key="${key}" data-page="${data.page - 1}" ${data.page <= 0 ? 'disabled' : ''}`)}${button('Seguinte', 'page', `data-key="${key}" data-page="${data.page + 1}" ${data.page + 1 >= data.totalPages ? 'disabled' : ''}`)}</div></div>`;
 let chartId = 0;
+export function chartScale(numbers) {
+  const low = Math.min(...numbers), high = Math.max(...numbers);
+  const span = high - low || Math.max(Math.abs(high) * .02, 1);
+  let min = low - span * .15, max = high + span * .15;
+  if (low >= 0) min = Math.max(0, min);
+  const raw = (max - min) / 4, power = 10 ** Math.floor(Math.log10(raw));
+  const step = [1, 2, 2.5, 5, 10].find(n => n * power >= raw) * power;
+  min = Math.floor(min / step) * step;max = Math.ceil(max / step) * step;
+  return { min, max, step, ticks: Array.from({ length: Math.round((max - min) / step) + 1 }, (_, i) => min + i * step) };
+}
 export function lineChart(periods, series, description = 'Quantidades por mês', { area = false } = {}) {
   const numbers = series.flatMap(s => s.values).filter(v => v !== null && v !== undefined).map(Number).filter(Number.isFinite);
   if (!numbers.length) return empty('Sem valores para representar', 'Consulta a cobertura e os motivos de exclusão.');
   const tooltipId = 'chart-tooltip-' + (++chartId);
   const width = 800, height = 250, left = 70, right = 22, top = 20, bottom = 45;
-  const max = Math.max(1, ...numbers) * 1.12, min = Math.min(0, ...numbers);
+  const { min, max, step, ticks } = chartScale(numbers);
   const x = i => left + i * (width - left - right) / Math.max(1, periods.length - 1);
   const y = v => height - bottom - (Number(v) - min) * (height - top - bottom) / (max - min);
-  const grid = Array.from({ length: 5 }, (_, i) => {
-    const v = min + (max - min) * i / 4;
-    return `<line x1="${left}" x2="${width - right}" y1="${y(v)}" y2="${y(v)}" stroke="#e8eeec"/><text x="${left - 12}" y="${y(v) + 4}" text-anchor="end">${esc(new Intl.NumberFormat('pt-PT', { maximumFractionDigits: 1 }).format(v))}</text>`;
+  const grid = ticks.map(v => {
+    return `<line x1="${left}" x2="${width - right}" y1="${y(v)}" y2="${y(v)}" stroke="#e8eeec"/><text x="${left - 12}" y="${y(v) + 4}" text-anchor="end">${esc(new Intl.NumberFormat('pt-PT', { maximumFractionDigits: Math.min(10, Math.max(0, 1 - Math.floor(Math.log10(step)))) }).format(v))}</text>`;
   }).join('');
   const colors = ['#23786a', '#b28142', '#7b9b92', '#7769ad', '#be6670'];
   const paths = series.map((s, index) => {
@@ -92,5 +112,5 @@ export function lineChart(periods, series, description = 'Quantidades por mês',
       return `<circle class="chart-point" data-chart-point data-index="${i}" data-period="${esc(period)}" data-series="${esc(s.name)}" data-value="${esc(value)}" data-color="${color}" cx="${x(i)}" cy="${y(v)}" r="4" fill="white" stroke="${color}" stroke-width="2" tabindex="0" role="img" aria-label="${esc(s.name)} · ${esc(period)}: ${esc(value)}"><title>${esc(s.name)} · ${esc(periods[i])}: ${esc(value)}</title></circle>`;
     }).join('');
   }).join('');
-  return `<div class="chart" data-chart-model="${esc(JSON.stringify({ periods, series }))}"><div class="legend">${series.map((s, i) => `<span><i class="line-${i % colors.length}"></i>${esc(s.name)}</span>`).join('')}</div><svg viewBox="0 0 ${width} ${height}" role="group" aria-label="${esc(description)}"><rect class="chart-hit-area" x="70" y="20" width="708" height="185" fill="transparent"/>${grid}${periods.map((p, i) => `<text x="${x(i)}" y="${height - 12}" text-anchor="middle">${esc(month(p))}</text>`).join('')}${paths}<line class="chart-guide" x1="70" x2="70" y1="20" y2="205" visibility="hidden" pointer-events="none"/></svg><div class="chart-tooltip" id="${tooltipId}" role="tooltip" hidden><span class="chart-tooltip-period"></span><div class="chart-tooltip-rows"></div></div></div>`;
+  return `<div class="chart" data-chart-model="${esc(JSON.stringify({ periods, series }))}"><div class="chart-scale-note">Escala vertical ajustada aos valores</div><div class="legend">${series.map((s, i) => `<span><i class="line-${i % colors.length}"></i>${esc(s.name)}</span>`).join('')}</div><svg viewBox="0 0 ${width} ${height}" role="group" aria-label="${esc(description)}"><rect class="chart-hit-area" x="70" y="20" width="708" height="185" fill="transparent"/>${grid}${periods.map((p, i) => `<text x="${x(i)}" y="${height - 12}" text-anchor="middle">${esc(month(p))}</text>`).join('')}${paths}<line class="chart-guide" x1="70" x2="70" y1="20" y2="205" visibility="hidden" pointer-events="none"/></svg><div class="chart-tooltip" id="${tooltipId}" role="tooltip" hidden><span class="chart-tooltip-period"></span><div class="chart-tooltip-rows"></div></div></div>`;
 }

@@ -1,0 +1,52 @@
+{
+  "versao": 1,
+  "sintetico": true,
+  "semente": 42,
+  "referencia": "2026-11-11",
+  "produtos": 100,
+  "padroes": {
+    "ESTAVEL": 20,
+    "TENDENCIA": 20,
+    "SAZONAL": 20,
+    "INTERMITENTE": 20,
+    "CAMPANHA": 20
+  },
+  "unidade": "un",
+  "treino": {
+    "inicio": "2023-08",
+    "fim": "2026-07",
+    "meses": 36,
+    "linhas": 3600
+  },
+  "atual": {
+    "inicio": "2023-11",
+    "fim": "2026-10",
+    "meses": 36,
+    "linhas": 3600
+  },
+  "avaliacao_retrospetiva": {
+    "inicio": "2026-08",
+    "fim": "2026-10",
+    "realizados": 299,
+    "operacionais": 300
+  },
+  "faltas_intencionais": [
+    "DEMO005: realizado do último mês ausente",
+    "DEMO006: stock de fecho do último mês ausente"
+  ],
+  "nota": "Campanhas e sazonalidade são padrões sintéticos, não importações de promoções/calendários. O catálogo usa a API de produtos. Dados diários são evidência, não CSV importável. Planos criados agora conservam a data real de publicação.",
+  "sha256": {
+    "evidencia_diaria.csv": "096e4b07447266137f858f04663c33b17912d8f13997bf8afef7ac3bbc06e06b",
+    "historico_atual.csv": "d011f69639fb6a4e02a2b7ceda3e4517b9e4d8b6830502a5d343440e1b7572d9",
+    "historico_treino.csv": "5f13e31d4efcdcc76fc397b7bf68db194fc4e3db306de10c3af16fa69519b5b0",
+    "invalidos/duplicados.csv": "ad3b960d89c3fd32207fcff7f79a4fdee724c6e50e041eddb138559f76dce142",
+    "invalidos/periodo_invalido.csv": "ea07a60bc1b7b10cf388ca13ac6ef2053737a9ba258f40f31363d579e29347cd",
+    "invalidos/produto_desconhecido.csv": "7bedab773185e234a3f8be62809b683efc73ed27b1db9e3ebee09b4f8c337776",
+    "invalidos/quantidade_negativa.csv": "8eed4569cb74618324166c2c9a108f40cb13505560be767f09fc9736688cb16c",
+    "invalidos/unidade_incompativel.csv": "e13943c32a9355fe395efe5d19ed6a27e55978a22be9f93e3d8b2ede6760706b",
+    "operacionais.csv": "b26f924640b5fce8e391df5d9cedfb8f2fedd80aa3268fa6be4a0c12f1213f3c",
+    "produtos.csv": "13dcc8a9a817483c2e1b32522041758e1ef27ef1b22cb1612370671b724d85c3",
+    "produtos.json": "6f4a3b3d98da1ec760dce32c2a023ea03fe62a265ba56b7ed67cd3257073d05d",
+    "realizados.csv": "b601b1f4e67c1a21e0724fd3775c419cc9149613cc08259352df18a8bfbc34c5"
+  }
+}

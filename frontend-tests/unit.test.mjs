@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { esc, quantity, percent, factorValue, independent, role, lineChart, lastMonth } from '../backend/src/main/resources/static/assets/ui.mjs';
+import { esc, quantity, percent, factorValue, independent, role, lineChart, chartScale, lastMonth } from '../backend/src/main/resources/static/assets/ui.mjs';
 import { Api, ApiError } from '../backend/src/main/resources/static/assets/api.mjs';
 import { summarize } from './performance-stats.mjs';
 
@@ -72,5 +72,16 @@ test('performance summary keeps outliers and uses the 29th sorted value for p95 
 test('performance summary refuses missing, invalid or negative durations', () => {
   for (const values of [Array(29).fill(1), [NaN, ...Array(29).fill(1)], [Infinity, ...Array(29).fill(1)], [-1, ...Array(29).fill(1)]]) {
     assert.throws(() => summarize(values), /30 medições válidas/);
+  }
+});
+
+test('chart scale fits all series with padding and handles constant, zero and negative values', () => {
+  const range = chartScale([23.4382, 23.8311, 24.2239, 26.782, 26.2142, 26.6463]);
+  assert.ok(range.min > 0 && range.min < 23.4382 && range.max > 26.782);
+  assert.ok(range.max - range.min < 10);
+  for (const values of [[0, 0], [24, 24], [-3, -1], [.00001, .00002]]) {
+    const r = chartScale(values);
+    assert.ok(r.max > r.min && r.min <= Math.min(...values) && r.max >= Math.max(...values));
+    assert.ok(r.ticks.every(Number.isFinite));
   }
 });

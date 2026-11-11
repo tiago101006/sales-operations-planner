@@ -1,5 +1,6 @@
 package pt.tiagodias.sop.evaluation;
 
+import pt.tiagodias.sop.shared.SearchPage;
 import java.math.BigDecimal;
 import java.sql.*;
 import java.time.*;
@@ -20,7 +21,7 @@ public class BacktestQueries {
     private final JsonMapper json=JsonMapper.builder().build();
     public BacktestQueries(JdbcTemplate jdbc,ImportQueries lots) { this.jdbc=jdbc;this.lots=lots; }
     private static final String HEADER="SELECT b.*,(SELECT COUNT(*) FROM backtest_celula c WHERE c.backtest_id=b.id) total FROM backtest b ";
-    private static final String CELLS="SELECT c.*,p.codigo,p.unidade,o.quantidade realizado FROM backtest_celula c JOIN produto p ON p.id=c.produto_id LEFT JOIN observacao o ON o.id=c.observacao_id WHERE c.backtest_id=? ";
+    private static final String CELLS="SELECT c.*,p.codigo,p.nome nome_produto,p.unidade,o.quantidade realizado FROM backtest_celula c JOIN produto p ON p.id=c.produto_id LEFT JOIN observacao o ON o.id=c.observacao_id WHERE c.backtest_id=? ";
     private BacktestDto header(ResultSet rs,int n)throws SQLException {
         return new BacktestDto(rs.getString("id"),rs.getString("lote_id"),rs.getString("lote_sha256"),rs.getString("tipo_serie"),rs.getString("modo"),
                 month(rs,"primeiro_corte"),month(rs,"ultimo_corte"),rs.getInt("horizonte_meses"),ImportQueries.instant(rs,"corte_realizados"),
@@ -31,8 +32,9 @@ public class BacktestQueries {
         return jdbc.query(HEADER+"WHERE b.id=?",this::header,id).stream().findFirst().orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Backtest não encontrado."));
     }
     public Pagina<BacktestDto> list(int page,int size) {
-        int offset=ImportQueries.offset(page,size);long count=jdbc.queryForObject("SELECT COUNT(*) FROM backtest",Long.class);
-        return new Pagina<>(jdbc.query(HEADER+"ORDER BY b.id DESC LIMIT ? OFFSET ?",this::header,size,offset),page,size,count,pages(count,size));
+
+        var result=SearchPage.page(jdbc,HEADER,"id DESC",this::header,page,size,"id,lote_id,estado,tipo_serie","criado_em");
+        return new Pagina<>(result.items(),page,size,result.total(),result.pages());
     }
     private CelulaDto cell(ResultSet rs,int n)throws SQLException {
         var actual=rs.getBigDecimal("realizado");var mm=rs.getBigDecimal("previsao_mm");var ets=rs.getBigDecimal("previsao_ets");
@@ -44,14 +46,16 @@ public class BacktestQueries {
                 json.readTree(rs.getString("parametros_mm")),json.readTree(rs.getString("parametros_ets")),comparable,comparable && actual.signum()!=0);
     }
     public Pagina<CelulaDto> cells(long id,int page,int size) {
-        int offset=ImportQueries.offset(page,size);long count=get(id).totalCelulas();
-        return new Pagina<>(jdbc.query(CELLS+"ORDER BY p.codigo,c.corte,c.horizonte LIMIT ? OFFSET ?",this::cell,id,size,offset),page,size,count,pages(count,size));
+        get(id);
+        var result=SearchPage.page(jdbc,CELLS,"codigo,corte,horizonte",this::cell,page,size,"codigo,nome_produto,estado_mm,estado_ets","periodo",id);
+        return new Pagina<>(result.items(),page,size,result.total(),result.pages());
     }
     private record Key(String id,String code,String unit,int horizon) {}
     public Pagina<GrupoDto> comparison(long id,int page,int size) {
         int offset=ImportQueries.offset(page,size);
         if(!get(id).versaoCalculo().equals(CommonMetrics.VERSION)) { throw new ResponseStatusException(HttpStatus.CONFLICT,"Versão de cálculo não suportada."); }
-        var data=jdbc.query(CELLS+"ORDER BY p.codigo,c.horizonte,c.corte",this::cell,id);
+        var filter=SearchPage.filter(CELLS,"codigo,nome_produto",null,id);
+        var data=jdbc.query(filter.sql()+" ORDER BY codigo,horizonte,corte",this::cell,filter.args());
         var grouped=new LinkedHashMap<Key,List<CommonMetrics.Pair>>();
         for(var row:data) {
             var key=new Key(row.produtoId(),row.produto(),row.unidade(),row.horizonte());

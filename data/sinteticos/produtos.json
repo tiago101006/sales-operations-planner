@@ -1,0 +1,502 @@
+[
+  {
+    "codigo": "DEMO001",
+    "nome": "Arroz — embalagem 1 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO002",
+    "nome": "Massa — embalagem 1 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO003",
+    "nome": "Farinha — embalagem 1 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO004",
+    "nome": "Azeite — embalagem 1 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO005",
+    "nome": "Leite — embalagem 1 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO006",
+    "nome": "Café — embalagem 1 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO007",
+    "nome": "Chá — embalagem 1 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO008",
+    "nome": "Bolachas — embalagem 1 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO009",
+    "nome": "Cereais — embalagem 1 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO010",
+    "nome": "Água — embalagem 1 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO011",
+    "nome": "Sumo — embalagem 1 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO012",
+    "nome": "Atum — embalagem 1 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO013",
+    "nome": "Feijão — embalagem 1 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO014",
+    "nome": "Grão — embalagem 1 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO015",
+    "nome": "Açúcar — embalagem 1 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO016",
+    "nome": "Sal — embalagem 1 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO017",
+    "nome": "Detergente — embalagem 1 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO018",
+    "nome": "Sabão — embalagem 1 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO019",
+    "nome": "Guardanapos — embalagem 1 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO020",
+    "nome": "Papel de cozinha — embalagem 1 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO021",
+    "nome": "Arroz — embalagem 2 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO022",
+    "nome": "Massa — embalagem 2 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO023",
+    "nome": "Farinha — embalagem 2 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO024",
+    "nome": "Azeite — embalagem 2 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO025",
+    "nome": "Leite — embalagem 2 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO026",
+    "nome": "Café — embalagem 2 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO027",
+    "nome": "Chá — embalagem 2 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO028",
+    "nome": "Bolachas — embalagem 2 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO029",
+    "nome": "Cereais — embalagem 2 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO030",
+    "nome": "Água — embalagem 2 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO031",
+    "nome": "Sumo — embalagem 2 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO032",
+    "nome": "Atum — embalagem 2 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO033",
+    "nome": "Feijão — embalagem 2 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO034",
+    "nome": "Grão — embalagem 2 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO035",
+    "nome": "Açúcar — embalagem 2 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO036",
+    "nome": "Sal — embalagem 2 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO037",
+    "nome": "Detergente — embalagem 2 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO038",
+    "nome": "Sabão — embalagem 2 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO039",
+    "nome": "Guardanapos — embalagem 2 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO040",
+    "nome": "Papel de cozinha — embalagem 2 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO041",
+    "nome": "Arroz — embalagem 3 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO042",
+    "nome": "Massa — embalagem 3 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO043",
+    "nome": "Farinha — embalagem 3 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO044",
+    "nome": "Azeite — embalagem 3 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO045",
+    "nome": "Leite — embalagem 3 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO046",
+    "nome": "Café — embalagem 3 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO047",
+    "nome": "Chá — embalagem 3 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO048",
+    "nome": "Bolachas — embalagem 3 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO049",
+    "nome": "Cereais — embalagem 3 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO050",
+    "nome": "Água — embalagem 3 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO051",
+    "nome": "Sumo — embalagem 3 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO052",
+    "nome": "Atum — embalagem 3 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO053",
+    "nome": "Feijão — embalagem 3 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO054",
+    "nome": "Grão — embalagem 3 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO055",
+    "nome": "Açúcar — embalagem 3 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO056",
+    "nome": "Sal — embalagem 3 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO057",
+    "nome": "Detergente — embalagem 3 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO058",
+    "nome": "Sabão — embalagem 3 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO059",
+    "nome": "Guardanapos — embalagem 3 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO060",
+    "nome": "Papel de cozinha — embalagem 3 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO061",
+    "nome": "Arroz — embalagem 4 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO062",
+    "nome": "Massa — embalagem 4 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO063",
+    "nome": "Farinha — embalagem 4 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO064",
+    "nome": "Azeite — embalagem 4 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO065",
+    "nome": "Leite — embalagem 4 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO066",
+    "nome": "Café — embalagem 4 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO067",
+    "nome": "Chá — embalagem 4 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO068",
+    "nome": "Bolachas — embalagem 4 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO069",
+    "nome": "Cereais — embalagem 4 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO070",
+    "nome": "Água — embalagem 4 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO071",
+    "nome": "Sumo — embalagem 4 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO072",
+    "nome": "Atum — embalagem 4 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO073",
+    "nome": "Feijão — embalagem 4 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO074",
+    "nome": "Grão — embalagem 4 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO075",
+    "nome": "Açúcar — embalagem 4 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO076",
+    "nome": "Sal — embalagem 4 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO077",
+    "nome": "Detergente — embalagem 4 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO078",
+    "nome": "Sabão — embalagem 4 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO079",
+    "nome": "Guardanapos — embalagem 4 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO080",
+    "nome": "Papel de cozinha — embalagem 4 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO081",
+    "nome": "Arroz — embalagem 5 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO082",
+    "nome": "Massa — embalagem 5 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO083",
+    "nome": "Farinha — embalagem 5 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO084",
+    "nome": "Azeite — embalagem 5 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO085",
+    "nome": "Leite — embalagem 5 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO086",
+    "nome": "Café — embalagem 5 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO087",
+    "nome": "Chá — embalagem 5 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO088",
+    "nome": "Bolachas — embalagem 5 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO089",
+    "nome": "Cereais — embalagem 5 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO090",
+    "nome": "Água — embalagem 5 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO091",
+    "nome": "Sumo — embalagem 5 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO092",
+    "nome": "Atum — embalagem 5 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO093",
+    "nome": "Feijão — embalagem 5 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO094",
+    "nome": "Grão — embalagem 5 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO095",
+    "nome": "Açúcar — embalagem 5 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO096",
+    "nome": "Sal — embalagem 5 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO097",
+    "nome": "Detergente — embalagem 5 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO098",
+    "nome": "Sabão — embalagem 5 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO099",
+    "nome": "Guardanapos — embalagem 5 (sintético)",
+    "unidade": "un"
+  },
+  {
+    "codigo": "DEMO100",
+    "nome": "Papel de cozinha — embalagem 5 (sintético)",
+    "unidade": "un"
+  }
+]

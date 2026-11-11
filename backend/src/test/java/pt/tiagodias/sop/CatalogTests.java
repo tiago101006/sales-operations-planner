@@ -71,6 +71,19 @@ class CatalogTests {
     private String unique() { return "T-" + UUID.randomUUID(); }
 
     @Test
+    void listsTeamOnlyForAdminWithoutAuthenticationSecrets() throws Exception {
+        var response=admin.request("GET","/api/v1/utilizadores?busca=Administrador&size=1",null,false);
+        assertThat(response.statusCode()).isEqualTo(200);
+        var data=json.readTree(response.body());
+        assertThat(data.get("totalElements").asInt()).isEqualTo(1);
+        assertThat(data.get("items").get(0).get("email").asText()).isEqualTo("admin@catalog.test");
+        assertThat(data.get("items").get(0).size()).isEqualTo(4);
+        assertThat(response.body()).doesNotContain("password", "hash");
+        assertThat(new Browser().request("GET","/api/v1/utilizadores",null,false).statusCode()).isEqualTo(401);
+        assertThat(login("planeador@catalog.test").request("GET","/api/v1/utilizadores",null,false).statusCode()).isEqualTo(403);
+    }
+
+    @Test
     void restrictsWritesByRoleAndRequiresCsrf() throws Exception {
         assertThat(new Browser().request("GET", "/api/v1/produtos", null, false).statusCode()).isEqualTo(401);
         var product = create(unique(), "Permissoes");

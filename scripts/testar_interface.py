@@ -21,7 +21,7 @@ from datetime import datetime, timezone
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def main(performance_seed=None):
+def main(performance_seed=None, validation_seed=None):
     performance = performance_seed is not None
     for executable in ['java', 'docker', 'node', 'npm']:
         if shutil.which(executable) is None:
@@ -36,7 +36,7 @@ def main(performance_seed=None):
     database = None
     server = None
     work = tempfile.TemporaryDirectory(prefix='sop-interface-')
-    logs = ROOT / 'tmp' / ('performance-tests' if performance else 'interface-tests')
+    logs = ROOT / 'tmp' / ('performance-tests' if performance else 'dataset-tests' if validation_seed is not None else 'interface-tests')
     if performance:
         logs = logs / (datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ-') + secrets.token_hex(3))
     logs.mkdir(parents=True, exist_ok=True)
@@ -109,6 +109,10 @@ def main(performance_seed=None):
                 return json.loads(raw) if raw else None
 
         request('POST', '/api/v1/auth/login', {'email': 'admin@ui.test', 'password': password})
+        if validation_seed is not None:
+            validation_seed(request)
+            print('Conjunto sintético verificado na API/MySQL isolados.', flush=True)
+            return
         if performance:
             metadata = performance_seed(request)
             mysql = subprocess.check_output(['docker', 'exec', database, 'sh', '-c',

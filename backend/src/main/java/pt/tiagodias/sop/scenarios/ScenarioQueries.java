@@ -1,5 +1,6 @@
 package pt.tiagodias.sop.scenarios;
 
+import pt.tiagodias.sop.shared.SearchPage;
 import java.math.*;
 import java.sql.*;
 import java.util.*;
@@ -22,7 +23,7 @@ public class ScenarioQueries {
     public ScenarioQueries(JdbcTemplate jdbc) { this.jdbc=jdbc;this.named=new NamedParameterJdbcTemplate(jdbc); }
     private static final String CENARIO="SELECT c.*,(SELECT COUNT(*) FROM revisao_cenario r WHERE r.cenario_id=c.id) revisoes,(SELECT r.id FROM revisao_cenario r WHERE r.cenario_id=c.id ORDER BY r.numero DESC LIMIT 1) ultima FROM cenario c ";
     private static final String REVISAO="SELECT r.*,(SELECT COUNT(*) FROM linha_cenario l WHERE l.revisao_id=r.id) linhas,(SELECT COUNT(*) FROM ajuste a WHERE a.revisao_id=r.id) ajustes FROM revisao_cenario r ";
-    private static final String LINHAS="SELECT l.*,p.codigo,p.unidade,b.quantidade_base FROM linha_cenario l JOIN produto p ON p.id=l.produto_id JOIN linha_previsao b ON b.execucao_id=l.execucao_id AND b.produto_id=l.produto_id AND b.periodo=l.periodo ";
+    private static final String LINHAS="SELECT l.*,p.codigo,p.nome nome_produto,p.unidade,b.quantidade_base FROM linha_cenario l JOIN produto p ON p.id=l.produto_id JOIN linha_previsao b ON b.execucao_id=l.execucao_id AND b.produto_id=l.produto_id AND b.periodo=l.periodo ";
     private static final String AJUSTES="SELECT a.*,e.autor_id,u.nome autor_nome,e.ocorrido_em FROM ajuste a JOIN evento_revisao e ON e.id=a.evento_id JOIN utilizador u ON u.id=e.autor_id ";
     private static final String CHAIN="""
             WITH RECURSIVE cadeia AS (
@@ -46,36 +47,29 @@ public class ScenarioQueries {
     public CenarioDto cenario(long id) { return jdbc.query(CENARIO+"WHERE c.id=?",this::mapCenario,id).stream().findFirst().orElseThrow(()->missing("Cenário")); }
     public RevisaoDto revisao(long id) { return jdbc.query(REVISAO+"WHERE r.id=?",this::mapRevisao,id).stream().findFirst().orElseThrow(()->missing("Revisão")); }
     public Pagina<CenarioDto> cenarios(Long execution,int page,int size) {
-        int offset=ImportQueries.offset(page,size);String where=execution==null?"":"WHERE c.execucao_id=? ";
-        Object[] args=execution==null?new Object[]{}:new Object[]{execution};
-        long count=jdbc.queryForObject("SELECT COUNT(*) FROM cenario c "+where,Long.class,args);
-        var values=new ArrayList<>(Arrays.asList(args));values.add(size);values.add(offset);
-        return new Pagina<>(jdbc.query(CENARIO+where+"ORDER BY c.id DESC LIMIT ? OFFSET ?",this::mapCenario,values.toArray()),page,size,count,pages(count,size));
+        String where=execution==null?"":"WHERE c.execucao_id=? ";Object[] args=execution==null?new Object[0]:new Object[]{execution};
+        var result=SearchPage.page(jdbc,CENARIO+where,"id DESC",this::mapCenario,page,size,"id,nome,tipo","criado_em",args);
+        return new Pagina<>(result.items(),page,size,result.total(),result.pages());
     }
     public Pagina<RevisaoDto> revisoes(long scenario,int page,int size) {
-        int offset=ImportQueries.offset(page,size);cenario(scenario);
-        long count=jdbc.queryForObject("SELECT COUNT(*) FROM revisao_cenario WHERE cenario_id=?",Long.class,scenario);
-        return new Pagina<>(jdbc.query(REVISAO+"WHERE r.cenario_id=? ORDER BY r.numero DESC LIMIT ? OFFSET ?",this::mapRevisao,scenario,size,offset),page,size,count,pages(count,size));
+        cenario(scenario);
+        var result=SearchPage.page(jdbc,REVISAO+"WHERE r.cenario_id=?","numero DESC",this::mapRevisao,page,size,"id,numero,estado","criado_em",scenario);
+        return new Pagina<>(result.items(),page,size,result.total(),result.pages());
     }
     public Pagina<ResumoRevisaoDto> fila(String state,int page,int size) {
-        int offset=ImportQueries.offset(page,size);
-        if(!Set.of("RASCUNHO","EM_REVISAO","DEVOLVIDA","APROVADA").contains(state)) {
-            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,"Estado de revisão inválido.");
-        }
-        long count=jdbc.queryForObject("SELECT COUNT(*) FROM revisao_cenario WHERE estado=?",Long.class,state);
-        String order=state.equals("EM_REVISAO")?"r.submetido_em ASC,r.id ASC":"r.criado_em DESC,r.id DESC";
-        var rows=jdbc.query(REVISAO.replace("SELECT r.*", "SELECT c.nome cenario_nome,u.nome autor_nome,r.*")+
-                "JOIN cenario c ON c.id=r.cenario_id JOIN utilizador u ON u.id=r.criado_por WHERE r.estado=? ORDER BY "+order+" LIMIT ? OFFSET ?",
-                (rs,n)->new ResumoRevisaoDto(mapRevisao(rs,n),rs.getString("cenario_nome"),rs.getString("autor_nome")),state,size,offset);
-        return new Pagina<>(rows,page,size,count,pages(count,size));
+        if(!Set.of("RASCUNHO","EM_REVISAO","DEVOLVIDA","APROVADA").contains(state)) throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,"Estado de revisão inválido.");
+        String order=state.equals("EM_REVISAO")?"submetido_em ASC,id ASC":"criado_em DESC,id DESC";
+        var result=SearchPage.page(jdbc,REVISAO.replace("SELECT r.*","SELECT c.nome cenario_nome,u.nome autor_nome,r.*")+"JOIN cenario c ON c.id=r.cenario_id JOIN utilizador u ON u.id=r.criado_por WHERE r.estado=?",order,(rs,n)->new ResumoRevisaoDto(mapRevisao(rs,n),rs.getString("cenario_nome"),rs.getString("autor_nome")),page,size,"id,cenario_nome,autor_nome,estado","criado_em",state);
+        return new Pagina<>(result.items(),page,size,result.total(),result.pages());
     }
     private LinhaDto line(ResultSet rs,int n)throws SQLException {
         var base=rs.getBigDecimal("quantidade_base");var value=rs.getBigDecimal("quantidade_final");
         return new LinhaDto(rs.getString("produto_id"),rs.getString("codigo"),rs.getString("unidade"),month(rs,"periodo"),decimal(base),decimal(rs.getBigDecimal("quantidade_calculada")),decimal(value),decimal(value.subtract(base)),percent(base,value));
     }
     public Pagina<LinhaDto> linhas(long revision,int page,int size) {
-        int offset=ImportQueries.offset(page,size);long count=revisao(revision).totalLinhas();
-        return new Pagina<>(jdbc.query(LINHAS+"WHERE l.revisao_id=? ORDER BY p.codigo,l.periodo LIMIT ? OFFSET ?",this::line,revision,size,offset),page,size,count,pages(count,size));
+        revisao(revision);
+        var result=SearchPage.page(jdbc,LINHAS+"WHERE l.revisao_id=?","codigo,periodo",this::line,page,size,"codigo,nome_produto","periodo",revision);
+        return new Pagina<>(result.items(),page,size,result.total(),result.pages());
     }
     private AjusteDto ajuste(ResultSet rs,long context)throws SQLException {
         return new AjusteDto(rs.getString("id"),rs.getString("evento_id"),rs.getString("revisao_id"),rs.getString("produto_id"),month(rs,"periodo"),rs.getInt("sequencia"),
@@ -83,16 +77,14 @@ public class ScenarioQueries {
     }
     public AjusteDto ajuste(long id,long context) { return jdbc.query(AJUSTES+"WHERE a.id=?",(rs,n)->ajuste(rs,context),id).stream().findFirst().orElseThrow(()->missing("Ajuste")); }
     public Pagina<AjusteDto> ajustes(long revision,boolean inherited,int page,int size) {
-        int offset=ImportQueries.offset(page,size);revisao(revision);
-        String filter=" JOIN cadeia c ON c.id=a.revisao_id WHERE a.id<=c.limite ";
-        long count=jdbc.queryForObject(CHAIN+"SELECT COUNT(*) FROM ajuste a"+filter,Long.class,revision,inherited);
-        return new Pagina<>(jdbc.query(CHAIN+AJUSTES+filter+"ORDER BY c.nivel DESC,a.id LIMIT ? OFFSET ?",(rs,n)->ajuste(rs,revision),revision,inherited,size,offset),page,size,count,pages(count,size));
+        revisao(revision);
+        var result=SearchPage.page(jdbc,CHAIN+AJUSTES.replace("SELECT a.*","SELECT c.nivel nivel,p.codigo,p.nome nome_produto,a.*")+"JOIN cadeia c ON c.id=a.revisao_id JOIN produto p ON p.id=a.produto_id WHERE a.id<=c.limite","nivel DESC,id",(rs,n)->ajuste(rs,revision),page,size,"codigo,nome_produto,autor_nome,justificacao","periodo",revision,inherited);
+        return new Pagina<>(result.items(),page,size,result.total(),result.pages());
     }
     public Pagina<EventoDto> eventos(long revision,int page,int size) {
-        int offset=ImportQueries.offset(page,size);revisao(revision);
-        long count=jdbc.queryForObject("SELECT COUNT(*) FROM evento_revisao WHERE revisao_id=?",Long.class,revision);
-        return new Pagina<>(jdbc.query("SELECT e.*,u.nome autor_nome FROM evento_revisao e JOIN utilizador u ON u.id=e.autor_id WHERE e.revisao_id=? ORDER BY e.id LIMIT ? OFFSET ?",
-                (rs,n)->new EventoDto(rs.getString("id"),rs.getString("revisao_id"),rs.getString("tipo"),rs.getString("autor_id"),rs.getString("autor_nome"),ImportQueries.instant(rs,"ocorrido_em"),rs.getString("motivo")),revision,size,offset),page,size,count,pages(count,size));
+        revisao(revision);
+        var result=SearchPage.page(jdbc,"SELECT e.*,u.nome autor_nome FROM evento_revisao e JOIN utilizador u ON u.id=e.autor_id WHERE e.revisao_id=?","id",(rs,n)->new EventoDto(rs.getString("id"),rs.getString("revisao_id"),rs.getString("tipo"),rs.getString("autor_id"),rs.getString("autor_nome"),ImportQueries.instant(rs,"ocorrido_em"),rs.getString("motivo")),page,size,"tipo,autor_nome,motivo","ocorrido_em",revision);
+        return new Pagina<>(result.items(),page,size,result.total(),result.pages());
     }
     public boolean autorDeAjustes(long revision,long author) {
         // Reuse the exact inheritance boundaries used by the audit API.
@@ -111,16 +103,17 @@ public class ScenarioQueries {
         }
         var headers=revisions.stream().map(this::revisao).toList();String execution=headers.get(0).execucaoId();
         if(headers.stream().anyMatch(r->!r.execucaoId().equals(execution))) { throw new ResponseStatusException(HttpStatus.CONFLICT,"A comparação exige revisões da mesma execução."); }
-        long count=jdbc.queryForObject("SELECT COUNT(DISTINCT produto_id) FROM linha_cenario WHERE revisao_id=?",Long.class,revisions.get(0));
-        var products=jdbc.query("SELECT DISTINCT p.id,p.codigo,p.unidade FROM linha_cenario l JOIN produto p ON p.id=l.produto_id WHERE l.revisao_id=? ORDER BY p.codigo,p.id LIMIT ? OFFSET ?",
-                (rs,n)->new Product(rs.getLong("id"),rs.getString("codigo"),rs.getString("unidade")),revisions.get(0),size,offset);
+        var filter=SearchPage.filter("SELECT p.id,p.codigo,p.nome,p.unidade,l.periodo FROM linha_cenario l JOIN produto p ON p.id=l.produto_id WHERE l.revisao_id=?","codigo,nome","periodo",revisions.get(0));
+        long count=jdbc.queryForObject("SELECT COUNT(DISTINCT id) FROM ("+filter.sql()+") f",Long.class,filter.args());
+        var searchArgs=new ArrayList<Object>(Arrays.asList(filter.args()));searchArgs.add(size);searchArgs.add(offset);
+        var products=jdbc.query("SELECT DISTINCT id,codigo,unidade FROM ("+filter.sql()+") f ORDER BY codigo,id LIMIT ? OFFSET ?",(rs,n)->new Product(rs.getLong("id"),rs.getString("codigo"),rs.getString("unidade")),searchArgs.toArray());
         if(products.isEmpty()) { return new ComparacaoDto(execution,headers,new Pagina<>(List.of(),page,size,count,pages(count,size))); }
         var data=named.query(LINHAS+"WHERE l.revisao_id IN (:revisoes) AND l.produto_id IN (:produtos) ORDER BY p.codigo,l.periodo,l.revisao_id",
                 Map.of("revisoes",revisions,"produtos",products.stream().map(Product::id).toList()),(rs,n)->Map.entry(rs.getLong("revisao_id"),line(rs,n)));
         var output=new ArrayList<ProdutoComparado>();
         for(var product:products) {
             var byMonth=new TreeMap<String,List<Map.Entry<Long,LinhaDto>>>();
-            for(var row:data) { if(row.getValue().produtoId().equals(Long.toString(product.id()))) { byMonth.computeIfAbsent(row.getValue().periodo(),k->new ArrayList<>()).add(row); } }
+            for(var row:data) { if(SearchPage.monthMatches(row.getValue().periodo()) && row.getValue().produtoId().equals(Long.toString(product.id()))) { byMonth.computeIfAbsent(row.getValue().periodo(),k->new ArrayList<>()).add(row); } }
             var periods=new ArrayList<PeriodoComparado>();
             byMonth.forEach((month,rows)->{
                 var values=new ArrayList<ValorComparado>();

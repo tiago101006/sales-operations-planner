@@ -9,7 +9,8 @@ e calcula precisão/operação com cobertura e exclusões temporais. A interface
 integrada também já permite executar o percurso no navegador;
 ver [monitorização](monitorizacao.md) e [interface](interface-web.md).
 Os [painéis por perfil](paineis-perfil.md) distinguem as tarefas dos cinco papéis.
-O conjunto alargado de dados sintéticos fica para a fase final de demonstração.
+O [conjunto alargado de dados sintéticos](dados-demonstracao.md) já está gerado;
+a importação na cópia de demonstração é um passo explícito, separado da geração.
 O [backup e restauro](backup-restauro.md) já dispõe de cópia conjunta MySQL/CSV e
 verificação da recuperação em contentores isolados.
 Este documento conserva o desenho geral; os contratos efetivos e limites de cada
@@ -19,8 +20,8 @@ bloco estão nos documentos específicos ligados no README, incluindo
 descritas abaixo ainda não estão implementadas.
 
 O [manual de utilização](manual-utilizacao.md) e o [plano de adoção](plano-adocao.md)
-estão preparados para a entrega. As sessões com participantes, os dados sintéticos
-alargados e a síntese final de resultados continuam pendentes. A documentação não
+estão preparados para a entrega. As sessões com participantes e a síntese final de resultados continuam pendentes;
+os dados alargados estão preparados para a demonstração. A documentação não
 constitui evidência de adoção por uma equipa real.
 
 ## Convenções comuns
@@ -391,41 +392,15 @@ quando o histórico está validado.
 
 ## Dados sintéticos e testes
 
-Gerador futuro em `scripts/gerar_dados.py`, com semente fixa `42`, manifesto de
-parâmetros e duas saídas separadas: dados válidos e fixtures inválidas. Proposta:
-100 produtos, 36 meses de histórico, três meses reservados para avaliação, com séries
-constantes, tendência, sazonais anuais, intermitentes e eventos promocionais conhecidos.
-Gerar unidades comparáveis por grupo, sem misturar `un`, `kg` e `L` nos totais.
+O gerador `scripts/gerar_dados.py` está implementado com semente 42, referência
+fixa, manifesto e hashes. Produz 100 produtos e dois snapshots de 36 meses,
+resultados de três meses fechados, evidência diária operacional e cinco fixtures
+inválidas. Os ficheiros e o roteiro estão em [dados de demonstração](dados-demonstracao.md).
 
-```text
-data/sinteticos/
-  produtos.csv
-  historico.csv
-  calendario.csv
-  promocoes.csv
-  realizados.csv
-  operacionais.csv
-  manifesto.json
-data/invalidos/
-  duplicados.csv
-  quantidade_negativa.csv
-  produto_desconhecido.csv
-  periodo_invalido.csv
-  unidade_incompativel.csv
-```
-
-Histórico: `produto;periodo;tipo;quantidade;unidade;disponivel_em`.
-Promoções: `produto;inicio;fim;descricao;disponivel_em`.
-Calendário: `periodo;dias_uteis;feriados;disponivel_em`.
-Realizados: `produto;periodo;quantidade;unidade;disponivel_em`.
-Operacionais: `produto;periodo;unidade;unidades_solicitadas;unidades_satisfeitas_no_prazo;dias_observados_com_procura;dias_com_procura_sem_stock;stock_fecho;limite_stock;unidades_perdidas;prazo_medio_dias;disponivel_em`.
-
-Para cada backtest, o snapshot do histórico só inclui meses anteriores ao corte e
-linhas já disponíveis. O gerador deve criar observações diárias subjacentes para os
-contadores de rutura, em vez de inferi-los do stock mensal. Manter os dados diários
-como evidência de teste mesmo que o MVP importe agregados mensais. Inserir zeros
-explícitos e retirar algumas linhas para ensaiar lacunas; não gerar uma quantidade
-vazia como se fosse zero. Guardar datas de conhecimento de promoções.
+A importação explícita usa `scripts/importar_demonstracao.py` pela API;
+`scripts/testar_dados_sinteticos.py` valida num ambiente temporário.
+Não são gerados calendários/promoções importáveis, nem planos retroativos.
+A demonstração não substitui medições com dados reais ou participantes independentes.
 
 Casos essenciais de aceitação: duplicados rejeitados atomicamente; cenários isolados;
 motivo obrigatório; aprovação concorrente única; API/CSV equivalentes; zeros e faltas

@@ -57,6 +57,9 @@ Os restantes perfis têm painéis próprios, descritos em
 o APROVADOR destaca a fila ordenada de decisões; COMERCIAL e CONSUMIDOR encontram
 os planos e os resultados permitidos pelo respetivo papel.
 
+As tabelas paginadas incluem [pesquisa e filtros](pesquisa-filtros.md) no servidor.
+A Equipa dispõe de listagem pesquisável, apenas para ADMIN.
+
 ## Organização visual e navegação
 
 A área de trabalho usa um cabeçalho horizontal com navegação agrupada pelo percurso
@@ -280,3 +283,10 @@ git --no-pager diff --cached --stat
 git commit -m "feat: criar interface web para planeamento e monitorizacao"
 git push
 ```
+
+### Escala vertical dos gráficos
+
+Os gráficos de linhas ajustam o intervalo vertical ao mínimo e máximo de todas
+as séries visíveis, com margem e divisões arredondadas. O eixo pode começar acima
+de zero, indicado junto ao gráfico; os valores dos pontos não são alterados.
+Séries constantes e valores zero mantêm um intervalo válido.

@@ -100,6 +100,27 @@ class ImportTests {
     }
 
     @Test
+    void filtersAcrossPagesWithLiteralSearchAndValidatedMonthRange() throws Exception {
+        var content=new StringBuilder(HEADER);
+        for(int i=0;i<24;i++) content.append(row("SKU-IMPORT",java.time.YearMonth.of(2023,1).plusMonths(i).toString(),"VENDAS",Integer.toString(100+i),"un"));
+        String id=lotId(admin.upload(content.toString()));
+        var byId=json.readTree(admin.get("/api/v1/lotes?busca=%23"+id).body());
+        assertThat(byId.get("totalElements").asInt()).isEqualTo(1);
+        assertThat(byId.get("items").get(0).get("id").asText()).isEqualTo(id);
+        String path="/api/v1/lotes/"+id+"/observacoes";
+        var filtered=json.readTree(admin.get(path+"?busca=Monitor&page=1&size=20").body());
+        assertThat(filtered.get("totalElements").asInt()).isEqualTo(24);
+        assertThat(filtered.get("items").size()).isEqualTo(4);
+        var month=json.readTree(admin.get(path+"?busca=SKU-IMPORT&desde=2023-12&ate=2023-12").body());
+        assertThat(month.get("totalElements").asInt()).isEqualTo(1);
+        assertThat(month.get("items").get(0).get("periodo").asText()).isEqualTo("2023-12");
+        assertThat(json.readTree(admin.get(path+"?busca=%25").body()).get("totalElements").asInt()).isZero();
+        assertThat(admin.get(path+"?desde=2024-13").statusCode()).isEqualTo(422);
+        assertThat(admin.get(path+"?desde=2024-05&ate=2023-01").statusCode()).isEqualTo(422);
+        assertThat(json.readTree(admin.get(path).body()).get("totalElements").asInt()).isEqualTo(24);
+    }
+
+    @Test
     void importsQuotedCsvPreservesZerosGapsProvenanceAndOriginal() throws Exception {
         String content = "\uFEFF" + HEADER + row("\"SKU-IMPORT\"", "2025-01", "VENDAS", "10.25", "un")
                 + row("SKU-IMPORT", "2025-02", "VENDAS", "0", "un") + row("SKU-IMPORT", "2025-04", "VENDAS", "12", "un");

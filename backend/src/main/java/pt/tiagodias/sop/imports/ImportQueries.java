@@ -1,5 +1,6 @@
 package pt.tiagodias.sop.imports;
 
+import pt.tiagodias.sop.shared.SearchPage;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.*;
@@ -41,41 +42,32 @@ public class ImportQueries {
     }
 
     public Pagina<LoteDto> list(int page, int size) {
-        int offset = offset(page, size);
-        long total = jdbc.queryForObject("SELECT COUNT(*) FROM lote", Long.class);
-        return new Pagina<>(jdbc.query(SELECT_LOTE + "ORDER BY l.id DESC LIMIT ? OFFSET ?", this::map, size, offset), page, size, total, pages(total, size));
+
+        var result=SearchPage.page(jdbc,SELECT_LOTE,"id DESC",this::map,page,size,"id,nome_ficheiro,origem,tipo,estado","importado_em");
+        return new Pagina<>(result.items(),page,size,result.total(),result.pages());
     }
 
     public Pagina<Diagnostico> errors(long id, int page, int size) {
-        int offset = offset(page, size);
         get(id);
-        long total = jdbc.queryForObject("SELECT COUNT(*) FROM erro_importacao WHERE lote_id=?", Long.class, id);
-        return new Pagina<>(jdbc.query("SELECT * FROM erro_importacao WHERE lote_id=? ORDER BY id LIMIT ? OFFSET ?",
-                (rs, n) -> new Diagnostico(rs.getLong("numero_linha"), rs.getString("campo"), rs.getString("codigo"), rs.getString("mensagem")),
-                id, size, offset), page, size, total, pages(total, size));
+        var result=SearchPage.page(jdbc,"SELECT * FROM erro_importacao WHERE lote_id=?","id",(rs,n)->new Diagnostico(rs.getLong("numero_linha"),rs.getString("campo"),rs.getString("codigo"),rs.getString("mensagem")),page,size,"numero_linha,campo,codigo,mensagem",null,id);
+        return new Pagina<>(result.items(),page,size,result.total(),result.pages());
     }
 
     public Pagina<ObservacaoDto> observations(long id, int page, int size) {
-        int offset = offset(page, size);
         var lot=get(id);
-        if (!lot.estado().equals("VALIDADO") || !(lot.tipo().equals("HISTORICO") || lot.tipo().equals("REALIZADOS"))) { throw new ResponseStatusException(HttpStatus.CONFLICT, "Consulta observações de HISTORICO/REALIZADOS validado."); }
-        long total = jdbc.queryForObject("SELECT COUNT(*) FROM observacao WHERE lote_id=?", Long.class, id);
-        return new Pagina<>(jdbc.query("SELECT o.*,p.codigo,p.unidade FROM observacao o JOIN produto p ON p.id=o.produto_id WHERE o.lote_id=? ORDER BY p.codigo,o.periodo,o.tipo LIMIT ? OFFSET ?",
-                (rs, n) -> new ObservacaoDto(rs.getString("id"), rs.getString("produto_id"), rs.getString("codigo"),
-                        rs.getDate("periodo").toLocalDate().toString().substring(0, 7), rs.getString("tipo"),
-                        rs.getBigDecimal("quantidade").setScale(4).toPlainString(), rs.getString("unidade"), instant(rs, "disponivel_em")),
-                id, size, offset), page, size, total, pages(total, size));
+        if(!lot.estado().equals("VALIDADO") || !(lot.tipo().equals("HISTORICO") || lot.tipo().equals("REALIZADOS"))) throw new ResponseStatusException(HttpStatus.CONFLICT,"Consulta observações de HISTORICO/REALIZADOS validado.");
+        var result=SearchPage.page(jdbc,"SELECT o.*,p.codigo,p.nome nome_produto,p.unidade FROM observacao o JOIN produto p ON p.id=o.produto_id WHERE o.lote_id=?","codigo,periodo,tipo",(rs,n)->new ObservacaoDto(rs.getString("id"),rs.getString("produto_id"),rs.getString("codigo"),rs.getDate("periodo").toLocalDate().toString().substring(0,7),rs.getString("tipo"),rs.getBigDecimal("quantidade").setScale(4).toPlainString(),rs.getString("unidade"),instant(rs,"disponivel_em")),page,size,"codigo,nome_produto,tipo","periodo",id);
+        return new Pagina<>(result.items(),page,size,result.total(),result.pages());
     }
     public Pagina<ResultadoDto> operational(long id,int page,int size) {
-        int offset=offset(page,size);var lot=get(id);
-        if(!lot.estado().equals("VALIDADO") || !lot.tipo().equals("OPERACIONAL")) { throw new ResponseStatusException(HttpStatus.CONFLICT,"Consulta resultados de um lote OPERACIONAL validado."); }
-        long count=jdbc.queryForObject("SELECT COUNT(*) FROM resultado_operacional WHERE lote_id=?",Long.class,id);
-        var rows=jdbc.query("SELECT o.*,p.codigo,p.unidade FROM resultado_operacional o JOIN produto p ON p.id=o.produto_id WHERE o.lote_id=? ORDER BY p.codigo,o.periodo LIMIT ? OFFSET ?",(rs,n)->{
+        var lot=get(id);
+        if(!lot.estado().equals("VALIDADO") || !lot.tipo().equals("OPERACIONAL")) throw new ResponseStatusException(HttpStatus.CONFLICT,"Consulta resultados de um lote OPERACIONAL validado.");
+        var result=SearchPage.page(jdbc,"SELECT o.*,p.codigo,p.nome nome_produto,p.unidade FROM resultado_operacional o JOIN produto p ON p.id=o.produto_id WHERE o.lote_id=?","codigo,periodo",(rs,n)->{
             var values=new java.util.LinkedHashMap<String,String>();
             for(String field:OutcomeCsvParser.FIELDS) { var value=rs.getBigDecimal(field);values.put(field,value==null?null:value.toPlainString()); }
             return new ResultadoDto(rs.getString("id"),rs.getString("produto_id"),rs.getString("codigo"),rs.getDate("periodo").toLocalDate().toString().substring(0,7),rs.getString("unidade"),instant(rs,"disponivel_em"),values);
-        },id,size,offset);
-        return new Pagina<>(rows,page,size,count,pages(count,size));
+        },page,size,"codigo,nome_produto","periodo",id);
+        return new Pagina<>(result.items(),page,size,result.total(),result.pages());
     }
 
     private static int pages(long total, int size) { return (int) ((total + size - 1) / size); }

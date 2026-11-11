@@ -226,8 +226,20 @@ A V3 acrescenta duas tabelas de backtesting às 21 tabelas iniciais; existe aind
 a tabela técnica `flyway_schema_history`.
 As versões de Flyway e Connector/J são geridas pelo parent Spring Boot.
 
+## Dados da demonstração
+
+O [conjunto sintético reproduzível](docs/dados-demonstracao.md) inclui 100 produtos,
+históricos, realizados, operacionais e fixtures inválidas. A geração não altera
+a base; o importador separado pede as credenciais da cópia local.
+
+```bash
+python3 scripts/gerar_dados.py
+python3 scripts/importar_demonstracao.py
+```
+
 ## Documentação
 
+- [Pesquisa e filtros das tabelas](docs/pesquisa-filtros.md)
 - [Manual de utilização por perfil e percurso completo](docs/manual-utilizacao.md)
 - [Plano de adoção e passagem a utilização](docs/plano-adocao.md)
 
