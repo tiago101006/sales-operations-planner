@@ -31,6 +31,7 @@ export function badge(value) {
   return `<span class="badge ${tone}"><span></span>${esc(label(value))}</span>`;
 }
 const paths = {
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10h.01"/>',
   home: '<path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/>',
   box: '<path d="m12 3 9 5-9 5-9-5 9-5Zm-9 5v10l9 5 9-5V8M12 13v10M7.5 5.5l9 5"/>',
   upload: '<path d="M12 16V3m-5 5 5-5 5 5M4 16v5h16v-5"/>',
@@ -57,7 +58,10 @@ export const input = (name, type = 'text', value = '', attrs = '') => `<input na
 export const select = (name, items, selected = '', required = true) => `<select name="${name}" ${required ? 'required' : ''}><option value="">${required ? 'Selecionar…' : 'Nenhum'}</option>${items.map(([id, text]) => `<option value="${esc(id)}" ${String(id) === String(selected) ? 'selected' : ''}>${esc(text)}</option>`).join('')}</select>`;
 export const empty = (title, detail = '') => `<div class="empty">${icon('layers', 30)}<h3>${esc(title)}</h3><p>${esc(detail)}</p></div>`;
 export const table = (headers, rows, title = 'Ainda não há registos', detail = 'Os registos aparecem aqui depois de serem criados.') => rows.length ? `<div class="table-wrap"><table><thead><tr>${headers.map(h => `<th scope="col">${h}</th>`).join('')}</tr></thead><tbody>${rows.map(row => `<tr>${row.map(cell => `<td>${cell ?? '—'}</td>`).join('')}</tr>`).join('')}</tbody></table></div>` : empty(title, detail);
-export const panel = (title, subtitle, content, actions = '') => `<section class="panel"><div class="panel-head"><div><h2>${title}</h2>${subtitle ? `<p>${subtitle}</p>` : ''}</div><div class="actions">${actions}</div></div>${content}</section>`;
+export const panel = (title, subtitle, content, actions = '') => {
+  const context = subtitle && subtitle.length <= 80 && !/[.!?]$/.test(subtitle);
+  return `<section class="panel"><div class="panel-head"><div><h2>${title}</h2>${context ? `<p class="panel-caption">${subtitle}</p>` : ''}</div><div class="actions">${subtitle && !context ? `<details class="panel-context"><summary aria-label="Sobre esta secção: ${esc(title)}" title="Sobre esta secção">${icon('info', 15)}<span>Sobre esta secção</span></summary><p>${subtitle}</p></details>` : ''}${actions}</div></div>${content}</section>`;
+};
 export const metric = (name, value, note, tone = '') => `<article class="metric ${tone}"><p>${esc(name)}</p><strong>${esc(value)}</strong><small>${esc(note)}</small></article>`;
 export const pager = (data, key) => `<div class="pagination"><span>${esc(data.totalElements)} registos · Página ${data.page + 1} de ${Math.max(1, data.totalPages)}</span><div>${button('Anterior', 'page', `data-key="${key}" data-page="${data.page - 1}" ${data.page <= 0 ? 'disabled' : ''}`)}${button('Seguinte', 'page', `data-key="${key}" data-page="${data.page + 1}" ${data.page + 1 >= data.totalPages ? 'disabled' : ''}`)}</div></div>`;
 export function lineChart(periods, series, description = 'Quantidades por mês', { area = false } = {}) {

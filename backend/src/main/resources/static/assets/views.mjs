@@ -10,7 +10,7 @@ export { miniChart };
 export function createViews(ctx) {
   const { api, state, writer } = ctx;
   const page = (key, path) => api.get(`${path}${path.includes('?') ? '&' : '?'}size=20&page=${state.pages[key] || 0}`);
-  const heading = (eyebrow, title, subtitle, actions = '', attributes = '') => `<div class="page-heading" ${attributes}><div><div class="eyebrow">${eyebrow}</div><h1>${title}</h1><p>${subtitle}</p></div><div class="actions">${actions}</div></div>`;
+  const heading = (eyebrow, title, subtitle, actions = '', attributes = '') => `<div class="page-heading" ${attributes}><div><div class="eyebrow">${eyebrow}</div><h1>${title}</h1>${subtitle ? (/^(Cenário #|Origem:|Otimista ·|Conservador ·|Base ·|Personalizado ·)/.test(subtitle) ? `<p class="heading-context">${subtitle}</p>` : `<details class="page-context"><summary>Sobre esta área</summary><p>${subtitle}</p></details>`) : ''}</div><div class="actions">${actions}</div></div>`;
   const newButton = (text, kind, extra = '') => writer() ? b(icon('plus', 16) + text, 'dialog', `data-kind="${kind}" ${extra}`, 'primary') : '';
   const back = (route, text) => `<a class="back" href="#/${route}">← ${text}</a>`;
 
@@ -21,35 +21,39 @@ export function createViews(ctx) {
     return consultationOverview();
   }
 
-  const planRows = plans => table(['Plano', 'Publicação', 'Linhas', ''], plans.items.map(p => [
-    `<strong>Plano #${esc(p.id)}</strong><small>Revisão #${esc(p.revisaoId)}</small>`, esc(date(p.publicadoEm)), esc(p.totalLinhas), `<a class="btn small" href="#/plano/${esc(p.id)}">Consultar</a>`,
-  ]));
-  const revisionRows = (data, decision = false) => table(['Cenário / revisão', 'Preparada por', decision ? 'Submetida em' : 'Criada em', 'Células', ''], data.items.map(item => {
+  const overviewDate = () => new Intl.DateTimeFormat('pt-PT', { day: 'numeric', month: 'long' }).format(new Date());
+  const planningRoute = stages => `<nav class="planning-route" aria-label="Ciclo de planeamento">${stages.map(([route, name, count, unit], i) => `<a href="#/${route}"><span class="route-number">0${i + 1}</span><span class="route-label">${esc(name)}</span><span class="route-count"><strong>${esc(q(count))}</strong> ${esc(String(count) === '1' ? ({ lotes: 'lote', execuções: 'execução', hipóteses: 'hipótese', publicados: 'publicado' }[unit] || unit) : unit)}</span>${icon('arrow', 16)}</a>`).join('')}</nav>`;
+  const workSummary = values => `<div class="work-summary">${values.map(([name, value, tone = '']) => `<div class="${tone}"><span>${esc(name)}</span><strong>${esc(q(value))}</strong></div>`).join('')}</div>`;
+  const hero = (kicker, title, description, action, signal, signalLabel, tone = '') => `<section class="planning-hero ${tone}" aria-label="Em foco"><div class="hero-copy"><span class="eyebrow">${esc(kicker)}</span><h2>${title}</h2><p>${description}</p><div class="actions">${action}</div></div><div class="hero-signal"><span class="hero-date">${icon('calendar', 15)} ${esc(overviewDate())}</span><strong>${esc(q(signal))}</strong><span>${esc(signalLabel)}</span><svg viewBox="0 0 180 42" aria-hidden="true" fill="none"><path d="M0 31H180M0 12H180" stroke="currentColor" opacity=".12"/><path d="M0 36H32L55 21H91L115 7H180" stroke="currentColor" stroke-width="2"/><circle cx="115" cy="7" r="4" fill="currentColor"/></svg></div></section>`;
+  const planRows = plans => plans.items.length ? `<div class="work-list">${plans.items.map(p => `<a class="work-item" href="#/plano/${esc(p.id)}"><span class="work-symbol">${icon('check', 21)}</span><span class="work-copy"><strong>Plano #${esc(p.id)}</strong><small>Revisão #${esc(p.revisaoId)} · ${esc(date(p.publicadoEm))}</small></span><span class="work-meta">${esc(p.totalLinhas)} quantidades</span><span class="work-open">${icon('arrow', 18)}</span></a>`).join('')}</div>` : empty('Ainda não há planos publicados');
+  const revisionRows = (data, decision = false) => data.items.length ? `<div class="work-list">${data.items.map(item => {
     const r = item.revisao;
-    return [`<strong>${esc(item.cenarioNome)}</strong><small>${esc(revisionCaption(r))}${r.criadoPor === state.user.id ? ' · Criada por ti' : ''}</small>`, esc(item.autorNome), esc(date(decision ? r.submetidoEm : r.criadoEm)), esc(r.totalLinhas), `<a class="btn small" href="#/revisao/${esc(r.id)}">${decision ? 'Analisar' : 'Abrir revisão'}</a>`];
-  }), decision ? 'Sem revisões à espera de decisão' : 'Sem revisões neste estado', decision ? 'As revisões submetidas pela equipa aparecem aqui, das mais antigas para as mais recentes.' : 'O trabalho da equipa aparece aqui à medida que as revisões são criadas.');
+    return `<a class="work-item" href="#/revisao/${esc(r.id)}"><span class="work-symbol ${r.estado === 'DEVOLVIDA' ? 'copper' : ''}">${icon(decision ? 'check' : 'layers', 21)}</span><span class="work-copy"><strong>${esc(item.cenarioNome)}</strong><small>${esc(revisionCaption(r))} · ${esc(item.autorNome)}</small></span><span class="work-meta">${badge(r.estado)}<small>${esc(date(decision ? r.submetidoEm : r.criadoEm))}</small></span><span class="work-open">${icon('arrow', 18)}</span></a>`;
+  }).join('')}</div>` : empty(decision ? 'Sem revisões à espera de decisão' : 'Sem revisões neste estado');
+  const overviewHelp = (summary, text) => `<details class="overview-disclosure"><summary>${summary}</summary><p>${text}</p></details>`;
 
   async function approvalOverview() {
     const [pending, returned, approved, plans] = await Promise.all([
       page('pendingRevisions', '/revisoes?estado=EM_REVISAO'), api.get('/revisoes?estado=DEVOLVIDA&size=1'),
       api.get('/revisoes?estado=APROVADA&size=1'), api.get('/planos?size=5'),
     ]);
-    return heading('Decisão e responsabilidade', 'Centro de aprovações', 'As revisões que aguardam análise e as decisões já publicadas.', b(icon('refresh', 15) + 'Atualizar fila', 'refresh')) +
-      `<div class="metrics">${metric('Em revisão', pending.totalElements, 'Aguardam decisão na equipa', 'highlight')}${metric('Devolvidas', returned.totalElements, 'Revisões preservadas com motivo')}${metric('Aprovadas', approved.totalElements, 'Revisões com decisão de aprovação')}${metric('Planos publicados', plans.totalElements, 'Versões disponíveis para consulta')}</div>` +
-      info('Abre uma revisão para analisar as quantidades, os pressupostos e os ajustes com justificação. A decisão exige independência: não podes aprovar ou devolver uma revisão criada por ti ou com ajustes teus preservados na auditoria.') +
-      panel('Revisões à espera de decisão', 'Toda a equipa · submissões mais antigas primeiro · inclui revisões anteriores do mesmo cenário.', revisionRows(pending, true) + pager(pending, 'pendingRevisions')) +
-      panel('Planos recentes', 'Consulta das decisões publicadas, sem alterar as quantidades aprovadas.', planRows(plans), '<a class="btn link" href="#/planos">Ver todos →</a>');
+    return `<div class="workbench">` + heading('Decidir', 'Centro de aprovações', '', b(icon('refresh', 15) + 'Atualizar fila', 'refresh')) +
+      hero('A decisão é tua', pending.totalElements ? 'Revisões<br>por decidir.' : 'A fila está em dia.', 'Analisa os pressupostos e os ajustes antes de publicar.', '<a class="btn" href="#/planos">Consultar planos ' + icon('arrow', 16) + '</a>', pending.totalElements, 'revisões na fila') +
+      workSummary([['A aguardar aprovação', pending.totalElements], ['Devolvidas', returned.totalElements, 'copper'], ['Aprovadas', approved.totalElements], ['Planos publicados', plans.totalElements]]) +
+      `<div class="overview-columns"><div>${panel('Revisões à espera de decisão', 'Mais antigas primeiro · toda a equipa', revisionRows(pending, true) + pager(pending, 'pendingRevisions'))}</div><aside>${panel('Planos recentes', '', planRows(plans), '<a class="btn link" href="#/planos">Ver todos →</a>')}${overviewHelp('O que posso aprovar?', 'A decisão exige independência: não podes aprovar ou devolver uma revisão criada por ti ou que conserve ajustes teus.')}</aside></div></div>`;
   }
 
   async function planningOverview() {
-    const [drafts, returned, pending, plans] = await Promise.all([
+    const [drafts, returned, pending, plans, lots, forecasts, cases] = await Promise.all([
       page('draftRevisions', '/revisoes?estado=RASCUNHO'), page('returnedRevisions', '/revisoes?estado=DEVOLVIDA'),
-      api.get('/revisoes?estado=EM_REVISAO&size=1'), api.get('/planos?size=1'),
+      api.get('/revisoes?estado=EM_REVISAO&size=1'), api.get('/planos?size=1'), api.get('/lotes?size=1'),
+      api.get('/execucoes-previsao?size=1'), api.get('/cenarios?size=1'),
     ]);
-    return heading('Preparar e acompanhar', 'Espaço de planeamento', 'Continua os rascunhos e prepara a correção das revisões devolvidas.', '<a class="btn" href="#/importacoes">Importar dados</a><a class="btn primary" href="#/previsoes">Gerar previsões</a>') +
-      `<div class="metrics">${metric('Rascunhos', drafts.totalElements, 'Revisões em preparação na equipa', 'highlight')}${metric('Devolvidas', returned.totalElements, 'Consulta o motivo e cria uma revisão')}${metric('Em revisão', pending.totalElements, 'Congeladas enquanto aguardam decisão')}${metric('Planos publicados', plans.totalElements, 'Decisões concluídas pela equipa')}</div>` +
-      panel('Revisões em preparação', 'Rascunhos de toda a equipa · mais recentes primeiro.', revisionRows(drafts) + pager(drafts, 'draftRevisions'), '<a class="btn link" href="#/cenarios">Explorar cenários →</a>') +
-      panel('Revisões devolvidas', 'A revisão original fica preservada. Abre o detalhe, consulta o motivo e cria uma nova revisão para corrigir.', revisionRows(returned) + pager(returned, 'returnedRevisions'));
+    const hasDrafts = drafts.totalElements > 0;
+    return `<div class="workbench">` + heading('Planear', 'Espaço de planeamento', '', '<a class="btn" href="#/importacoes">Importar dados</a><a class="btn primary" href="#/previsoes">Gerar previsões</a>') +
+      hero('Em preparação', hasDrafts ? 'O planeamento<br>continua aqui.' : 'Prepara<br>a primeira previsão.', hasDrafts ? 'Retoma um rascunho ou explora outra hipótese.' : 'Começa com os dados. Constrói as tuas alternativas.', (hasDrafts ? '<a class="btn" href="#/cenarios">Explorar cenários ' : '<a class="btn" href="#/previsoes">Gerar previsões ') + icon('arrow', 16) + '</a>', drafts.totalElements, 'rascunhos da equipa') +
+      planningRoute([['importacoes', 'Dados', lots.totalElements, 'lotes'], ['previsoes', 'Previsão', forecasts.totalElements, 'execuções'], ['cenarios', 'Cenários', cases.totalElements, 'hipóteses'], ['planos', 'Plano', plans.totalElements, 'publicados']]) +
+      `<div class="overview-columns"><div>${panel('Revisões em preparação', 'Mais recentes primeiro · toda a equipa', revisionRows(drafts) + pager(drafts, 'draftRevisions'))}</div><aside>${panel('Revisões devolvidas', returned.totalElements ? 'A corrigir numa nova revisão' : '', revisionRows(returned) + (returned.totalElements ? pager(returned, 'returnedRevisions') : ''))}${workSummary([['A aguardar aprovação', pending.totalElements], ['Planos publicados', plans.totalElements]])}${overviewHelp('Como continuo uma revisão devolvida?', 'Abre a revisão, consulta o motivo e cria uma nova revisão para corrigir. A anterior fica preservada.')}</aside></div></div>`;
   }
 
   async function consultationOverview() {
@@ -59,13 +63,13 @@ export function createViews(ctx) {
       commercial ? api.get('/execucoes-previsao?size=5') : null,
       commercial ? api.get('/cenarios?size=1') : null, commercial ? null : api.get('/produtos?size=1'),
     ]);
-    const cards = commercial ? [metric('Previsões', forecasts.totalElements, 'Execuções para acompanhar a procura', 'highlight'), metric('Cenários', cases.totalElements, 'Alternativas preparadas pela equipa')]
-      : [metric('Produtos', products.totalElements, 'Produtos disponíveis no catálogo', 'highlight'), metric('Avaliações', assessments.totalElements, 'Precisão e operação dos planos')];
-    cards.push(metric('Planos publicados', plans.totalElements, 'Quantidades aprovadas e preservadas'), metric(commercial ? 'Avaliações' : 'Último plano', commercial ? assessments.totalElements : (plans.items[0] ? '#' + plans.items[0].id : '—'), commercial ? 'Resultados com cobertura identificada' : 'Publicação mais recente da equipa'));
-    const focus = commercial ? panel('Previsões recentes', 'Métodos, horizonte e resultados disponíveis para consulta.', table(['Execução', 'Método', 'Horizonte', 'Estado', ''], forecasts.items.map(e => [`#${esc(e.id)}`, esc(label(e.metodo)), `${e.horizonteMeses} meses`, badge(e.estado), `<a class="btn small" href="#/previsao/${esc(e.id)}">Consultar</a>`])), '<a class="btn link" href="#/backtests">Comparar modelos →</a>')
-      : panel('Avaliações recentes', 'Uma métrica sem dados elegíveis continua identificada como indisponível.', table(['Avaliação', 'Plano', 'Período', ''], assessments.items.map(a => [`#${esc(a.id)}`, `Plano #${esc(a.planoId)}`, `${esc(month(a.periodoInicio))} — ${esc(month(a.periodoFim))}`, `<a class="btn small" href="#/avaliacao/${esc(a.id)}">Consultar</a>`])), '<a class="btn link" href="#/monitorizacao">Monitorização →</a>');
-    return heading(commercial ? 'Visão comercial' : 'Consulta da operação', commercial ? 'Acompanhamento comercial' : 'Planos e resultados', commercial ? 'Acompanha a procura prevista, compara alternativas e consulta as decisões da equipa.' : 'Encontra o plano aprovado e acompanha os resultados disponíveis.', commercial ? '<a class="btn primary" href="#/cenarios">Comparar cenários</a>' : '<a class="btn primary" href="#/planos">Consultar planos</a>') +
-      `<div class="metrics">${cards.join('')}</div>` + panel('Planos recentes', 'Versões aprovadas, disponíveis para consulta e exportação CSV.', planRows(plans), '<a class="btn link" href="#/planos">Ver todos →</a>') + focus;
+    const latestPlan = plans.items[0];
+    const focus = commercial ? panel('Previsões recentes', '', forecasts.items.length ? `<div class="work-list">${forecasts.items.map(e => `<a class="work-item" href="#/previsao/${esc(e.id)}"><span class="work-symbol">${icon('trend', 21)}</span><span class="work-copy"><strong>${esc(label(e.metodo))} · #${esc(e.id)}</strong><small>${esc(e.horizonteMeses)} meses · ${esc(month(e.ultimoPeriodoTreino))}</small></span><span class="work-meta">${badge(e.estado)}</span><span class="work-open">${icon('arrow', 18)}</span></a>`).join('')}</div>` : empty('Ainda não há previsões'), '<a class="btn link" href="#/backtests">Comparar modelos →</a>')
+      : panel('Avaliações recentes', '', assessments.items.length ? `<div class="work-list">${assessments.items.map(a => `<a class="work-item" href="#/avaliacao/${esc(a.id)}"><span class="work-symbol">${icon('chart', 21)}</span><span class="work-copy"><strong>Avaliação #${esc(a.id)} · Plano #${esc(a.planoId)}</strong><small>${esc(month(a.periodoInicio))} — ${esc(month(a.periodoFim))}</small></span><span class="work-open">${icon('arrow', 18)}</span></a>`).join('')}</div>` : empty('Ainda não há avaliações'), '<a class="btn link" href="#/monitorizacao">Monitorização →</a>');
+    return `<div class="workbench">` + heading(commercial ? 'Acompanhar' : 'Consultar', commercial ? 'Acompanhamento comercial' : 'Planos e resultados', '', commercial ? '<a class="btn primary" href="#/cenarios">Comparar cenários</a>' : '<a class="btn primary" href="#/planos">Consultar planos</a>') +
+      hero('Decisões publicadas', latestPlan ? 'Plano publicado.<br>Resultados a acompanhar.' : 'À espera<br>do primeiro plano.', latestPlan ? 'Quantidades aprovadas, disponíveis para consulta.' : 'As decisões da equipa vão aparecer aqui.', '<a class="btn" href="#/monitorizacao">Acompanhar resultados ' + icon('arrow', 16) + '</a>', latestPlan ? '#' + latestPlan.id : '—', 'plano mais recente') +
+      workSummary(commercial ? [['Previsões', forecasts.totalElements], ['Cenários', cases.totalElements], ['Planos publicados', plans.totalElements], ['Avaliações', assessments.totalElements]] : [['Produtos', products.totalElements], ['Planos publicados', plans.totalElements], ['Avaliações', assessments.totalElements]]) +
+      `<div class="overview-columns"><div>${panel('Planos recentes', '', planRows(plans), '<a class="btn link" href="#/planos">Ver todos →</a>')}</div><aside>${focus}</aside></div></div>`;
   }
 
   async function adminOverview() {
@@ -75,8 +79,8 @@ export function createViews(ctx) {
     ]);
     const latestPlan = plans.items[0];
     const execution = executions.items.find(e => e.estado === 'CONCLUIDA' && e.totalLinhas > 0);
-    let chart = empty('O teu planeamento começa aqui', 'Importa um histórico e gera uma previsão. O gráfico aparece assim que existirem quantidades previstas.');
-    let chartSubtitle = 'Previsão base e quantidades aprovadas, por produto e mês.';
+    let chart = empty('O teu planeamento começa aqui', 'Importa um histórico e gera uma previsão.');
+    let chartSubtitle = 'Previsão base e quantidades aprovadas';
     let chartAction = '', chartFoot = '';
     if (latestPlan || execution) {
       const lines = await api.get(latestPlan ? `/planos/${latestPlan.id}/linhas?size=12` : `/execucoes-previsao/${execution.id}/linhas?size=12`);
@@ -85,20 +89,17 @@ export function createViews(ctx) {
         const points = lines.items.filter(l => l.produtoId === first.produtoId);
         const series = [{ name: 'Previsão base', values: points.map(l => l.quantidadeBase) }];
         if (latestPlan) series.push({ name: 'Plano aprovado', values: points.map(l => l.quantidade) });
-        chartSubtitle = `${esc(first.produto)} · ${esc(first.unidade)} · ${latestPlan ? 'Plano #' + esc(latestPlan.id) : 'Execução #' + esc(execution.id)} · primeiro produto`;
+        chartSubtitle = `${esc(first.produto)} · ${esc(first.unidade)} · ${latestPlan ? 'Plano #' + esc(latestPlan.id) : 'Execução #' + esc(execution.id)}`;
         chart = lineChart(points.map(l => l.periodo), series, `Previsão e planeamento de ${first.produto}, em ${first.unidade}`, { area: true });
         chartAction = `<a class="btn small" href="#/${latestPlan ? 'plano/' + esc(latestPlan.id) : 'previsao/' + esc(execution.id)}">Ver detalhe ${icon('arrow', 14)}</a>`;
-        chartFoot = `<div class="chart-context"><span>${icon('box', 15)} ${esc(first.produto)} · ${esc(first.unidade)}</span><span>${esc(month(points[0].periodo))} — ${esc(month(points.at(-1).periodo))}</span><span>${points.length} meses representados</span></div>`;
+        chartFoot = `<div class="chart-context"><span>${icon('box', 15)} ${esc(first.produto)} · ${esc(first.unidade)}</span><span>${esc(month(points[0].periodo))} — ${esc(month(points.at(-1).periodo))}</span><span>Primeiro produto · ${points.length} meses</span></div>`;
       }
     }
-    const dashboardMetric = (title, value, note, glyph, tone, route) => `<a class="dashboard-metric ${tone}" href="#/${route}"><div class="metric-top"><span>${title}</span><span class="metric-symbol">${icon(glyph, 22)}</span></div><strong>${esc(q(value))}</strong><div class="metric-bottom"><span>${note}</span>${icon('arrow', 15)}</div></a>`;
-    const today = new Intl.DateTimeFormat('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
-    const shortcuts = [['importacoes', 'upload', 'Organizar os dados', 'Importar e validar históricos'], ['previsoes', 'trend', 'Antecipar a procura', 'Gerar e consultar previsões'], ['cenarios', 'layers', 'Explorar cenários', 'Comparar alternativas e ajustes'], ['monitorizacao', 'chart', 'Acompanhar resultados', 'Consultar precisão e operação']];
-    return `<div class="admin-dashboard">` + heading('Painel de administração', 'Visão geral', 'O teu planeamento, numa só perspetiva.', `<span class="dashboard-date">${icon('calendar', 16)}${esc(today)}</span>${newButton('Importar CSV', 'import')}`) +
-      `<div class="dashboard-metrics">${dashboardMetric('Produtos', products.totalElements, 'No catálogo da equipa', 'box', 'sage', 'produtos')}${dashboardMetric('Previsões', executions.totalElements, 'Execuções registadas', 'trend', 'sand', 'previsoes')}${dashboardMetric('Cenários', cases.totalElements, 'Alternativas de planeamento', 'layers', 'clay', 'cenarios')}${dashboardMetric('Planos publicados', plans.totalElements, 'Decisões aprovadas', 'check', 'forest', 'planos')}</div>` +
-      `<div class="dashboard-main"><div class="dashboard-chart">${panel('Da previsão ao plano', chartSubtitle, chart + chartFoot, chartAction)}</div><aside class="dashboard-guide"><div class="guide-heading"><span class="guide-mark">${icon('layers', 22)}</span><span>O teu espaço S&OP</span></div><h2>Mais clareza.<br>Melhores decisões.</h2><p>Cada etapa aproxima os dados de um plano com confiança.</p><div class="dashboard-shortcuts">${shortcuts.map(([route, glyph, title, note]) => `<a href="#/${route}"><span class="shortcut-symbol">${icon(glyph, 18)}</span><span><strong>${title}</strong><small>${note}</small></span>${icon('arrow', 16)}</a>`).join('')}</div><a class="guide-team" href="#/equipa">${icon('people', 16)} Gerir a equipa ${icon('arrow', 15)}</a></aside></div>` +
-      `<div class="dashboard-bottom">${panel('Planos recentes', 'As últimas decisões publicadas pela equipa.', table(['Plano', 'Publicado em', 'Linhas', 'Estado', ''], plans.items.map(p => [`<span class="plan-name"><span class="plan-symbol">${icon('check', 18)}</span><span><strong>Plano #${esc(p.id)}</strong><small>Revisão #${esc(p.revisaoId)}</small></span></span>`, esc(date(p.publicadoEm)), esc(p.totalLinhas), badge('APROVADA').replace('Aprovada', 'Publicado'), `<a class="btn small" href="#/plano/${esc(p.id)}">Consultar</a>`])), '<a class="btn link" href="#/planos">Ver todos →</a>')}` +
-      panel('Últimas importações', 'Qualidade dos dados à entrada.', lots.items.length ? `<div class="dashboard-imports">${lots.items.map(l => `<a href="#/lote/${esc(l.id)}"><span class="import-symbol ${l.estado === 'REJEITADO' ? 'rejected' : ''}">${icon('upload', 18)}</span><span class="import-name"><strong>${esc(l.nomeFicheiro)}</strong><small>${esc(label(l.tipo))} · ${esc(date(l.importadoEm))}</small></span>${badge(l.estado)}</a>`).join('')}</div>` : empty('Ainda não há importações', 'Começa por importar um histórico CSV.'), '<a class="btn link" href="#/importacoes">Ver todas →</a>') + `</div><footer class="dashboard-footer"><span><span class="status-dot"></span>Dados da equipa · Consulta atualizada ao abrir o painel</span><span>NexoPlan / Planeamento S&OP</span></footer></div>`;
+    return `<div class="workbench admin-dashboard">` + heading('Coordenar', 'Visão geral', '', newButton('Importar CSV', 'import')) +
+      hero('NexoPlan · S&OP', 'Da procura<br>à decisão.', 'Dados, alternativas e decisões no mesmo percurso.', '<a class="btn" href="#/cenarios">Explorar cenários ' + icon('arrow', 16) + '</a>', products.totalElements, 'produtos no catálogo') +
+      planningRoute([['importacoes', 'Dados', lots.totalElements, 'lotes'], ['previsoes', 'Previsão', executions.totalElements, 'execuções'], ['cenarios', 'Cenários', cases.totalElements, 'hipóteses'], ['planos', 'Plano', plans.totalElements, 'publicados']]) +
+      `<div class="overview-columns"><div class="dashboard-chart">${panel('Da previsão ao plano', chartSubtitle, chart + chartFoot, chartAction)}</div><aside>${panel('Planos recentes', '', planRows(plans), '<a class="btn link" href="#/planos">Ver todos →</a>')}</aside></div>` +
+      `<details class="overview-disclosure overview-imports"><summary>Últimas importações <span>${esc(lots.totalElements)} lotes</span></summary>${lots.items.length ? `<div class="work-list">${lots.items.map(l => `<a class="work-item" href="#/lote/${esc(l.id)}"><span class="work-symbol">${icon('upload', 20)}</span><span class="work-copy"><strong>${esc(l.nomeFicheiro)}</strong><small>${esc(label(l.tipo))} · ${esc(date(l.importadoEm))}</small></span><span class="work-meta">${badge(l.estado)}</span><span class="work-open">${icon('arrow', 18)}</span></a>`).join('')}</div>` : empty('Ainda não há importações')}</details></div>`;
   }
 
   async function products() {
@@ -111,7 +112,7 @@ export function createViews(ctx) {
   async function imports() {
     const data = await page('lots', '/lotes');
     return heading('Qualidade e proveniência', 'Importação de dados', 'Importa CSV e acompanha a validação antes de utilizar os registos.', newButton('Importar CSV', 'import')) +
-      info('Históricos alimentam as previsões. Realizados e operacionais permitem avaliar os planos publicados. Um lote com erros mantém os diagnósticos e não publica registos parciais.') +
+      overviewHelp('Que dados posso importar?', 'Históricos alimentam as previsões. Realizados e operacionais permitem avaliar os planos publicados. Um lote com erros mantém os diagnósticos e não publica registos parciais.') +
       panel('Lotes recebidos', 'O original e o histórico de cada importação são conservados.', table(['Ficheiro / origem', 'Tipo', 'Registos', 'Estado', 'Recebido', ''], data.items.map(l => [`<strong>${esc(l.nomeFicheiro)}</strong><small>#${esc(l.id)} · ${esc(l.origem)}</small>`, esc(label(l.tipo)), esc(l.totalLinhas), badge(l.estado), esc(date(l.importadoEm)), `<a class="btn small" href="#/lote/${esc(l.id)}">Detalhes</a>`])) + pager(data, 'lots'));
   }
   async function lot(id) {
@@ -200,7 +201,7 @@ export function createViews(ctx) {
     const actions = (writer() ? b('Novo cenário', 'dialog', `data-kind="scenario" data-execution="${esc(r.execucaoId)}"`) + b('Criar nova revisão', 'dialog', 'data-kind="copy" title="Guardar outra versão deste mesmo cenário"') : '') + (writer() && r.estado === 'RASCUNHO' ? b('Enviar para aprovação', 'dialog', 'data-kind="submit"', 'primary') : '') +
       (canDecide && r.estado === 'EM_REVISAO' ? b('Devolver', 'dialog', 'data-kind="return"', 'danger') + b('Aprovar e publicar', 'dialog', 'data-kind="approve"', 'primary') : '');
     const first = lines.items[0], points = lines.items.filter(l => l.produtoId === first?.produtoId);
-    let note = r.estado === 'RASCUNHO' ? info('Esta revisão está em rascunho. Podes ajustar as quantidades com justificação e depois enviar esta versão para aprovação.') : info('Esta revisão está congelada. Para preparar alterações ao mesmo cenário, usa Criar nova revisão. Para explorar outra hipótese, usa Novo cenário.');
+    let note = r.estado === 'RASCUNHO' ? info('Rascunho · Ajusta com justificação e envia para aprovação.') : info('Revisão congelada · Cria uma nova revisão para alterar quantidades.');
     if (ctx.approver() && !canDecide && r.estado === 'EM_REVISAO') note += info('A decisão exige outro aprovador: criaste esta revisão ou participaste nos ajustes que ela conserva.', true);
     return { context: { revision: r, adjustments, revisionCells: lines.items, currentScenario: c }, html: back(`cenarios?execucaoId=${r.execucaoId}`, 'Cenários da mesma previsão') + heading('Revisão #' + esc(r.id), esc(c.nome), `Cenário #${esc(c.id)} · ${r.numero}.ª versão deste cenário · ${esc(label(c.tipo))}`, actions, `data-revision-id="${esc(r.id)}" data-revision-version="${esc(r.versao)}"`) + note + scenarioHelp() +
       panel('Pressupostos desta revisão', '', meta([['Estado', badge(r.estado)], ['Fator', q(factorValue(r.fator))], ['Previsão', '#' + esc(r.execucaoId)], ['Origem', r.revisaoOrigemId ? `<a href="#/revisao/${esc(r.revisaoOrigemId)}">Revisão #${esc(r.revisaoOrigemId)}</a>` : 'Previsão base'], ['Enviada para aprovação', esc(date(r.submetidoEm))]]) + `<p class="detail-description">${esc(r.pressupostos.descricao)}</p><div class="panel-body"><a class="btn small" href="#/cenario/${esc(c.id)}?revisaoId=${esc(r.id)}">Histórico de revisões deste cenário</a></div>`) +

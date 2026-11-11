@@ -36,7 +36,18 @@ function logoutView(message = '') {
   root.innerHTML = `<main id="conteudo" class="login" tabindex="-1"><section class="login-story"><a class="brand" href="#/visao"><img src="/assets/brand.svg" width="43" height="43" alt=""><div><strong>NexoPlan</strong><small>PLANEAMENTO S&OP</small></div></a><div><h1>Antecipar a procura.<br><em>Planear com confiança.</em></h1><p>Históricos, previsões e decisões ligadas num único espaço de trabalho.</p>${miniChart}</div><footer>Da previsão à decisão · Com rastreabilidade</footer></section><section class="login-form"><form id="login-form"><div class="eyebrow">Bem-vindo ao teu espaço</div><h2>Entrar na aplicação</h2><p class="intro">Acede aos planos e ferramentas disponíveis para a tua equipa.</p>${field('Email', input('email', 'email', '', 'required maxlength="254" autocomplete="username" placeholder="O teu email"'))}${field('Password', input('password', 'password', '', 'required maxlength="200" autocomplete="current-password" placeholder="A tua password"'))}<div class="form-error" role="alert">${esc(message)}</div><button class="btn primary" type="submit">Entrar ${icon('arrow', 16)}</button><p class="login-footer">O acesso é atribuído pelo administrador da equipa.<br>As decisões e os ajustes ficam associados à tua conta.</p></form></section></main>`;
 }
 function shell() {
-  root.innerHTML = `<div class="shell"><aside class="sidebar"><a class="brand" href="#/visao"><img src="/assets/brand.svg" width="38" height="38" alt=""><div><strong>NexoPlan</strong><small>PLANEAMENTO S&OP</small></div></a><div class="nav-caption">Espaço de trabalho</div><nav aria-label="Navegação principal">${routes.filter(r => r[3]()).map(([key, text, glyph]) => `<a class="nav-link" href="#/${key}" data-nav="${key}">${icon(glyph)}<span>${text}</span></a>`).join('')}</nav><div class="sidebar-bottom"><b>Planeamento com contexto.</b><br>Dados → Previsões → Decisões<br>→ Resultados</div></aside><div class="workspace"><header class="topbar"><div class="crumb">Planeamento <span>/</span> <strong id="breadcrumb">Visão geral</strong></div><div class="account"><span class="avatar">${esc(state.user.nome.trim().slice(0, 1).toUpperCase())}</span><div class="account-name">${esc(state.user.nome)}<small>${state.user.papeis.map(p => esc(label(p))).join(' · ')}</small></div>${b(icon('logout', 18), 'logout', 'aria-label="Terminar sessão" title="Terminar sessão"', 'icon-button')}</div></header><main id="conteudo" class="content" tabindex="-1"></main></div></div>`;
+  const navLink = key => {
+    const entry = routes.find(r => r[0] === key);
+    if (!entry?.[3]()) return '';
+    return `<a class="nav-link" href="#/${entry[0]}" data-nav="${entry[0]}">${icon(entry[2], 16)}<span>${entry[1]}</span></a>`;
+  };
+  const groups = [['01', 'Dados', ['produtos', 'importacoes']], ['02', 'Previsão', ['previsoes', 'backtests']], ['03', 'Decisão', ['cenarios', 'planos']], ['04', 'Resultados', ['monitorizacao']]];
+  root.innerHTML = `<div class="shell"><header class="app-header"><div class="topbar"><a class="brand" href="#/visao"><img src="/assets/brand.svg" width="42" height="42" alt=""><div><strong>NexoPlan<span class="brand-period">.</span></strong><small>PROCURA → DECISÃO</small></div></a><span class="workspace-label">PLANEAMENTO DE VENDAS & OPERAÇÕES</span><div class="account"><span class="avatar">${esc(state.user.nome.trim().slice(0, 1).toUpperCase())}</span><div class="account-name">${esc(state.user.nome)}<small>${state.user.papeis.map(p => esc(label(p))).join(' · ')}</small></div>${b(icon('logout', 18), 'logout', 'aria-label="Terminar sessão" title="Terminar sessão"', 'icon-button')}${b('<span></span><span></span>', 'toggle-nav', 'aria-label="Abrir navegação" aria-controls="main-navigation" aria-expanded="false"', 'nav-toggle')}</div></div><div class="sidebar"><nav id="main-navigation" aria-label="Navegação principal"><div class="nav-home">${navLink('visao')}</div>${groups.map(([number, title, keys]) => { const links = keys.map(navLink).join(''); return links ? `<div class="nav-group" aria-label="${title}"><span class="nav-stage"><span>${number}</span>${title}</span><div class="nav-options">${links}</div></div>` : ''; }).join('')}${role(state.user, 'ADMIN') ? `<div class="nav-admin">${navLink('equipa')}</div>` : ''}</nav></div></header><div class="workspace"><div class="location-bar"><span class="location-mark"></span><span>NexoPlan</span><span>/</span><strong id="breadcrumb">Visão geral</strong><span class="location-note">${state.user.papeis.map(p => esc(label(p))).join(' · ')}</span></div><main id="conteudo" class="content" tabindex="-1"></main><footer class="app-footer"><span>NexoPlan<span class="brand-period">.</span></span><span>Dados · Previsões · Decisões</span></footer></div></div>`;
+}
+function setNavigation(open) {
+  document.querySelector('.sidebar')?.classList.toggle('open', open);
+  const toggle = document.querySelector('[data-action=toggle-nav]');
+  if (toggle) { toggle.setAttribute('aria-expanded', String(open));toggle.setAttribute('aria-label', open ? 'Fechar navegação' : 'Abrir navegação'); }
 }
 async function render() {
   if (!state.user) return;
@@ -328,6 +339,7 @@ document.addEventListener('click', async event => {
   const action = target.dataset.action;
   try {
     switch (action) {
+      case 'toggle-nav': setNavigation(target.getAttribute('aria-expanded') !== 'true');break;
       case 'close-dialog': if (!modal.querySelector('[data-busy]')) closeDialog();break;
       case 'refresh': await render();break;
       case 'refresh-stale': closeDialog();await render();break;
@@ -407,6 +419,11 @@ document.addEventListener('change', async event => {
 });
 modal.addEventListener('cancel', event => { if (modal.querySelector('[data-busy]')) event.preventDefault(); });
 modal.addEventListener('close', () => { if (!modal.open) { modal.innerHTML = '';dialogContext = null; } });
-window.addEventListener('hashchange', () => { if (modal.querySelector('[data-busy]')) return;closeDialog();state.pages = {};render(); });
+window.addEventListener('hashchange', () => { if (modal.querySelector('[data-busy]')) return;closeDialog();setNavigation(false);state.pages = {};render(); });
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && !modal.open && document.querySelector('.sidebar.open')) {
+    setNavigation(false);document.querySelector('[data-action=toggle-nav]')?.focus();
+  }
+});
 try { state.user = await api.get('/auth/me');shell();await render(); }
 catch (error) { logoutView(error instanceof ApiError && error.status === 401 ? '' : error.message); }

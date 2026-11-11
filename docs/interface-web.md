@@ -16,7 +16,7 @@ Com o Docker iniciado, abrir a aplicação e entrar com email/password existente
 4. Numa revisão RASCUNHO, usar Ajustar, preencher quantidade e justificação e guardar.
    A quantidade final e a auditoria devem refletir o pedido. São aceites ponto ou
    vírgula decimal; a API recebe uma string decimal com ponto, sem conversão para float.
-5. Submeter congela a revisão. Terminar sessão e entrar com a conta APROVADOR
+5. **Enviar para aprovação** congela a revisão. Terminar sessão e entrar com a conta APROVADOR
    independente para aprovar ou devolver com motivo. A correção de uma devolução
    usa Criar nova revisão; aprovar abre o plano publicado.
 6. Descarregar o CSV do plano e consultar/criar uma avaliação em Monitorização.
@@ -43,21 +43,82 @@ Para um ensaio que não altere os teus dados, usar o teste isolado descrito abai
 | Monitorização | Plano/lotes/corte, seleção de produto, precisão por horizonte, operação e motivos de exclusão |
 | Equipa | ADMIN cria contas com papéis explícitos e consulta utilizadores por ID |
 
-O painel ADMIN usa cartões de produtos, execuções, cenários e planos, sem variações
-percentuais artificiais. O gráfico mostra até 12 meses do primeiro produto do
+O painel ADMIN apresenta os totais de lotes, execuções, cenários e planos num
+percurso de planeamento, com acesso direto a cada área. Estes valores são contagens
+reais da API; não representam progresso, taxas de conclusão ou tendências.
+O gráfico mostra até 12 meses do primeiro produto do
 último plano publicado, comparando base e aprovado na mesma unidade. Sem planos,
 usa uma execução concluída com linhas entre as cinco mais recentes; sem dados,
 apresenta instruções para começar. O produto, a unidade e o plano/execução são
-identificados. Os acessos rápidos, planos e importações recentes usam as rotas
-existentes. Os restantes perfis têm painéis próprios, descritos em
-[painéis por perfil](paineis-perfil.md), com a mesma linguagem visual em verde
-floresta, sálvia, areia e terracota. Em ecrãs pequenos, os
-cartões passam a duas colunas e o gráfico/tabelas permitem deslocação horizontal.
+identificados. Planos e revisões usam listas compactas com abertura direta do
+registo; as importações recentes do ADMIN estão numa secção expansível.
+Os restantes perfis têm painéis próprios, descritos em
+[painéis por perfil](paineis-perfil.md). O PLANEADOR reúne rascunhos e devoluções;
+o APROVADOR destaca a fila ordenada de decisões; COMERCIAL e CONSUMIDOR encontram
+os planos e os resultados permitidos pelo respetivo papel.
+
+## Organização visual e navegação
+
+A área de trabalho usa um cabeçalho horizontal com navegação agrupada pelo percurso
+S&OP: **Dados**, **Previsão**, **Decisão** e **Resultados**. Visão geral e Equipa
+mantêm acessos próprios. Cada perfil vê apenas as entradas permitidas; a entrada
+atual conserva `aria-current="page"`, incluindo os detalhes da respetiva área.
+
+Até 800 px, o botão **Abrir navegação** apresenta o menu e atualiza
+`aria-expanded`. Escolher uma página fecha o menu; Escape também o fecha e devolve
+o foco ao botão. O conteúdo ocupa a largura disponível, com margens laterais curtas também em
+ecrãs largos. No computador, as etapas da navegação ficam próximas entre si;
+Equipa mantém-se como acesso de gestão separado à direita. Tabelas e gráficos largos
+permitem deslocação dentro da sua própria área, sem alargar a página.
+
+Verde profundo, areia e cobre identificam a NexoPlan. O destaque principal enquadra
+a tarefa do perfil e apresenta uma contagem real. Os elementos gráficos de fundo
+são decorativos; não apresentam medidas de negócio nem variações percentuais.
+O percurso de quatro etapas dos
+painéis ADMIN e PLANEADOR permite consultar os totais e abrir cada área. Não é um
+indicador de avanço de um lote individual.
+
+As explicações gerais estão disponíveis em **Sobre esta área**, **Sobre esta
+secção** ou ajudas com título específico, abertas por clique ou teclado. Contexto
+curto, como o produto/unidade do gráfico, permanece junto dos dados. As mensagens
+de erro, conflitos, estado da revisão e limitações de cobertura continuam visíveis;
+os detalhes expansíveis não ocultam estas condições. Os formulários conservam
+rótulos, instruções de preenchimento e confirmações das ações.
+
+Ao gerar uma previsão ou comparar modelos, a pesquisa de históricos aceita ID
+(com ou sem `#`), origem ou nome do ficheiro, sem distinguir maiúsculas ou acentos.
+Na página de previsões/comparações, o campo começa vazio e apresenta históricos
+mais recentes primeiro, sem escolher nenhum automaticamente. O nome do ficheiro
+e a origem têm destaque; o número do lote é apenas informação complementar.
+No detalhe de um histórico validado, **Gerar previsão** abre o formulário com
+esse lote escolhido explicitamente, permitindo continuar logo após a importação.
+Um único campo mostra imediatamente os resultados por baixo, com ID, ficheiro,
+origem, data e número de registos em linhas separadas. Um clique no resultado
+ou as setas e Enter confirmam o lote; Escape fecha apenas a lista aberta.
+Editar a pesquisa exige nova confirmação do lote e nunca troca a fonte de dados
+automaticamente. Um texto pesquisado sem seleção não permite gerar a execução.
 
 As comparações selecionam a última revisão de cada cenário listado. O histórico
 permite consultar todas as revisões, incluindo as anteriores/devolvidas/aprovadas.
 A grelha compara quantidades finais e desvios; o gráfico representa o primeiro
 produto da página de comparação, com o produto identificado na legenda.
+As colunas, a legenda e as seleções identificam os cenários pelo nome. O botão
+**Novo cenário** também está disponível no detalhe de uma revisão; **Criar nova
+revisão** guarda outra versão do mesmo cenário. Uma ajuda expansível explica as
+duas ações. **Enviar para aprovação** congela a revisão para decisão independente.
+O contador de concorrência permanece na API e no controlo dos pedidos, sem ser
+confundido na apresentação com o número da revisão guardada.
+O ID aparece sempre primeiro, por exemplo **Revisão #9**; a ordem surge como
+**3.ª versão deste cenário**. O histórico permite **Voltar ao cenário**, retomando
+a revisão de onde foi aberto, mesmo depois de atualizar a página. Quando aberto
+diretamente, o regresso leva à revisão mais recente do cenário.
+O seletor **Previsão de origem** está integrado na lista de cenários, com um atalho
+para consultar a previsão. Trocar a origem limpa as seleções da comparação anterior.
+
+Os fatores simples aparecem como 1,10 ou 0,90. A formatação retira apenas zeros
+de preenchimento e conserva as casas significativas até à precisão já aceite
+pela API (seis casas); a edição e os cálculos não são arredondados para duas casas.
+As quantidades continuam a conservar todas as casas devolvidas pela API.
 
 O painel de monitorização separa precisão e operação e mantém os contadores de
 cobertura junto das métricas. O detalhe lista todos os produtos e motivos; o
@@ -71,7 +132,8 @@ HTML/CSS e módulos JavaScript nativos em
 `backend/src/main/resources/static/`. São incluídos no JAR e na imagem Docker.
 Não há servidor frontend separado, compilação Node nem dependências externas em
 tempo de execução. Node/Playwright servem apenas para os testes da interface.
-Os gráficos e ícones são SVG locais; a ilustração da página inicial é decorativa.
+Os gráficos e ícones são SVG locais; os elementos gráficos sem valores na área de
+destaque são decorativos e estão ocultos às tecnologias de apoio.
 
 - `index.html`: ponto de entrada, contentor, diálogo e anúncios acessíveis.
 - `assets/app.mjs`: sessão, navegação por hash, comandos, formulários e eventos.
@@ -90,7 +152,10 @@ Fetch usa a mesma origem e o cookie HttpOnly existente. O cliente pede um token
 CSRF novo antes de cada escrita, incluindo login/logout e upload. Não guarda
 passwords, tokens, relatórios ou sessões em localStorage/sessionStorage.
 Uma sessão expirada limpa a interface e pede novo login. Não existem tentativas
-automáticas de escrita, mesmo após falha de rede ou conflito de versão.
+automáticas de repetir escritas, mesmo após falha de rede ou conflito de versão.
+Um login bem-sucedido abre sempre o painel inicial
+do perfil em `#/visao`. Com sessão válida, atualizar uma página mantém a rota e as
+permissões dessa página. Não se herda a página anterior ao trocar de conta.
 
 Quantidades e IDs permanecem strings; as quantidades conservam todas as casas
 na apresentação e no pedido. A conversão numérica fica restrita às coordenadas
@@ -163,11 +228,15 @@ conjunto de dados e concluir manual, resultados e
 relatório. Essas evidências não são substituídas pelos testes automáticos.
 O [backup/restauro](backup-restauro.md) já foi verificado numa cópia isolada.
 A [meta de desempenho do ajuste](desempenho.md) foi medida no cenário local documentado.
+O [protocolo de usabilidade](usabilidade.md) e as fichas estão preparados para
+sessões exploratórias com colegas. A recolha e a avaliação em público representativo
+continuam pendentes; não existem ainda resultados dessas sessões.
 
-A direção visual aprovada dá prioridade a fundos neutros, verde em destaques
-pontuais, contraste legível e espaçamento consistente. Os gráficos devem apoiar
-as tarefas e a informação. O conforto em sessões prolongadas fica para avaliação
-com utilizadores, em vez de ser inferido a partir das capturas de ecrã.
+A iteração visual atual reduz as explicações permanentes, substitui a barra
+lateral por navegação horizontal e diferencia o espaço de planeamento através
+da composição e da cor. A aceitação desta iteração e o conforto em sessões
+prolongadas ficam para avaliação com utilizadores; não são inferidos a partir
+das capturas de ecrã ou dos testes automáticos.
 
 ## Validação desta entrega
 

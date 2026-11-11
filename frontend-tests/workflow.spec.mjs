@@ -29,9 +29,16 @@ test('percurso completo com APIs reais, auditoria, aprovação independente e mo
     await login(page, 'admin@ui.test');
     await expect(page.getByRole('heading', { name: 'Visão geral', exact: true })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'O teu planeamento começa aqui', exact: true })).toBeVisible();
+    const navigation = page.getByRole('navigation', { name: 'Navegação principal' });
+    for (const stage of ['Dados', 'Previsão', 'Decisão', 'Resultados']) await expect(navigation).toContainText(stage);
+    await expect(navigation.getByRole('link', { name: 'Visão geral', exact: true })).toHaveAttribute('aria-current', 'page');
+    await expect(navigation.locator('[aria-current=page]')).toHaveCount(1);
+    await expect(page.locator('.page-heading').getByRole('link', { name: 'Gerir equipa', exact: true })).toHaveCount(0);
+    await expect(navigation.getByRole('link', { name: 'Equipa', exact: true })).toBeVisible();
   });
   await test.step('catálogo e texto não interpretado como HTML', async () => {
     await page.getByRole('link', { name: 'Produtos', exact: true }).click();
+    await expect(page.getByRole('navigation', { name: 'Navegação principal' }).getByRole('link', { name: 'Produtos', exact: true })).toHaveAttribute('aria-current', 'page');
     await page.getByRole('button', { name: 'Novo produto', exact: true }).click();
     await modal(page).getByLabel('Código', { exact: true }).fill('UI_XSS');
     await modal(page).getByLabel('Nome do produto', { exact: true }).fill('<img src=x onerror="window.pwned=1">');
@@ -129,6 +136,14 @@ test('percurso completo com APIs reais, auditoria, aprovação independente e mo
   });
   await test.step('pesquisa e seleção diretas num único controlo, por rato e teclado', async () => {
     await page.getByRole('link', { name: 'Previsões', exact: true }).click();
+    const sectionHelp = page.locator('.panel').filter({ has: page.getByRole('heading', { name: 'Execuções de previsão', exact: true }) }).locator('.panel-context');
+    await expect(sectionHelp).toHaveJSProperty('open', false);
+    await expect(sectionHelp.locator('p')).toBeHidden();
+    await sectionHelp.locator('summary').click();
+    await expect(sectionHelp.locator('p')).toBeVisible();
+    await expect(sectionHelp.locator('p')).toContainText('histórico');
+    await sectionHelp.locator('summary').click();
+    await expect(sectionHelp).toHaveJSProperty('open', false);
     await page.getByRole('button', { name: 'Gerar previsão', exact: true }).click();
     const search = modal(page).getByRole('combobox', { name: 'Histórico validado', exact: true });
     const selected = modal(page).locator('[name=loteHistoricoId]');
@@ -443,6 +458,19 @@ test('percurso completo com APIs reais, auditoria, aprovação independente e mo
     await expect(page.locator('#notice')).not.toHaveClass(/visible/, { timeout: 8000 });
     await page.mouse.move(1400, 80);
     await page.screenshot({ path: '../tmp/ui-preview/visao-geral.png', fullPage: true });
+    for (const width of [1920, 1024, 820]) {
+      await page.setViewportSize({ width, height: 1000 });
+      await expect(page.getByRole('navigation', { name: 'Navegação principal' })).toBeVisible();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+      if (width === 1920) {
+        const headingBounds = await page.locator('.page-heading').boundingBox();
+        expect(headingBounds.x).toBeLessThan(80);
+        expect(headingBounds.width).toBeGreaterThan(width - 160);
+        const groups = await page.locator('.nav-group').evaluateAll(nodes => nodes.map(node => ({ left: node.getBoundingClientRect().left, right: node.getBoundingClientRect().right })));
+        for (let i = 1; i < groups.length; i++) expect(groups[i].left - groups[i - 1].right).toBeLessThan(60);
+      }
+      await page.screenshot({ path: `../tmp/ui-preview/visao-geral-${width}.png`, fullPage: true });
+    }
     await page.setViewportSize({ width: 390, height: 844 });
     await expect(page.getByRole('heading', { name: 'Visão geral', exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
@@ -457,6 +485,11 @@ test('percurso completo com APIs reais, auditoria, aprovação independente e mo
     await expect(page.getByRole('heading', { name: 'Revisões devolvidas', exact: true })).toBeVisible();
     expect(await page.getByRole('link', { name: 'Equipa', exact: true }).count()).toBe(0);
     await page.screenshot({ path: '../tmp/ui-preview/planeador.png', fullPage: true });
+    await page.setViewportSize({ width: 390, height: 844 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+    await expect(page.getByRole('heading', { name: 'Espaço de planeamento', exact: true })).toBeVisible();
+    await page.screenshot({ path: '../tmp/ui-preview/planeador-mobile.png', fullPage: true });
+    await page.setViewportSize({ width: 1440, height: 1000 });
     await logout(page);await login(page, 'commercial@ui.test');
     await page.getByRole('link', { name: 'Visão geral', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Acompanhamento comercial', exact: true })).toBeVisible();
@@ -494,7 +527,23 @@ test('login móvel e navegação por teclado sem deslocação horizontal', async
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
   await login(page, 'admin@ui.test');
   await expect(page.getByRole('heading', { name: 'Visão geral', exact: true })).toBeVisible();
+  const navigation = page.getByRole('navigation', { name: 'Navegação principal' });
+  const toggle = page.locator('[data-action=toggle-nav]');
+  await expect(navigation).toBeHidden();
+  await expect(toggle).toHaveAccessibleName('Abrir navegação');
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  await toggle.click();
+  await expect(navigation).toBeVisible();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  await expect(toggle).toHaveAccessibleName('Fechar navegação');
+  await page.keyboard.press('Escape');
+  await expect(navigation).toBeHidden();
+  await expect(toggle).toBeFocused();
+  await toggle.click();
   await page.getByRole('link', { name: 'Produtos', exact: true }).click();
+  await expect(page).toHaveURL(/#\/produtos$/);
+  await expect(navigation).toBeHidden();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
   await page.getByRole('button', { name: 'Novo produto', exact: true }).click();
   await expect(page.getByRole('dialog')).toBeVisible();await page.keyboard.press('Escape');await expect(page.getByRole('dialog')).not.toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
