@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { esc, quantity, percent, independent, role, lineChart, lastMonth } from '../backend/src/main/resources/static/assets/ui.mjs';
 import { Api, ApiError } from '../backend/src/main/resources/static/assets/api.mjs';
+import { summarize } from './performance-stats.mjs';
 
 test('escapes text and attributes without interpreting user HTML', () => {
   assert.equal(esc('<img src="x" onerror=\'bad()\'>&'), '&lt;img src=&quot;x&quot; onerror=&#39;bad()&#39;&gt;&amp;');
@@ -54,4 +55,16 @@ test('network interruption reports an uncertain write without repeating the requ
   let calls = 0;
   const api = new Api(async url => { calls++;if (url.endsWith('/csrf')) return Response.json({ headerName: 'x-csrf', token: 't' });throw new Error('offline'); });
   await assert.rejects(api.send('/cenarios', {}), /pode ter sido guardado/);assert.equal(calls, 2);
+});
+test('performance summary keeps outliers and uses the 29th sorted value for p95 of 30 samples', () => {
+  const values = [10000, ...Array.from({ length: 29 }, (_, i) => 29 - i)];
+  const original = [...values], result = summarize(values);
+  assert.equal(result.p95Ms, 29);assert.equal(result.medianMs, 15.5);
+  assert.equal(result.maxMs, 10000);assert.equal(result.minMs, 1);
+  assert.equal(result.meanMs, (10000 + 435) / 30);assert.deepEqual(values, original);
+});
+test('performance summary refuses missing, invalid or negative durations', () => {
+  for (const values of [Array(29).fill(1), [NaN, ...Array(29).fill(1)], [Infinity, ...Array(29).fill(1)], [-1, ...Array(29).fill(1)]]) {
+    assert.throws(() => summarize(values), /30 medições válidas/);
+  }
 });

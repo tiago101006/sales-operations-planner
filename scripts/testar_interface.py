@@ -4,6 +4,8 @@ import http.cookiejar
 import io
 import json
 import os
+import hashlib
+import platform
 from pathlib import Path
 import secrets
 import shutil
@@ -19,7 +21,8 @@ from datetime import datetime, timezone
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def main():
+def main(performance_seed=None):
+    performance = performance_seed is not None
     for executable in ['java', 'docker', 'node', 'npm']:
         if shutil.which(executable) is None:
             raise SystemExit(f'Falta {executable} no PATH.')
@@ -28,20 +31,23 @@ def main():
     jar = ROOT / 'backend/target/sales-operations-planner-0.0.1-SNAPSHOT.jar'
     if not jar.exists():
         raise SystemExit('Constroi primeiro o backend: cd backend && ./mvnw verify')
-    db_name = 'sop_ui_test'
+    db_name = 'sop_performance_test' if performance else 'sop_ui_test'
     password = 'Ui-test-' + secrets.token_hex(16)
     database = None
     server = None
     work = tempfile.TemporaryDirectory(prefix='sop-interface-')
-    logs = ROOT / 'tmp' / 'interface-tests'
+    logs = ROOT / 'tmp' / ('performance-tests' if performance else 'interface-tests')
+    if performance:
+        logs = logs / (datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ-') + secrets.token_hex(3))
     logs.mkdir(parents=True, exist_ok=True)
     environment = dict(os.environ, MYSQL_DATABASE=db_name, MYSQL_USER='sop_ui', MYSQL_PASSWORD=password,
-                       MYSQL_ROOT_PASSWORD=password, TZ='UTC')
+                       MYSQL_ROOT_PASSWORD=password, TZ='UTC', SOP_UI_PERFORMANCE='1' if performance else '0')
     try:
         print('A criar um MySQL temporario exclusivo dos testes de interface...', flush=True)
+        mysql_options = ['--innodb-buffer-pool-size=128M'] if performance else ['--innodb-buffer-pool-size=32M', '--performance-schema=OFF']
         database = subprocess.check_output(['docker', 'run', '-d', '--rm', '--label', 'sop-ui-test=1',
                     '-p', '127.0.0.1::3306', '-e', 'MYSQL_DATABASE', '-e', 'MYSQL_USER', '-e', 'MYSQL_PASSWORD',
-                    '-e', 'MYSQL_ROOT_PASSWORD', 'mysql:8.4', '--innodb-buffer-pool-size=32M', '--performance-schema=OFF'], env=environment, text=True).strip()
+                    '-e', 'MYSQL_ROOT_PASSWORD', 'mysql:8.4', *mysql_options], env=environment, text=True).strip()
         mapped = subprocess.check_output(['docker', 'port', database, '3306/tcp'], text=True).strip()
         db_port = mapped.rsplit(':', 1)[1]
         deadline = time.monotonic() + 120
@@ -72,12 +78,12 @@ def main():
         deadline = time.monotonic() + 90
         while time.monotonic() < deadline:
             if server.poll() is not None:
-                raise RuntimeError('O backend temporario terminou; consulta tmp/interface-tests/server.log.')
+                raise RuntimeError('O backend temporario terminou; consulta ' + str(logs / 'server.log'))
             try:
                 with urllib.request.urlopen(base + '/actuator/health', timeout=2) as response:
                     if json.load(response)['status'] == 'UP':
                         break
-            except (urllib.error.URLError, TimeoutError):
+            except (urllib.error.URLError, TimeoutError, ConnectionError):
                 pass
             time.sleep(1)
         else:
@@ -103,6 +109,31 @@ def main():
                 return json.loads(raw) if raw else None
 
         request('POST', '/api/v1/auth/login', {'email': 'admin@ui.test', 'password': password})
+        if performance:
+            metadata = performance_seed(request)
+            mysql = subprocess.check_output(['docker', 'exec', database, 'sh', '-c',
+                'MYSQL_PWD="$MYSQL_PASSWORD" mysql -h127.0.0.1 -u "$MYSQL_USER" "$MYSQL_DATABASE" --batch --skip-column-names -e "SELECT VERSION(),@@innodb_buffer_pool_size,@@performance_schema"'], text=True).strip().split('\t')
+            cpu = next((line.split(':', 1)[1].strip() for line in Path('/proc/cpuinfo').read_text().splitlines() if line.startswith('model name')), platform.machine())
+            java = subprocess.run(['java', '-version'], capture_output=True, text=True).stderr.splitlines()[0]
+            metadata['environment'] = {'os': platform.platform(), 'cpu': cpu, 'logicalCpus': os.cpu_count(),
+                'memoryTotalKiB': int(Path('/proc/meminfo').read_text().splitlines()[0].split()[1]),
+                'loadAverageBeforeBrowser': list(os.getloadavg()), 'java': java, 'jvmMaxHeapMiB': 384,
+                'mysqlVersion': mysql[0], 'mysqlBufferPoolBytes': int(mysql[1]), 'mysqlPerformanceSchema': int(mysql[2]),
+                'node': subprocess.check_output(['node', '--version'], text=True).strip(),
+                'gitCommit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(),
+                'trackedChangesPresent': bool(subprocess.check_output(['git', 'status', '--porcelain', '--untracked-files=no'], cwd=ROOT)),
+                'backendJarSha256': hashlib.sha256(jar.read_bytes()).hexdigest()}
+            metadata['environment']['frontendSha256'] = hashlib.sha256(b''.join(p.read_bytes() for p in sorted((ROOT / 'backend/src/main/resources/static').rglob('*')) if p.is_file())).hexdigest()
+            (logs / 'context.json').write_text(json.dumps(metadata, ensure_ascii=False, indent=2) + '\n')
+            request('POST', '/api/v1/auth/logout', {})
+            environment.update(SOP_UI_ISOLATED='1', SOP_UI_PERFORMANCE='1', SOP_UI_BASE_URL=base,
+                SOP_UI_PASSWORD=password, SOP_PERF_REVISION=metadata['revisionId'], SOP_PERF_RUN_DIR=str(logs))
+            print('Cenário com 300 células pronto. A medir no navegador...', flush=True)
+            result = subprocess.run(['npm', 'run', 'test:performance'], cwd=ROOT / 'frontend-tests', env=environment)
+            if result.returncode:
+                raise RuntimeError('A medição falhou ou ultrapassou a meta. Consulta ' + str(logs))
+            print('Medição concluída; relatório em ' + str(logs / 'result.json'), flush=True)
+            return
         for name, role in [('approver', 'APROVADOR'), ('consumer', 'CONSUMIDOR'), ('commercial', 'COMERCIAL')]:
             request('POST', '/api/v1/utilizadores', {'nome': name.title(), 'email': name + '@ui.test', 'password': password, 'papeis': [role]})
         request('POST', '/api/v1/produtos', {'codigo': 'SKU_UI_ONE', 'nome': 'Produto de ensaio', 'unidade': 'un'})

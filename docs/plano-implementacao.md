@@ -10,6 +10,8 @@ integrada também já permite executar o percurso no navegador;
 ver [monitorização](monitorizacao.md) e [interface](interface-web.md).
 Os [painéis por perfil](paineis-perfil.md) distinguem as tarefas dos cinco papéis.
 O conjunto alargado de dados sintéticos fica para a fase final de demonstração.
+O [backup e restauro](backup-restauro.md) já dispõe de cópia conjunta MySQL/CSV e
+verificação da recuperação em contentores isolados.
 Este documento conserva o desenho geral; os contratos efetivos e limites de cada
 bloco estão nos documentos específicos ligados no README, incluindo
 [cenários e revisões](cenarios-ajustes.md) e
@@ -230,9 +232,12 @@ indicador anulável, cobertura, unidade e motivos de indisponibilidade.
 
 Saída: reproduzir CA05 do relatório: realizados 100, 0 e falta; base 90, 10 e 30;
 ajustado 110, 0 e 20 -> MAE 10/5, MAPE 10%/10%, dois pares MAE e um MAPE.
-Medir meta de p95 de dois segundos para guardar/mostrar um ajuste em 300 células,
-com 30 medições e ambiente documentado. Validar tarefas com utilizadores, restaurar
-backup e concluir manual, resultados de backtest e plano de adoção.
+Meta de p95 de dois segundos para guardar/mostrar um ajuste numa revisão com 300 células:
+medida em 30 amostras, com p95 de 95,2 ms no cenário local documentado em
+[desempenho](desempenho.md). A página renderiza 20 linhas de cada vez. Validar tarefas
+e conforto com utilizadores e concluir
+manual, resultados de backtest e plano de adoção. O restauro de backup já foi
+verificado conforme o [procedimento operacional](backup-restauro.md).
 
 ```bash
 git add backend frontend scripts docs data

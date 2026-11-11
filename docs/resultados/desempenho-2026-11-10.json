@@ -1,0 +1,305 @@
+{
+  "revisionId": "1",
+  "products": 100,
+  "historyMonths": 24,
+  "historyRows": 2400,
+  "horizonMonths": 3,
+  "revisionCells": 300,
+  "method": "MEDIA_MOVEL",
+  "window": 3,
+  "warmups": 5,
+  "samples": [
+    {
+      "index": 1,
+      "warmup": true,
+      "durationMs": 102.19999999925494,
+      "quantity": "200.0001",
+      "version": 1
+    },
+    {
+      "index": 2,
+      "warmup": true,
+      "durationMs": 80.19999999925494,
+      "quantity": "200.0002",
+      "version": 2
+    },
+    {
+      "index": 3,
+      "warmup": true,
+      "durationMs": 78,
+      "quantity": "200.0003",
+      "version": 3
+    },
+    {
+      "index": 4,
+      "warmup": true,
+      "durationMs": 73.10000000149012,
+      "quantity": "200.0004",
+      "version": 4
+    },
+    {
+      "index": 5,
+      "warmup": true,
+      "durationMs": 83.39999999850988,
+      "quantity": "200.0005",
+      "version": 5
+    },
+    {
+      "index": 6,
+      "warmup": false,
+      "durationMs": 74.19999999925494,
+      "quantity": "200.0006",
+      "version": 6
+    },
+    {
+      "index": 7,
+      "warmup": false,
+      "durationMs": 77.80000000074506,
+      "quantity": "200.0007",
+      "version": 7
+    },
+    {
+      "index": 8,
+      "warmup": false,
+      "durationMs": 79.19999999925494,
+      "quantity": "200.0008",
+      "version": 8
+    },
+    {
+      "index": 9,
+      "warmup": false,
+      "durationMs": 74.69999999925494,
+      "quantity": "200.0009",
+      "version": 9
+    },
+    {
+      "index": 10,
+      "warmup": false,
+      "durationMs": 73.39999999850988,
+      "quantity": "200.0010",
+      "version": 10
+    },
+    {
+      "index": 11,
+      "warmup": false,
+      "durationMs": 78.30000000074506,
+      "quantity": "200.0011",
+      "version": 11
+    },
+    {
+      "index": 12,
+      "warmup": false,
+      "durationMs": 77.59999999776483,
+      "quantity": "200.0012",
+      "version": 12
+    },
+    {
+      "index": 13,
+      "warmup": false,
+      "durationMs": 64.5,
+      "quantity": "200.0013",
+      "version": 13
+    },
+    {
+      "index": 14,
+      "warmup": false,
+      "durationMs": 79.90000000223517,
+      "quantity": "200.0014",
+      "version": 14
+    },
+    {
+      "index": 15,
+      "warmup": false,
+      "durationMs": 77.19999999925494,
+      "quantity": "200.0015",
+      "version": 15
+    },
+    {
+      "index": 16,
+      "warmup": false,
+      "durationMs": 70.89999999850988,
+      "quantity": "200.0016",
+      "version": 16
+    },
+    {
+      "index": 17,
+      "warmup": false,
+      "durationMs": 77.5,
+      "quantity": "200.0017",
+      "version": 17
+    },
+    {
+      "index": 18,
+      "warmup": false,
+      "durationMs": 76.40000000223517,
+      "quantity": "200.0018",
+      "version": 18
+    },
+    {
+      "index": 19,
+      "warmup": false,
+      "durationMs": 76.09999999776483,
+      "quantity": "200.0019",
+      "version": 19
+    },
+    {
+      "index": 20,
+      "warmup": false,
+      "durationMs": 75,
+      "quantity": "200.0020",
+      "version": 20
+    },
+    {
+      "index": 21,
+      "warmup": false,
+      "durationMs": 78.89999999850988,
+      "quantity": "200.0021",
+      "version": 21
+    },
+    {
+      "index": 22,
+      "warmup": false,
+      "durationMs": 95.19999999925494,
+      "quantity": "200.0022",
+      "version": 22
+    },
+    {
+      "index": 23,
+      "warmup": false,
+      "durationMs": 78.29999999701977,
+      "quantity": "200.0023",
+      "version": 23
+    },
+    {
+      "index": 24,
+      "warmup": false,
+      "durationMs": 75.70000000298023,
+      "quantity": "200.0024",
+      "version": 24
+    },
+    {
+      "index": 25,
+      "warmup": false,
+      "durationMs": 64.79999999701977,
+      "quantity": "200.0025",
+      "version": 25
+    },
+    {
+      "index": 26,
+      "warmup": false,
+      "durationMs": 78.59999999776483,
+      "quantity": "200.0026",
+      "version": 26
+    },
+    {
+      "index": 27,
+      "warmup": false,
+      "durationMs": 74.80000000074506,
+      "quantity": "200.0027",
+      "version": 27
+    },
+    {
+      "index": 28,
+      "warmup": false,
+      "durationMs": 67.80000000074506,
+      "quantity": "200.0028",
+      "version": 28
+    },
+    {
+      "index": 29,
+      "warmup": false,
+      "durationMs": 78.90000000223517,
+      "quantity": "200.0029",
+      "version": 29
+    },
+    {
+      "index": 30,
+      "warmup": false,
+      "durationMs": 76.39999999850988,
+      "quantity": "200.0030",
+      "version": 30
+    },
+    {
+      "index": 31,
+      "warmup": false,
+      "durationMs": 74.39999999850988,
+      "quantity": "200.0031",
+      "version": 31
+    },
+    {
+      "index": 32,
+      "warmup": false,
+      "durationMs": 68.39999999850988,
+      "quantity": "200.0032",
+      "version": 32
+    },
+    {
+      "index": 33,
+      "warmup": false,
+      "durationMs": 128.90000000223517,
+      "quantity": "200.0033",
+      "version": 33
+    },
+    {
+      "index": 34,
+      "warmup": false,
+      "durationMs": 65.19999999925494,
+      "quantity": "200.0034",
+      "version": 34
+    },
+    {
+      "index": 35,
+      "warmup": false,
+      "durationMs": 73.80000000074506,
+      "quantity": "200.0035",
+      "version": 35
+    }
+  ],
+  "targetP95Ms": 2000,
+  "lastTrainingMonth": "2026-10",
+  "quantityPolicy": "35 substituições sequenciais da mesma célula, com valores distintos e justificação",
+  "isolated": true,
+  "environment": {
+    "os": "Linux-7.2.13-200.fc44.x86_64-x86_64-with-glibc2.43",
+    "cpu": "AMD Ryzen 7 7730U with Radeon Graphics",
+    "logicalCpus": 16,
+    "memoryTotalKiB": 15692708,
+    "loadAverageBeforeBrowser": [
+      2.01904296875,
+      1.16259765625,
+      1.21826171875
+    ],
+    "java": "openjdk version \"17.0.11\" 2024-04-16",
+    "jvmMaxHeapMiB": 384,
+    "mysqlVersion": "8.4.13",
+    "mysqlBufferPoolBytes": 134217728,
+    "mysqlPerformanceSchema": 1,
+    "node": "v24.14.1",
+    "gitCommit": "58be583de39014da2171d089cf00f0f828d9e243",
+    "trackedChangesPresent": true,
+    "backendJarSha256": "59b4d99afb6828197d5c11703cd21dae0ca033e2a51b21bc0597ae4dac73296d",
+    "frontendSha256": "9b9ea3f90c6d7a0322022fda0804fef342dbaf0efe0c28da2b987c8b14f45e4c"
+  },
+  "createdAt": "2026-11-10T23:15:58.733Z",
+  "browser": "156.0.8078.79",
+  "headless": true,
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "concurrency": 1,
+  "measurement": "Clique em Guardar ajuste até quantidade/versão atualizadas no DOM e dois requestAnimationFrame. Inclui CSRF, POST, releituras e renderização; exclui preencher o formulário.",
+  "displayedRowsPerPage": 20,
+  "errors": [],
+  "completed": true,
+  "summary": {
+    "count": 30,
+    "minMs": 64.5,
+    "medianMs": 76.24999999813735,
+    "meanMs": 77.09333333298564,
+    "p95Ms": 95.19999999925494,
+    "maxMs": 128.90000000223517,
+    "percentileMethod": "nearest-rank"
+  },
+  "passedTarget": true
+}

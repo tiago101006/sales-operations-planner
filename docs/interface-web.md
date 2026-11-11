@@ -158,9 +158,16 @@ e [cache de contextos nos testes](https://docs.spring.io/spring-framework/refere
 ## Trabalho seguinte
 
 A interface é funcional, mas isto ainda não constitui a avaliação académica final.
-Falta medir as tarefas com utilizadores e a meta de desempenho, executar/verificar
-restauro de backup, consolidar o conjunto de dados e concluir manual, resultados e
+Falta medir as tarefas com utilizadores e o conforto de utilização, consolidar o
+conjunto de dados e concluir manual, resultados e
 relatório. Essas evidências não são substituídas pelos testes automáticos.
+O [backup/restauro](backup-restauro.md) já foi verificado numa cópia isolada.
+A [meta de desempenho do ajuste](desempenho.md) foi medida no cenário local documentado.
+
+A direção visual aprovada dá prioridade a fundos neutros, verde em destaques
+pontuais, contraste legível e espaçamento consistente. Os gráficos devem apoiar
+as tarefas e a informação. O conforto em sessões prolongadas fica para avaliação
+com utilizadores, em vez de ser inferido a partir das capturas de ecrã.
 
 ## Validação desta entrega
 
