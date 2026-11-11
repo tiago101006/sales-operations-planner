@@ -55,7 +55,8 @@ h2 { font-size: 16px; letter-spacing: -.4px; font-weight: 600; }
 .btn.primary:hover:not(:disabled), .btn.dark:hover:not(:disabled), .btn.primary:focus-visible, .btn.dark:focus-visible { background: #173d34; color: #fffdf0; border-color: #173d34; }
 .btn.link { background: transparent; color: #29664c; box-shadow: none; }
 .btn.link:hover:not(:disabled) { background: transparent; text-decoration: underline; }
-.btn.danger { color: #963d2e; border-color: #dab1a0; }
+.btn.danger { color: #963d2e; border-color: #dab1a0; background: #fff8f4; }
+.btn.danger:hover:not(:disabled), .btn.danger:focus-visible { color: #7c2d21; background: #f5e0d5; border-color: #b97962; }
 .btn.small { font-size: 11px; min-height: 31px; }
 .panel { background: var(--paper); border: 1px solid #d8ddce; border-radius: 11px; box-shadow: none; margin-bottom: 20px; overflow: hidden; }
 .panel-head, .admin-dashboard .panel-head { min-height: 64px; padding: 18px 22px; background: #f7f7ef; border-bottom: 1px solid #dfe4d5; align-items: center; }

@@ -227,7 +227,7 @@ export function createViews(ctx) {
   }
   async function plan(id) {
     const [p, lines] = await Promise.all([api.get(`/planos/${id}`), page('planLines', `/planos/${id}/linhas`)]);
-    return back('planos', 'Planos publicados') + heading('Publicação #' + esc(id), 'Plano aprovado', 'Os valores publicados e a exportação usam a mesma cópia preservada.', b('Descarregar CSV', 'download', `data-id="${esc(id)}"`, 'primary') + (writer() ? b('Criar avaliação', 'dialog', `data-kind="assessment" data-plan="${esc(id)}"`) : '')) +
+    return back('planos', 'Planos publicados') + heading('Plano publicado', 'Plano aprovado #' + esc(id), 'Os valores publicados e a exportação usam a mesma cópia preservada.', b('Descarregar CSV', 'download', `data-id="${esc(id)}"`, 'primary') + (writer() ? b('Criar avaliação', 'dialog', `data-kind="assessment" data-plan="${esc(id)}"`) : '')) +
       panel('Informação de aprovação', '', meta([['Revisão', '#' + esc(p.revisaoId)], ['Cenário', '#' + esc(p.cenarioId)], ['Aprovado por', 'Utilizador #' + esc(p.aprovadoPor)], ['Aprovação', esc(date(p.aprovadoEm))], ['Publicação', esc(date(p.publicadoEm))]])) +
       panel('Células publicadas', 'A consulta é paginada; o CSV inclui todas as linhas.', table(['Produto', 'Mês', 'Unidade', 'Previsão base', 'Quantidade aprovada'], lines.items.map(l => [esc(l.produto), esc(month(l.periodo)), esc(l.unidade), q(l.quantidadeBase), `<strong class="num">${q(l.quantidade)}</strong>`])) + pager(lines, 'planLines'));
   }
@@ -258,7 +258,7 @@ export function createViews(ctx) {
   async function team() {
     const users = await page('team', '/utilizadores');
     return heading('Acesso e responsabilidades', 'Equipa', 'Cria contas com os papéis necessários. A aprovação exige independência de quem preparou ou ajustou a revisão.', b(icon('plus', 16) + 'Criar utilizador', 'dialog', 'data-kind="user"', 'primary')) +
-      panel('Membros da equipa', 'Consulta reservada ao administrador.', table(['Nome', 'Email', 'Perfis', ''], users.items.map(u => [esc(u.nome), esc(u.email), esc(u.papeis.map(label).join(' · ')), rowAction('Consultar', 'lookup-user', u.id)])) + pager(users, 'team')) +
+      panel('Membros da equipa', 'Consulta reservada ao administrador.', table(['ID', 'Nome', 'Email', 'Perfis', ''], users.items.map(u => [`<strong>#${esc(u.id)}</strong>`, esc(u.nome), esc(u.email), esc(u.papeis.map(label).join(' · ')), rowAction('Consultar', 'lookup-user', u.id)])) + pager(users, 'team')) +
       panel('Consultar utilizador', 'A consulta é feita por identificador.', `<form id="user-lookup" class="toolbar">${field('Identificador', input('userId', 'text', '', 'required pattern="[1-9][0-9]*" inputmode="numeric" placeholder="Ex.: 2"'))}<button class="btn" type="submit">Consultar</button></form><div id="user-result"></div>`) +
       panel('Responsabilidades', '', table(['Papel', 'Responsabilidade'], [['Administrador', 'Gere contas e prepara dados e planos. Não aprova automaticamente.'], ['Planeador', 'Importa, prevê, cria cenários, ajusta e submete revisões.'], ['Comercial', 'Consulta dados, cenários e resultados.'], ['Aprovador', 'Aprova ou devolve revisões em que não interveio.'], ['Consumidor', 'Consulta catálogo, planos publicados e monitorização.']].map(r => r.map(esc))));
   }
