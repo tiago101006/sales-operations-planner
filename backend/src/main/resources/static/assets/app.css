@@ -52,6 +52,11 @@
 .panel { border-radius: 14px; box-shadow: 0 3px 15px #243d3603; }
 .panel-head { border-color: #eff1eb; }
 .btn { border-radius: 8px; }
+.btn.dark:hover:not(:disabled), .btn.dark:focus-visible {
+  background: #244f40;
+  border-color: #244f40;
+  color: #fff;
+}
 input, select, textarea { border-radius: 7px; }
 .admin-dashboard .page-heading { align-items: center; margin-bottom: 27px; }
 .admin-dashboard h1 { font-size: 28px; font-weight: 700; letter-spacing: -.9px; }
