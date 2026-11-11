@@ -64,9 +64,11 @@ export const panel = (title, subtitle, content, actions = '') => {
 };
 export const metric = (name, value, note, tone = '') => `<article class="metric ${tone}"><p>${esc(name)}</p><strong>${esc(value)}</strong><small>${esc(note)}</small></article>`;
 export const pager = (data, key) => `<div class="pagination"><span>${esc(data.totalElements)} registos · Página ${data.page + 1} de ${Math.max(1, data.totalPages)}</span><div>${button('Anterior', 'page', `data-key="${key}" data-page="${data.page - 1}" ${data.page <= 0 ? 'disabled' : ''}`)}${button('Seguinte', 'page', `data-key="${key}" data-page="${data.page + 1}" ${data.page + 1 >= data.totalPages ? 'disabled' : ''}`)}</div></div>`;
+let chartId = 0;
 export function lineChart(periods, series, description = 'Quantidades por mês', { area = false } = {}) {
   const numbers = series.flatMap(s => s.values).filter(v => v !== null && v !== undefined).map(Number).filter(Number.isFinite);
   if (!numbers.length) return empty('Sem valores para representar', 'Consulta a cobertura e os motivos de exclusão.');
+  const tooltipId = 'chart-tooltip-' + (++chartId);
   const width = 800, height = 250, left = 70, right = 22, top = 20, bottom = 45;
   const max = Math.max(1, ...numbers) * 1.12, min = Math.min(0, ...numbers);
   const x = i => left + i * (width - left - right) / Math.max(1, periods.length - 1);
@@ -84,7 +86,11 @@ export function lineChart(periods, series, description = 'Quantidades por mês',
       const coords = segment.trim().split(/[ L]+/).map(Number);
       return `<path d="M${segment}L${coords.at(-2)} ${height - bottom}L${coords[0]} ${height - bottom}Z" fill="${color}" opacity=".07"/>`;
     }).join('') : '';
-    return fills + `<path d="${path}" fill="none" stroke="${color}" stroke-width="2.5" ${index === 1 ? 'stroke-dasharray="5 4"' : ''}/>` + s.values.map((v, i) => v == null || !Number.isFinite(Number(v)) ? '' : `<circle cx="${x(i)}" cy="${y(v)}" r="4" fill="white" stroke="${color}" stroke-width="2"><title>${esc(s.name)} · ${esc(periods[i])}: ${esc(quantity(v))}</title></circle>`).join('');
+    return fills + `<path d="${path}" fill="none" stroke="${color}" stroke-width="2.5" ${index === 1 ? 'stroke-dasharray="5 4"' : ''}/>` + s.values.map((v, i) => {
+      if (v == null || !Number.isFinite(Number(v))) return '';
+      const period = month(periods[i]), value = quantity(v);
+      return `<circle class="chart-point" data-chart-point data-index="${i}" data-period="${esc(period)}" data-series="${esc(s.name)}" data-value="${esc(value)}" data-color="${color}" cx="${x(i)}" cy="${y(v)}" r="4" fill="white" stroke="${color}" stroke-width="2" tabindex="0" role="img" aria-label="${esc(s.name)} · ${esc(period)}: ${esc(value)}"><title>${esc(s.name)} · ${esc(periods[i])}: ${esc(value)}</title></circle>`;
+    }).join('');
   }).join('');
-  return `<div class="chart"><div class="legend">${series.map((s, i) => `<span><i class="line-${i % colors.length}"></i>${esc(s.name)}</span>`).join('')}</div><svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${esc(description)}">${grid}${periods.map((p, i) => `<text x="${x(i)}" y="${height - 12}" text-anchor="middle">${esc(month(p))}</text>`).join('')}${paths}</svg></div>`;
+  return `<div class="chart" data-chart-model="${esc(JSON.stringify({ periods, series }))}"><div class="legend">${series.map((s, i) => `<span><i class="line-${i % colors.length}"></i>${esc(s.name)}</span>`).join('')}</div><svg viewBox="0 0 ${width} ${height}" role="group" aria-label="${esc(description)}"><rect class="chart-hit-area" x="70" y="20" width="708" height="185" fill="transparent"/>${grid}${periods.map((p, i) => `<text x="${x(i)}" y="${height - 12}" text-anchor="middle">${esc(month(p))}</text>`).join('')}${paths}<line class="chart-guide" x1="70" x2="70" y1="20" y2="205" visibility="hidden" pointer-events="none"/></svg><div class="chart-tooltip" id="${tooltipId}" role="tooltip" hidden><span class="chart-tooltip-period"></span><div class="chart-tooltip-rows"></div></div></div>`;
 }

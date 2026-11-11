@@ -1,5 +1,5 @@
 import { Api, ApiError } from './api.mjs';
-import { esc, date, quantity as q, factorValue, revisionCaption, label, icon, button as b, field, input, select, role, lastMonth, table, independent } from './ui.mjs';
+import { esc, date, month, quantity as q, factorValue, revisionCaption, label, icon, button as b, field, input, select, role, lastMonth, table, independent } from './ui.mjs';
 import { createViews, miniChart } from './views.mjs';
 
 const api = new Api();
@@ -11,6 +11,53 @@ const internal = () => role(state.user, 'ADMIN', 'PLANEADOR', 'COMERCIAL', 'APRO
 const approver = () => role(state.user, 'APROVADOR');
 const views = createViews({ api, state, writer, internal, approver });
 let epoch = 0, dialogContext = null, noticeTimer;
+let activeChartPoint = null, activeChartTitle = '', touchedChartPoint = null, activeChartIndex = 0;
+function hideChartTooltip() {
+  if (activeChartPoint) {
+    const tooltip = activeChartPoint.closest('.chart')?.querySelector('.chart-tooltip');
+    if (tooltip) tooltip.hidden = true;
+    const chart = activeChartPoint.closest('.chart');
+    chart?.querySelector('.chart-guide')?.setAttribute('visibility', 'hidden');
+    chart?.querySelectorAll('.chart-point title').forEach(title => { if (title.dataset.nativeTitle !== undefined) title.textContent = title.dataset.nativeTitle; });
+    chart?.querySelectorAll('.chart-point.is-active').forEach(p => p.classList.remove('is-active'));
+    activeChartPoint.classList.remove('is-active');activeChartPoint.removeAttribute('aria-describedby');
+    const title = activeChartPoint.querySelector('title');if (title) title.textContent = activeChartTitle;
+  }
+  activeChartPoint = null;activeChartTitle = '';touchedChartPoint = null;
+}
+function showChartTooltip(point, selectedIndex = Number(point?.dataset.index)) {
+  if (!point?.isConnected) return;
+  const chart = point.closest('.chart'), tooltip = chart?.querySelector('.chart-tooltip');
+  if (!tooltip) return;
+  if (activeChartPoint !== point) {
+    hideChartTooltip();activeChartPoint = point;
+    // Keep the native SVG title as a no-script fallback, without a second delayed popup.
+    const title = point.querySelector('title');activeChartTitle = title?.textContent || '';
+    if (title) title.textContent = '';
+  }
+  chart.querySelectorAll('.chart-point title').forEach(title => { if (title.textContent) title.dataset.nativeTitle = title.textContent;title.textContent = ''; });
+  activeChartIndex = selectedIndex;
+  const model = JSON.parse(chart.dataset.chartModel);
+  const index = selectedIndex, plotX = 70 + index * 708 / Math.max(1, model.periods.length - 1);
+  tooltip.querySelector('.chart-tooltip-period').textContent = month(model.periods[index]);
+  tooltip.querySelector('.chart-tooltip-rows').innerHTML = model.series.map((series, i) => `<div class="chart-tooltip-row" data-series="${esc(series.name)}"><span class="chart-tooltip-series"><i class="line-${i % 5}"></i>${esc(series.name)}</span><strong class="chart-tooltip-value">${esc(q(series.values[index]))}</strong></div>`).join('');
+  const guide = chart.querySelector('.chart-guide');
+  guide.setAttribute('x1', plotX);guide.setAttribute('x2', plotX);guide.setAttribute('visibility', 'visible');
+  chart.querySelectorAll('.chart-point').forEach(p => p.classList.toggle('is-active', Number(p.dataset.index) === index));
+  tooltip.hidden = false;point.setAttribute('aria-describedby', tooltip.id);
+  const box = chart.getBoundingClientRect(), svg = chart.querySelector('svg');
+  const position = svg.createSVGPoint();position.x = plotX;position.y = 20;
+  const screen = position.matrixTransform(svg.getScreenCTM());
+  const anchor = { left: screen.x, width: 0, top: screen.y, bottom: screen.y };
+  const inset = 8, scrollLeft = chart.scrollLeft, scrollTop = chart.scrollTop;
+  const minLeft = scrollLeft + inset, maxLeft = Math.max(minLeft, scrollLeft + chart.clientWidth - tooltip.offsetWidth - inset);
+  const center = anchor.left + anchor.width / 2 - box.left + scrollLeft;
+  const above = anchor.top - box.top + scrollTop - tooltip.offsetHeight - 12;
+  const below = anchor.bottom - box.top + scrollTop + 12;
+  const maxTop = Math.max(scrollTop + inset, scrollTop + chart.clientHeight - tooltip.offsetHeight - inset);
+  tooltip.style.left = Math.max(minLeft, Math.min(maxLeft, center - tooltip.offsetWidth / 2)) + 'px';
+  tooltip.style.top = Math.max(scrollTop + inset, Math.min(maxTop, above >= scrollTop + inset ? above : below)) + 'px';
+}
 const routes = [
   ['visao', 'Visão geral', 'home', () => true], ['produtos', 'Produtos', 'box', () => true],
   ['importacoes', 'Importações', 'upload', internal], ['previsoes', 'Previsões', 'trend', internal],
@@ -30,6 +77,7 @@ function notify(text) {
   noticeTimer = setTimeout(() => box.classList.remove('visible'), 6500);
 }
 function logoutView(message = '') {
+  hideChartTooltip();
   document.title = 'Entrar — NexoPlan';
   epoch++;for (const key of Object.keys(state)) delete state[key];Object.assign(state, { user: null, pages: {}, compareIds: [], comparison: null });
   closeDialog();
@@ -55,6 +103,7 @@ async function render() {
   const current = route(), active = aliases[current.name] || current.name;
   const permission = routes.find(r => r[0] === active);
   const main = document.querySelector('#conteudo');const version = ++epoch;
+  hideChartTooltip();
   document.querySelectorAll('[data-nav]').forEach(el => { el.classList.toggle('active', el.dataset.nav === active); if (el.dataset.nav === active) el.setAttribute('aria-current', 'page'); else el.removeAttribute('aria-current'); });
   document.querySelector('#breadcrumb').textContent = permission?.[1] || 'Página';
   document.title = `${permission?.[1] || 'Página'} — NexoPlan`;
@@ -83,6 +132,7 @@ function formError(form, error) {
   box.scrollIntoView({ block: 'nearest' });
 }
 function formHtml(kind, title, content, submit, context = {}) {
+  hideChartTooltip();
   dialogContext = { kind, ...context };
   modal.innerHTML = `<div class="modal-head"><h2 id="modal-title">${title}</h2><button class="close" type="button" data-action="close-dialog" aria-label="Fechar">×</button></div><form id="command-form" data-kind="${kind}"><div class="form-grid">${content}</div><div class="form-error" role="alert"></div><div class="form-actions">${b('Cancelar', 'close-dialog')}<button class="btn primary" type="submit">${submit}</button></div></form>`;
   modal.querySelectorAll('input[type=datetime-local]').forEach(input => input.dataset.initial = input.value);
@@ -357,6 +407,49 @@ document.addEventListener('click', async event => {
   } catch (error) { notify(error.message); }
   finally { if (target.isConnected) target.disabled = false; }
 });
+function chartPointer(event) {
+  const chart = event.target.closest('.chart[data-chart-model]');
+  if (!chart) return null;
+  const svg = chart.querySelector('svg'), point = svg.createSVGPoint();
+  point.x = event.clientX;point.y = event.clientY;
+  const local = point.matrixTransform(svg.getScreenCTM().inverse());
+  if (local.x < 69.5 || local.x > 778.5 || local.y < 19.5 || local.y > 205.5) return null;
+  const model = JSON.parse(chart.dataset.chartModel);
+  const index = Math.max(0, Math.min(model.periods.length - 1, Math.round((local.x - 70) / 708 * (model.periods.length - 1))));
+  const anchor = event.target.closest('[data-chart-point]') || chart.querySelector(`[data-chart-point][data-index="${index}"]`) || chart.querySelector('[data-chart-point]');
+  return anchor ? { anchor, index } : null;
+}
+document.addEventListener('pointermove', event => {
+  if (event.pointerType === 'touch') return;
+  const hit = chartPointer(event);
+  if (hit) showChartTooltip(hit.anchor, hit.index);
+  else if (!document.activeElement?.matches('[data-chart-point]')) hideChartTooltip();
+});
+document.addEventListener('pointerout', event => {
+  const chart = event.target.closest('.chart');
+  if (chart && !chart.contains(event.relatedTarget) && !touchedChartPoint && !document.activeElement?.matches('[data-chart-point]')) hideChartTooltip();
+});
+document.addEventListener('pointerdown', event => {
+  const hit = chartPointer(event);
+  if (!hit) { hideChartTooltip();return; }
+  showChartTooltip(hit.anchor, hit.index);
+  if (event.pointerType === 'touch') touchedChartPoint = hit.anchor;
+});
+document.addEventListener('focusin', event => {
+  const point = event.target.closest('[data-chart-point]');
+  if (point) showChartTooltip(point);
+});
+document.addEventListener('focusout', event => {
+  if (event.target.matches('[data-chart-point]')) hideChartTooltip();
+});
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && activeChartPoint) hideChartTooltip();
+});
+document.addEventListener('scroll', () => {
+  if (activeChartPoint && (document.activeElement === activeChartPoint || activeChartPoint.closest('.chart').matches(':hover'))) showChartTooltip(activeChartPoint, activeChartIndex);
+  else hideChartTooltip();
+}, true);
+window.addEventListener('resize', hideChartTooltip);
 modal.addEventListener('focusin', event => {
   if (event.target.name === 'historySearch') updateHistoryPicker();
 });

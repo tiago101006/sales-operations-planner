@@ -307,3 +307,21 @@ a.work-item:hover .work-copy strong { text-decoration: underline; text-underline
 @media(max-width:800px) {
   .location-note { display: block; font-size: 9px; letter-spacing: .2px; max-width: 130px; text-align: right; }
 }
+/* Exact values on demand: mouse, keyboard focus or touch. */
+.chart { position: relative; }
+.chart-point { cursor: crosshair; }
+.chart-point:hover, .chart-point:focus-visible, .chart-point.is-active { r: 6; stroke-width: 3; outline: none; }
+.chart-point:focus-visible { fill: #e5edc1; }
+.chart-tooltip { position: absolute; z-index: 4; pointer-events: none; max-width: min(290px,calc(100% - 16px)); padding: 12px 15px; border: 1px solid #52735c; border-left: 4px solid var(--point-color,#c6dba5); border-radius: 8px; background: #173d34; color: #fffceb; box-shadow: 0 6px 20px #173d3426; line-height: 1.5; }
+.chart-tooltip[hidden] { display: none; }
+.chart-tooltip-period { display: block; font-size: 10px; color: #d4e1c4; margin-bottom: 4px; }
+.chart-tooltip-series { display: block; font-size: 11px; color: #f3f4e5; overflow-wrap: anywhere; }
+.chart-tooltip-value { display: block; font-size: 19px; font-weight: 600; color: #e5edc1; margin-top: 3px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.chart-guide { stroke: #71856b; stroke-width: 1; stroke-dasharray: 4 4; }
+.chart-hit-area { pointer-events: all; }
+.chart-tooltip { min-width: 215px; }
+.chart-tooltip-row { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-top: 6px; }
+.chart-tooltip-row .chart-tooltip-value { font-size: 15px; margin: 0; }
+.chart-tooltip-row .chart-tooltip-series { display: flex; gap: 6px; align-items: center; }
+.chart-tooltip-series i { width: 8px; height: 8px; border-radius: 50%; background: var(--line); flex-shrink: 0; }
+.chart-tooltip-series .line-0 { --line: #23786a; }.chart-tooltip-series .line-1 { --line: #b28142; }.chart-tooltip-series .line-2 { --line: #7b9b92; }.chart-tooltip-series .line-3 { --line: #7769ad; }.chart-tooltip-series .line-4 { --line: #be6670; }

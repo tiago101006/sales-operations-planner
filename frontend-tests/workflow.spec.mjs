@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { readFile, mkdir } from 'node:fs/promises';
+import { month as displayMonth, quantity as displayQuantity } from '../backend/src/main/resources/static/assets/ui.mjs';
 
 const password = process.env.SOP_UI_PASSWORD;
 const login = async (page, email) => {
@@ -455,6 +456,60 @@ test('percurso completo com APIs reais, auditoria, aprovação independente e mo
     for (const line of published.items) {
       expect(chartValues).toContain(`Plano aprovado · ${line.periodo}: ${line.quantidade.replace('.', ',')}`);
     }
+    const chart = dashboard.locator('.dashboard-chart .chart');
+    const tooltip = chart.getByRole('tooltip');
+    const lastApprovedPoint = chart.locator('[data-chart-point][data-series="Plano aprovado"]').last();
+    await chart.scrollIntoViewIfNeeded();
+    await lastApprovedPoint.hover();
+    await expect(tooltip).toBeVisible();
+    await expect(tooltip.locator('.chart-tooltip-series')).toHaveText(['Previsão base', 'Plano aprovado']);
+    await expect(tooltip.locator('.chart-tooltip-period')).toHaveText(displayMonth(published.items.at(-1).periodo));
+    await expect(tooltip.locator('[data-series="Plano aprovado"] .chart-tooltip-value')).toHaveText(displayQuantity(published.items.at(-1).quantidade));
+    await expect(lastApprovedPoint).toHaveAttribute('aria-describedby', await tooltip.getAttribute('id'));
+    const boundedTooltip = async chartLocator => chartLocator.evaluate(el => {
+      const box = el.getBoundingClientRect(), tip = el.querySelector('.chart-tooltip').getBoundingClientRect();
+      return tip.left >= box.left - 1 && tip.right <= box.right + 1 && tip.top >= box.top - 1 && tip.bottom <= box.bottom + 1;
+    });
+    expect(await boundedTooltip(chart)).toBe(true);
+    // The empty plot area selects the nearest month horizontally, regardless of Y.
+    const svg = chart.locator('svg');
+    const positions = await svg.evaluate(el => {
+      const matrix = el.getScreenCTM();
+      return [70 + 708 * .4, 70 + 708 * .8].map(x => { const p = el.createSVGPoint();p.x = x;p.y = 170;const q = p.matrixTransform(matrix);return { x: q.x, y: q.y }; });
+    });
+    await page.mouse.move(positions[0].x, positions[0].y);
+    await expect(tooltip.locator('.chart-tooltip-period')).toHaveText(displayMonth(published.items[1].periodo));
+    await expect(tooltip.locator('[data-series="Previsão base"] .chart-tooltip-value')).toHaveText(displayQuantity(published.items[1].quantidadeBase));
+    await expect(tooltip.locator('[data-series="Plano aprovado"] .chart-tooltip-value')).toHaveText(displayQuantity(published.items[1].quantidade));
+    await expect(chart.locator('.chart-guide')).toHaveAttribute('visibility', 'visible');
+    await page.mouse.move(positions[1].x, positions[1].y);
+    await expect(tooltip.locator('.chart-tooltip-period')).toHaveText(displayMonth(published.items.at(-1).periodo));
+    await chart.screenshot({ path: '../tmp/ui-preview/grafico-tooltip.png' });
+    await expect(tooltip).toBeVisible();
+    await page.mouse.move(1400, 80);
+    await expect(tooltip).toBeHidden();
+    await expect(lastApprovedPoint.locator('title')).toHaveText(`Plano aprovado · ${published.items.at(-1).periodo}: ${published.items.at(-1).quantidade.replace('.', ',')}`);
+    const firstBasePoint = chart.locator('[data-chart-point][data-series="Previsão base"]').first();
+    await firstBasePoint.focus();
+    await expect(tooltip).toBeVisible();
+    await expect(tooltip.locator('.chart-tooltip-series')).toHaveText(['Previsão base', 'Plano aprovado']);
+    await expect(tooltip.locator('[data-series="Previsão base"] .chart-tooltip-value')).toHaveText(displayQuantity(published.items[0].quantidadeBase));
+    await page.keyboard.press('Escape');
+    await expect(tooltip).toBeHidden();
+    await expect(firstBasePoint).toBeFocused();
+    // A real touch context verifies tap support without changing the user's data or exposing session cookies.
+    const touchContext = await context.browser().newContext({ storageState: await context.storageState(), hasTouch: true, viewport: { width: 390, height: 844 } });
+    try {
+      const touchPage = await touchContext.newPage();
+      await touchPage.goto(page.url());
+      const touchChart = touchPage.locator('.admin-dashboard .dashboard-chart .chart');
+      await touchChart.locator('[data-chart-point][data-series="Previsão base"]').first().tap();
+      await expect(touchChart.getByRole('tooltip')).toBeVisible();
+      await expect(touchChart.locator('[data-series="Previsão base"] .chart-tooltip-value')).toHaveText(displayQuantity(published.items[0].quantidadeBase));
+      expect(await boundedTooltip(touchChart)).toBe(true);
+      await touchPage.getByRole('heading', { name: 'Visão geral', exact: true }).tap();
+      await expect(touchChart.getByRole('tooltip')).toBeHidden();
+    } finally { await touchContext.close(); }
     await expect(page.locator('#notice')).not.toHaveClass(/visible/, { timeout: 8000 });
     await page.mouse.move(1400, 80);
     await page.screenshot({ path: '../tmp/ui-preview/visao-geral.png', fullPage: true });

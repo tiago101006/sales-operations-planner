@@ -68,7 +68,8 @@ Até 800 px, o botão **Abrir navegação** apresenta o menu e atualiza
 `aria-expanded`. Escolher uma página fecha o menu; Escape também o fecha e devolve
 o foco ao botão. O conteúdo ocupa a largura disponível, com margens laterais curtas também em
 ecrãs largos. No computador, as etapas da navegação ficam próximas entre si;
-Equipa mantém-se como acesso de gestão separado à direita. Tabelas e gráficos largos
+Equipa mantém-se como acesso de gestão separado à direita, sem repetir esse
+atalho na Visão geral. As opções dentro de cada etapa têm separação própria. Tabelas e gráficos largos
 permitem deslocação dentro da sua própria área, sem alargar a página.
 
 Verde profundo, areia e cobre identificam a NexoPlan. O destaque principal enquadra
@@ -119,6 +120,14 @@ Os fatores simples aparecem como 1,10 ou 0,90. A formatação retira apenas zero
 de preenchimento e conserva as casas significativas até à precisão já aceite
 pela API (seis casas); a edição e os cálculos não são arredondados para duas casas.
 As quantidades continuam a conservar todas as casas devolvidas pela API.
+
+A área dos gráficos de dados seleciona o mês mais próximo da posição horizontal
+do rato ou toque. Uma linha vertical acompanha o mês e uma caixa reúne os valores
+exatos de todas as séries, incluindo valores indisponíveis. O foco de teclado
+num ponto também seleciona o respetivo mês. A caixa respeita
+os limites visíveis do gráfico e fecha ao abandonar o ponto, premir Escape ou
+escolher outra área. Valores em falta continuam sem pontos artificiais; o
+formato do tooltip conserva as casas decimais devolvidas pela API.
 
 O painel de monitorização separa precisão e operação e mantém os contadores de
 cobertura junto das métricas. O detalhe lista todos os produtos e motivos; o
