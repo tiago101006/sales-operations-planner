@@ -67,6 +67,24 @@ test('percurso completo com APIs reais, auditoria, aprovação independente e mo
   await test.step('importação rejeitada com diagnósticos e importação válida', async () => {
     await page.getByRole('link', { name: 'Importações', exact: true }).click();
     await page.getByRole('button', { name: 'Importar CSV', exact: true }).click();
+    await modal(page).getByText('Consultar o formato esperado', { exact: true }).click();
+    await expect(modal(page).getByText('Cabeçalho (primeira linha)', { exact: true })).toBeVisible();
+    await expect(modal(page).locator('#csv-example')).toContainText(';VENDAS;');
+    const widths = await modal(page).evaluate(el => ({ help: el.querySelector('.csv-help').getBoundingClientRect().width, grid: el.querySelector('.form-grid').getBoundingClientRect().width }));
+    expect(widths.help).toBeGreaterThan(widths.grid * .95);
+    await modal(page).getByLabel('Tipo de dados', { exact: true }).selectOption('OPERACIONAL');
+    await expect(modal(page).locator('#csv-format')).toContainText('dias_com_procura_sem_stock');
+    await page.screenshot({ path: '../tmp/ui-preview/formato-csv-desktop.png', fullPage: true });
+    await page.setViewportSize({ width: 390, height: 844 });
+    expect(await modal(page).evaluate(el => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
+    await page.screenshot({ path: '../tmp/ui-preview/formato-csv-mobile.png', fullPage: true });
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await modal(page).getByLabel('Tipo de dados', { exact: true }).selectOption('REALIZADOS');
+    await expect(modal(page).locator('#csv-description')).toContainText('procura realizada');
+    await modal(page).getByLabel('Tipo de dados', { exact: true }).selectOption('');
+    await expect(modal(page).locator('.csv-help')).toBeHidden();
+    await modal(page).getByLabel('Tipo de dados', { exact: true }).selectOption('HISTORICO');
+    await modal(page).getByText('Consultar o formato esperado', { exact: true }).click();
     await modal(page).getByLabel('Origem', { exact: true }).fill('Ensaio no navegador');
     await modal(page).locator('input[type=file]').setInputFiles(process.env.SOP_UI_DUPLICATE);
     await modal(page).getByRole('button', { name: 'Importar e validar', exact: true }).click();

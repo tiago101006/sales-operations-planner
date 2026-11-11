@@ -97,7 +97,7 @@ async function dialog(kind, data = {}) {
     }
     case 'import': {
       const lots = (await api.all('/lotes')).filter(l => l.estado === 'VALIDADO');
-      formHtml(kind, 'Importar dados CSV', field('Tipo de dados', select('tipo', [['HISTORICO', 'Histórico de vendas / consumo'], ['REALIZADOS', 'Procura realizada'], ['OPERACIONAL', 'Resultados operacionais']], 'HISTORICO')) + field('Origem', input('origem', 'text', '', 'required maxlength="160" placeholder="Ex.: sistema de vendas"')) + field('Ficheiro CSV', '<input name="ficheiro" type="file" accept=".csv,text/csv" required>', 'UTF-8 · separador ; · até 10 MiB. Os produtos devem existir no catálogo.') + field('Corrige um lote anterior', select('substituiLoteId', [], '', false), 'Opcional. Novo snapshot completo do mesmo tipo, sem alterar o anterior.') + `<div class="info"><details><summary>Consultar o formato esperado</summary><p id="csv-format"></p></details></div>`, 'Importar e validar', { lots });updateImportFormat();break;
+      formHtml(kind, 'Importar dados CSV', field('Tipo de dados', select('tipo', [['HISTORICO', 'Histórico de vendas / consumo'], ['REALIZADOS', 'Procura realizada'], ['OPERACIONAL', 'Resultados operacionais']], 'HISTORICO')) + field('Origem', input('origem', 'text', '', 'required maxlength="160" placeholder="Ex.: sistema de vendas"')) + field('Ficheiro CSV', '<input name="ficheiro" type="file" accept=".csv,text/csv" required>', 'UTF-8 · separador ; · até 10 MiB. Os produtos devem existir no catálogo.') + field('Corrige um lote anterior', select('substituiLoteId', [], '', false), 'Opcional. Novo snapshot completo do mesmo tipo, sem alterar o anterior.') + `<div class="info csv-help"><details><summary>Consultar o formato esperado</summary><div class="csv-help-content"><p id="csv-description"></p><div class="csv-caption">Cabeçalho (primeira linha)</div><pre class="csv-snippet"><code id="csv-format"></code></pre><div class="csv-caption">Exemplo de uma linha de dados</div><pre class="csv-snippet"><code id="csv-example"></code></pre><p class="csv-note">Exemplos ilustrativos: usa códigos do catálogo, meses AAAA-MM, ponto nas casas decimais e datas de disponibilidade em UTC (Z).</p></div></details></div>`, 'Importar e validar', { lots });updateImportFormat();break;
     }
     case 'forecast': case 'backtest': {
       const lots = (await api.all('/lotes')).filter(l => l.tipo === 'HISTORICO' && l.estado === 'VALIDADO');
@@ -139,8 +139,29 @@ function updateImportFormat() {
   const type = modal.querySelector('[name=tipo]').value;
   const old = modal.querySelector('[name=substituiLoteId]');
   old.innerHTML = '<option value="">Nenhum</option>' + dialogContext.lots.filter(l => l.tipo === type).map(l => `<option value="${esc(l.id)}">#${esc(l.id)} · ${esc(l.nomeFicheiro)}</option>`).join('');
-  const formats = { HISTORICO: 'produto;periodo;tipo;quantidade;unidade;disponivel_em', REALIZADOS: 'produto;periodo;quantidade;unidade;disponivel_em', OPERACIONAL: 'produto;periodo;unidade;unidades_solicitadas;unidades_satisfeitas_no_prazo;dias_observados_com_procura;dias_com_procura_sem_stock;stock_fecho;limite_stock;unidades_perdidas;prazo_medio_dias;disponivel_em' };
-  modal.querySelector('#csv-format').textContent = formats[type];
+  const formats = {
+    HISTORICO: {
+      header: 'produto;periodo;tipo;quantidade;unidade;disponivel_em',
+      example: 'SKU001;2026-10;VENDAS;24.0000;un;2026-11-01T00:00:00Z',
+      description: 'Uma linha por produto, mês e tipo de série: VENDAS ou CONSUMO.',
+    },
+    REALIZADOS: {
+      header: 'produto;periodo;quantidade;unidade;disponivel_em',
+      example: 'SKU001;2026-10;24.0000;un;2026-11-01T00:00:00Z',
+      description: 'Uma linha por produto e mês já fechado, com a procura realizada.',
+    },
+    OPERACIONAL: {
+      header: 'produto;periodo;unidade;unidades_solicitadas;unidades_satisfeitas_no_prazo;dias_observados_com_procura;dias_com_procura_sem_stock;stock_fecho;limite_stock;unidades_perdidas;prazo_medio_dias;disponivel_em',
+      example: 'SKU001;2026-10;un;100;90;20;2;30;10;1;2;2026-11-01T00:00:00Z',
+      description: 'Uma linha por produto e mês, com os resultados de serviço e stock.',
+    },
+  };
+  const format = formats[type];
+  modal.querySelector('.csv-help').hidden = !format;
+  if (!format) return;
+  modal.querySelector('#csv-format').textContent = format.header;
+  modal.querySelector('#csv-example').textContent = format.example;
+  modal.querySelector('#csv-description').textContent = format.description;
 }
 function updateMethod() {
   const method = modal.querySelector('[name=metodo]').value;

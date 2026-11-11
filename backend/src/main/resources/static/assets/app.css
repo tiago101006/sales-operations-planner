@@ -58,6 +58,13 @@
   color: #fff;
 }
 input, select, textarea { border-radius: 7px; }
+.form-grid > .csv-help { grid-column: 1 / -1; min-width: 0; margin-bottom: 0; }
+.csv-help-content { margin-top: 12px; }
+.csv-help-content > p { margin: 0 0 12px; }
+.csv-help .csv-caption { font-size: 11px; font-weight: 600; color: #435d49; }
+.csv-help .csv-snippet { margin: 6px 0 14px; padding: 10px 12px; max-width: 100%; border: 1px solid #dce5d7; border-radius: 7px; background: #fff; }
+.csv-help .csv-snippet code { display: block; margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.7; color: #43564a; }
+.csv-help .csv-note { font-size: 11px; line-height: 1.7; margin-bottom: 0; }
 .admin-dashboard .page-heading { align-items: center; margin-bottom: 27px; }
 .admin-dashboard h1 { font-size: 28px; font-weight: 700; letter-spacing: -.9px; }
 .admin-dashboard .eyebrow { color: #647668; letter-spacing: 1.6px; font-size: 9px; margin-bottom: 8px; }
