@@ -1,15 +1,16 @@
-import { esc, quantity as q, percent, date, month, label, badge, icon, button as b, field, select, input, table, panel, metric, pager, empty, lineChart, independent, role } from './ui.mjs';
+import { esc, quantity as q, factorValue, revisionCaption, percent, date, month, label, badge, icon, button as b, field, select, input, table, panel, metric, pager, empty, lineChart, independent, role } from './ui.mjs';
 
 const rowAction = (text, action, id) => b(text, action, `data-id="${esc(id)}"`, 'small');
 const meta = values => `<div class="detail-meta">${values.map(([name, value]) => `<div><small>${name}</small><p>${value}</p></div>`).join('')}</div>`;
 const info = (text, warn = false) => `<div class="info ${warn ? 'warn' : ''}">${text}</div>`;
+const scenarioHelp = () => `<details class="info scenario-help"><summary>Cenário ou revisão: qual é a diferença?</summary><p><strong>Cenário:</strong> uma hipótese de procura, como “Otimista” ou “Conservador”. Usa <strong>Novo cenário</strong> para explorar outra hipótese.</p><p><strong>Revisão:</strong> uma versão guardada do mesmo cenário. Usa <strong>Criar nova revisão</strong> para preparar alterações e conservar a anterior.</p><p><strong>Enviar para aprovação:</strong> congela essa revisão para decisão de um aprovador independente. Depois de aprovada, origina um plano publicado.</p></details>`;
 const miniChart = `<svg class="mini-chart" viewBox="0 0 420 180" fill="none" aria-hidden="true"><path d="M10 150H410M10 110H410M10 70H410M10 30H410" stroke="currentColor" opacity=".12"/><path d="M10 144 68 122 125 132 183 84 240 98 298 55 355 66 410 24V165H10Z" fill="currentColor" opacity=".08"/><path d="M10 144 68 122 125 132 183 84 240 98 298 55 355 66 410 24" stroke="currentColor" stroke-width="2.5"/><path d="m240 98 58-15 57 10 55-25" stroke="currentColor" opacity=".45" stroke-width="2" stroke-dasharray="6 5"/><circle cx="410" cy="24" r="5" fill="currentColor"/></svg>`;
 export { miniChart };
 
 export function createViews(ctx) {
   const { api, state, writer } = ctx;
   const page = (key, path) => api.get(`${path}${path.includes('?') ? '&' : '?'}size=20&page=${state.pages[key] || 0}`);
-  const heading = (eyebrow, title, subtitle, actions = '') => `<div class="page-heading"><div><div class="eyebrow">${eyebrow}</div><h1>${title}</h1><p>${subtitle}</p></div><div class="actions">${actions}</div></div>`;
+  const heading = (eyebrow, title, subtitle, actions = '', attributes = '') => `<div class="page-heading" ${attributes}><div><div class="eyebrow">${eyebrow}</div><h1>${title}</h1><p>${subtitle}</p></div><div class="actions">${actions}</div></div>`;
   const newButton = (text, kind, extra = '') => writer() ? b(icon('plus', 16) + text, 'dialog', `data-kind="${kind}" ${extra}`, 'primary') : '';
   const back = (route, text) => `<a class="back" href="#/${route}">← ${text}</a>`;
 
@@ -25,7 +26,7 @@ export function createViews(ctx) {
   ]));
   const revisionRows = (data, decision = false) => table(['Cenário / revisão', 'Preparada por', decision ? 'Submetida em' : 'Criada em', 'Células', ''], data.items.map(item => {
     const r = item.revisao;
-    return [`<strong>${esc(item.cenarioNome)}</strong><small>Revisão ${r.numero} · #${esc(r.id)}${r.criadoPor === state.user.id ? ' · Criada por ti' : ''}</small>`, esc(item.autorNome), esc(date(decision ? r.submetidoEm : r.criadoEm)), esc(r.totalLinhas), `<a class="btn small" href="#/revisao/${esc(r.id)}">${decision ? 'Analisar' : 'Abrir revisão'}</a>`];
+    return [`<strong>${esc(item.cenarioNome)}</strong><small>${esc(revisionCaption(r))}${r.criadoPor === state.user.id ? ' · Criada por ti' : ''}</small>`, esc(item.autorNome), esc(date(decision ? r.submetidoEm : r.criadoEm)), esc(r.totalLinhas), `<a class="btn small" href="#/revisao/${esc(r.id)}">${decision ? 'Analisar' : 'Abrir revisão'}</a>`];
   }), decision ? 'Sem revisões à espera de decisão' : 'Sem revisões neste estado', decision ? 'As revisões submetidas pela equipa aparecem aqui, das mais antigas para as mais recentes.' : 'O trabalho da equipa aparece aqui à medida que as revisões são criadas.');
 
   async function approvalOverview() {
@@ -161,37 +162,48 @@ export function createViews(ctx) {
   async function scenarios(params) {
     const executions = (await api.all('/execucoes-previsao')).filter(e => e.estado === 'CONCLUIDA' && e.totalLinhas > 0);
     const id = params.get('execucaoId') || state.executionId || executions[0]?.id;
-    if (state.executionId !== id) { state.compareIds = []; state.comparison = null; state.executionId = id; state.pages.scenarios = 0; }
+    if (state.executionId !== id) { state.compareIds = []; state.compareNames = {}; state.comparison = null; state.executionId = id; state.pages.scenarios = 0; }
     if (!id) return heading('Explorar alternativas', 'Cenários', 'Uma previsão base, várias decisões possíveis.') + panel('Começar um cenário', '', empty('Ainda não há previsões elegíveis', 'Gera uma previsão concluída com linhas antes de criar cenários.') + '<div class="panel-body"><a class="btn primary" href="#/previsoes">Ir para previsões</a></div>');
     const data = await page('scenarios', `/cenarios?execucaoId=${encodeURIComponent(id)}`);
+    state.compareNames ||= {};
+    for (const c of data.items) state.compareNames[c.ultimaRevisaoId] = c.nome;
     let result = '';
     if (state.comparison && state.compareIds.length >= 2) {
       const comparison = await api.get(`/comparacao-cenarios?revisaoIds=${state.compareIds.map(encodeURIComponent).join(',')}&size=10&page=${state.pages.comparison || 0}`);
-      const headers = ['Produto / mês', 'Base', ...comparison.revisoes.map(r => `Cenário #${esc(r.cenarioId)}<br>Revisão ${r.numero} · v${r.versao}`)];
+      const revisions = await Promise.all(comparison.revisoes.map(async r => ({ ...r, cenarioNome: state.compareNames[r.id] || (await api.get(`/cenarios/${r.cenarioId}`)).nome })));
+      const headers = ['Produto / mês', 'Previsão base', ...revisions.map(r => `${esc(r.cenarioNome)}<br><small>${esc(revisionCaption(r))}</small>`)];
       const first = comparison.produtos.items[0];
-      result = panel('Comparação de revisões', 'Quantidades finais; o desvio é calculado face à base. Todos os valores mantêm a unidade do produto.', (first ? lineChart(first.periodos.map(p => p.periodo), [{ name: 'Base · ' + first.produto, values: first.periodos.map(p => p.quantidadeBase) }, ...comparison.revisoes.map((r, i) => ({ name: 'Revisão #' + r.id, values: first.periodos.map(p => p.cenarios[i].quantidadeFinal) }))]) : '') +
+      result = panel('Comparação de cenários', 'Compara as quantidades finais das revisões selecionadas. Os desvios são calculados face à previsão base.', (first ? lineChart(first.periodos.map(p => p.periodo), [{ name: 'Previsão base · ' + first.produto, values: first.periodos.map(p => p.quantidadeBase) }, ...revisions.map((r, i) => ({ name: r.cenarioNome + ' · revisão #' + r.id, values: first.periodos.map(p => p.cenarios[i].quantidadeFinal) }))]) : '') +
         `<div class="comparison">${table(headers, comparison.produtos.items.flatMap(p => p.periodos.map(period => [`<strong>${esc(p.produto)}</strong><small>${esc(month(period.periodo))} · ${esc(p.unidade)}</small>`, q(period.quantidadeBase), ...period.cenarios.map(c => `<strong class="num">${q(c.quantidadeFinal)}</strong><small>Desvio ${percent(c.desvioPercentual)}</small>`)])))}</div>` + pager(comparison.produtos, 'comparison'));
     }
-    return heading('Explorar alternativas', 'Cenários', 'Define pressupostos, compara alternativas e conserva a previsão base.', newButton('Novo cenário', 'scenario', `data-execution="${esc(id)}"`)) +
-      panel('Base de planeamento', '', `<div class="toolbar">${field('Execução de previsão', select('scenarioExecution', executions.map(e => [e.id, `#${e.id} · ${label(e.metodo)} · treino até ${e.ultimoPeriodoTreino}`]), id))}</div>`) +
-      panel('Cenários da execução #' + esc(id), 'Seleciona de 2 a 5 revisões da mesma execução para comparar.', table(['Comparar', 'Cenário', 'Tipo', 'Revisões', 'Criado', ''], data.items.map(c => [`<input aria-label="Comparar última revisão de ${esc(c.nome)}" type="checkbox" data-compare="${esc(c.ultimaRevisaoId)}" ${state.compareIds.includes(c.ultimaRevisaoId) ? 'checked' : ''}>`, `<strong>${esc(c.nome)}</strong><small>Cenário #${esc(c.id)}</small>`, esc(label(c.tipo)), esc(c.numeroRevisoes), esc(date(c.criadoEm)), `<a class="btn small" href="#/cenario/${esc(c.id)}">Ver revisões</a>`])) + pager(data, 'scenarios') + `<div class="panel-body"><div class="actions">${state.compareIds.map(r => b('Revisão #' + esc(r) + ' ×', 'remove-compare', `data-id="${esc(r)}"`, 'small')).join('')}${b('Comparar selecionadas', 'compare', state.compareIds.length < 2 ? 'disabled' : '', 'primary')}</div></div>`) + result;
+    return heading('Explorar alternativas', 'Cenários', 'Cria hipóteses de procura e compara-as com a previsão base.', newButton('Novo cenário', 'scenario', `data-execution="${esc(id)}"`)) + scenarioHelp() +
+      panel('Cenários da previsão #' + esc(id), 'Seleciona de 2 a 5 cenários. A comparação usa a última revisão de cada um.', `<div class="scenario-source">${field('Previsão de origem', select('scenarioExecution', executions.map(e => [e.id, `#${e.id} · ${label(e.metodo)} · treino até ${e.ultimoPeriodoTreino}`]), id))}<a class="btn small" href="#/previsao/${esc(id)}">Ver previsão</a></div>` + table(['Comparar', 'Cenário', 'Tipo', 'Revisões guardadas', 'Criado', ''], data.items.map(c => [`<input aria-label="Comparar última revisão de ${esc(c.nome)}" type="checkbox" data-compare="${esc(c.ultimaRevisaoId)}" ${state.compareIds.includes(c.ultimaRevisaoId) ? 'checked' : ''}>`, `<strong>${esc(c.nome)}</strong><small>Cenário #${esc(c.id)}</small>`, esc(label(c.tipo)), esc(c.numeroRevisoes), esc(date(c.criadoEm)), `<a class="btn small" href="#/revisao/${esc(c.ultimaRevisaoId)}">Ver cenário</a>`])) + pager(data, 'scenarios') + `<div class="panel-body"><div class="actions">${state.compareIds.map(r => b(esc(state.compareNames[r] || 'Revisão #' + r) + ' ×', 'remove-compare', `data-id="${esc(r)}"`, 'small')).join('')}${b('Comparar selecionadas', 'compare', state.compareIds.length < 2 ? 'disabled' : '', 'primary')}</div></div>`) + result;
   }
-  async function scenario(id) {
+  async function scenario(id, params) {
     const [c, revisions] = await Promise.all([api.get(`/cenarios/${id}`), page('revisions', `/cenarios/${id}/revisoes`)]);
-    return back(`cenarios?execucaoId=${c.execucaoId}`, 'Cenários') + heading('Cenário #' + esc(id), esc(c.nome), `${esc(label(c.tipo))} · Execução #${esc(c.execucaoId)} · ${c.numeroRevisoes} revisões`) +
-      panel('Histórico de revisões', 'Cada revisão conserva o fator, os pressupostos e a proveniência.', table(['Revisão', 'Fator', 'Estado', 'Ajustes locais', 'Criada', ''], revisions.items.map(r => [`<strong>Revisão ${r.numero}</strong><small>#${esc(r.id)} · versão ${r.versao}</small>`, q(r.fator), badge(r.estado), esc(r.totalAjustesLocais), esc(date(r.criadoEm)), `<a class="btn small" href="#/revisao/${esc(r.id)}">Abrir</a>`])) + pager(revisions, 'revisions'));
+    let returnId = c.ultimaRevisaoId;
+    const requested = params?.get('revisaoId');
+    if (requested && /^[1-9][0-9]{0,18}$/.test(requested)) {
+      try {
+        const source = revisions.items.find(r => r.id === requested) || await api.get(`/revisoes/${requested}`);
+        if (source.cenarioId === c.id) returnId = source.id;
+      } catch (error) { if (![400, 404].includes(error.status)) throw error; }
+    }
+    const actions = `<a class="btn primary" href="#/revisao/${esc(returnId)}">Voltar ao cenário</a>` + (writer() ? b('Novo cenário', 'dialog', `data-kind="scenario" data-execution="${esc(c.execucaoId)}"`) : '');
+    return back(`cenarios?execucaoId=${c.execucaoId}`, 'Cenários da mesma previsão') + heading('Cenário #' + esc(id), esc(c.nome), `${esc(label(c.tipo))} · Previsão #${esc(c.execucaoId)} · ${c.numeroRevisoes} revisões guardadas`, actions) + scenarioHelp() +
+      panel('Histórico de revisões', 'Cada revisão tem um ID único. A versão indica a ordem em que foi guardada neste cenário.', table(['Revisão', 'Fator', 'Estado', 'Ajustes locais', 'Criada', ''], revisions.items.map(r => [`<strong>Revisão #${esc(r.id)}</strong><small>${r.numero}.ª versão deste cenário</small>`, q(factorValue(r.fator)), badge(r.estado), esc(r.totalAjustesLocais), esc(date(r.criadoEm)), `<a class="btn small" href="#/revisao/${esc(r.id)}">Abrir</a>`])) + pager(revisions, 'revisions'));
   }
   async function revision(id) {
     const [r, lines, adjustments, events] = await Promise.all([api.get(`/revisoes/${id}`), page('revisionLines', `/revisoes/${id}/linhas`), api.all(`/revisoes/${id}/ajustes?incluirHerdados=true`), page('events', `/revisoes/${id}/eventos`)]);
     const c = await api.get(`/cenarios/${r.cenarioId}`);
     const canDecide = ctx.approver() && independent(state.user, r, adjustments);
-    const actions = (writer() ? b('Criar nova revisão', 'dialog', 'data-kind="copy"') : '') + (writer() && r.estado === 'RASCUNHO' ? b('Submeter para revisão', 'dialog', 'data-kind="submit"', 'primary') : '') +
+    const actions = (writer() ? b('Novo cenário', 'dialog', `data-kind="scenario" data-execution="${esc(r.execucaoId)}"`) + b('Criar nova revisão', 'dialog', 'data-kind="copy" title="Guardar outra versão deste mesmo cenário"') : '') + (writer() && r.estado === 'RASCUNHO' ? b('Enviar para aprovação', 'dialog', 'data-kind="submit"', 'primary') : '') +
       (canDecide && r.estado === 'EM_REVISAO' ? b('Devolver', 'dialog', 'data-kind="return"', 'danger') + b('Aprovar e publicar', 'dialog', 'data-kind="approve"', 'primary') : '');
     const first = lines.items[0], points = lines.items.filter(l => l.produtoId === first?.produtoId);
-    let note = r.estado === 'RASCUNHO' ? info('Os ajustes substituem a quantidade final de uma célula. A justificação é obrigatória e a previsão base é preservada.') : info('Esta revisão está congelada. Para alterar quantidades, cria uma nova revisão.');
+    let note = r.estado === 'RASCUNHO' ? info('Esta revisão está em rascunho. Podes ajustar as quantidades com justificação e depois enviar esta versão para aprovação.') : info('Esta revisão está congelada. Para preparar alterações ao mesmo cenário, usa Criar nova revisão. Para explorar outra hipótese, usa Novo cenário.');
     if (ctx.approver() && !canDecide && r.estado === 'EM_REVISAO') note += info('A decisão exige outro aprovador: criaste esta revisão ou participaste nos ajustes que ela conserva.', true);
-    return { context: { revision: r, adjustments, revisionCells: lines.items, currentScenario: c }, html: back(`cenario/${r.cenarioId}`, esc(c.nome)) + heading('Cenário / Revisão ' + r.numero, esc(c.nome), `Revisão #${esc(id)} · versão ${r.versao} · ${esc(label(c.tipo))}`, actions) + note +
-      panel('Pressupostos desta revisão', '', meta([['Estado', badge(r.estado)], ['Fator', q(r.fator)], ['Execução', '#' + esc(r.execucaoId)], ['Origem', r.revisaoOrigemId ? `<a href="#/revisao/${esc(r.revisaoOrigemId)}">Revisão #${esc(r.revisaoOrigemId)}</a>` : 'Previsão base'], ['Submetida', esc(date(r.submetidoEm))]]) + `<p class="detail-description">${esc(r.pressupostos.descricao)}</p>`) +
+    return { context: { revision: r, adjustments, revisionCells: lines.items, currentScenario: c }, html: back(`cenarios?execucaoId=${r.execucaoId}`, 'Cenários da mesma previsão') + heading('Revisão #' + esc(r.id), esc(c.nome), `Cenário #${esc(c.id)} · ${r.numero}.ª versão deste cenário · ${esc(label(c.tipo))}`, actions, `data-revision-id="${esc(r.id)}" data-revision-version="${esc(r.versao)}"`) + note + scenarioHelp() +
+      panel('Pressupostos desta revisão', '', meta([['Estado', badge(r.estado)], ['Fator', q(factorValue(r.fator))], ['Previsão', '#' + esc(r.execucaoId)], ['Origem', r.revisaoOrigemId ? `<a href="#/revisao/${esc(r.revisaoOrigemId)}">Revisão #${esc(r.revisaoOrigemId)}</a>` : 'Previsão base'], ['Enviada para aprovação', esc(date(r.submetidoEm))]]) + `<p class="detail-description">${esc(r.pressupostos.descricao)}</p><div class="panel-body"><a class="btn small" href="#/cenario/${esc(c.id)}?revisaoId=${esc(r.id)}">Histórico de revisões deste cenário</a></div>`) +
       panel('Evolução do cenário' + (first ? ' · ' + esc(first.produto) : ''), first ? 'Primeiro produto da página · ' + esc(first.unidade) : '', first ? lineChart(points.map(p => p.periodo), [{ name: 'Base', values: points.map(p => p.quantidadeBase) }, { name: 'Calculada', values: points.map(p => p.quantidadeCalculada) }, { name: 'Final', values: points.map(p => p.quantidadeFinal) }]) : empty('Sem linhas')) +
       panel('Quantidades por mês', 'Ajustes disponíveis apenas em rascunho.', table(['Produto / mês', 'Base', 'Calculada', 'Final', 'Desvio', ''], lines.items.map((l, i) => [`<strong>${esc(l.produto)}</strong><small>${esc(month(l.periodo))} · ${esc(l.unidade)}</small>`, q(l.quantidadeBase), q(l.quantidadeCalculada), `<strong class="num">${q(l.quantidadeFinal)}</strong>`, percent(l.desvioPercentual), writer() && r.estado === 'RASCUNHO' ? b('Ajustar', 'adjust', `data-index="${i}"`, 'small') : '<span class="muted">Consulta</span>'])) + pager(lines, 'revisionLines')) +
       panel('Auditoria dos ajustes', 'Inclui os ajustes herdados que foram conservados no momento da cópia.', table(['Mês / produto', 'Anterior → novo', 'Justificação', 'Autor', 'Origem'], adjustments.map(a => [esc(month(a.periodo)) + '<small>Produto #' + esc(a.produtoId) + '</small>', `<span class="num">${q(a.valorAnterior)} → ${q(a.valorNovo)}</span>`, esc(a.justificacao), esc(a.autorNome) + '<small>' + esc(date(a.ocorridoEm)) + '</small>', a.herdado ? `<a href="#/revisao/${esc(a.revisaoId)}">Herdado · #${esc(a.revisaoId)}</a>` : 'Esta revisão'])), '', ) +

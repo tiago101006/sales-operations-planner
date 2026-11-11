@@ -1,5 +1,5 @@
 import { Api, ApiError } from './api.mjs';
-import { esc, date, quantity as q, label, icon, button as b, field, input, select, role, lastMonth, table, independent } from './ui.mjs';
+import { esc, date, quantity as q, factorValue, revisionCaption, label, icon, button as b, field, input, select, role, lastMonth, table, independent } from './ui.mjs';
 import { createViews, miniChart } from './views.mjs';
 
 const api = new Api();
@@ -51,7 +51,7 @@ async function render() {
   try {
     if (!permission || !views[current.name]) throw new Error('Esta página não existe. Escolhe uma opção do menu.');
     if (!permission[3]()) throw new Error('O teu perfil não tem acesso a esta área. Consulta os planos publicados e a monitorização.');
-    const html = await views[current.name](current.name === 'cenarios' ? current.params : current.id);
+    const html = await views[current.name](current.name === 'cenarios' ? current.params : current.id, current.params);
     if (version === epoch && state.user) { if (typeof html === 'string') main.innerHTML = html; else { Object.assign(state, html.context);main.innerHTML = html.html; } }
   } catch (error) {
     if (version === epoch && state.user) main.innerHTML = `<div class="info error" role="alert">${esc(error.message)}</div>${b('Tentar atualizar', 'refresh')}`;
@@ -157,17 +157,17 @@ async function dialog(kind, data = {}) {
     }
     case 'scenario': {
       const execution = data.execution || state.executionId;
-      formHtml(kind, 'Novo cenário', `<div class="info">Base: execução #${esc(execution)}. O cenário preserva todas as células da previsão original.</div>` + field('Nome', input('nome', 'text', '', 'required maxlength="120" placeholder="Ex.: Campanha de inverno"')) + field('Tipo', select('tipo', [['OTIMISTA', 'Otimista'], ['CONSERVADOR', 'Conservador'], ['BASE', 'Base'], ['PERSONALIZADO', 'Personalizado']], 'OTIMISTA')) + field('Fator', decimalInput('fator', '1.100000', 6, 6), '1,10 corresponde a +10% de procura.') + field('Pressupostos', textArea('descricao'), 'Explica a hipótese que sustenta este cenário.'), 'Criar cenário', { execution });break;
+      formHtml(kind, 'Novo cenário', `<div class="info">Cria outra hipótese de procura a partir da previsão #${esc(execution)}. O cenário começa com a sua primeira revisão.</div><div class="form-span">` + field('Nome', input('nome', 'text', '', 'required maxlength="120" placeholder="Ex.: Campanha de inverno"')) + '</div>' + field('Tipo', select('tipo', [['OTIMISTA', 'Otimista'], ['CONSERVADOR', 'Conservador'], ['BASE', 'Base'], ['PERSONALIZADO', 'Personalizado']], 'OTIMISTA')) + field('Fator', decimalInput('fator', '1.10', 6, 6), '1,10 = mais 10%; 0,90 = menos 10%. Aceita até 6 casas decimais quando necessário.') + field('Pressupostos', textArea('descricao'), 'Explica a hipótese que sustenta este cenário.'), 'Criar cenário', { execution });break;
     }
-    case 'copy': formHtml(kind, 'Criar nova revisão', `<div class="info">Origem: revisão #${esc(r.id)}, versão ${r.versao}. Sem mudar o fator, os valores e a auditoria relevante são conservados.</div><label class="check-group"><input name="recalcular" type="checkbox">Recalcular a partir da base com outro fator</label><div id="new-factor" class="display-none">${field('Novo fator', decimalInput('fator', r.fator, 6, 6))}<p class="info warn">Um fator diferente recalcula as quantidades e deixa de herdar os ajustes anteriores.</p></div>${field('Pressupostos', textArea('descricao', r.pressupostos.descricao))}`, 'Criar revisão', { revision: r });modal.querySelector('[name=fator]').disabled = true;break;
+    case 'copy': formHtml(kind, 'Criar nova revisão', `<div class="info">Vais criar outra versão do cenário <strong>${esc(state.currentScenario.nome)}</strong>, a partir de <strong>${esc(revisionCaption(r))}</strong>. A versão anterior fica guardada. Sem mudar o fator, os valores e a auditoria relevante são conservados.</div><label class="check-group"><input name="recalcular" type="checkbox">Recalcular a partir da base com outro fator</label><div id="new-factor" class="display-none">${field('Novo fator', decimalInput('fator', factorValue(r.fator), 6, 6))}<p class="info warn">Um fator diferente recalcula as quantidades e deixa de herdar os ajustes anteriores.</p></div>${field('Pressupostos', textArea('descricao', r.pressupostos.descricao))}`, 'Criar revisão', { revision: r });modal.querySelector('[name=fator]').disabled = true;break;
     case 'adjust': {
       const cell = data.cell;
       formHtml(kind, 'Ajustar quantidade', `<div class="info"><strong>${esc(cell.produto)} · ${esc(cell.periodo)} · ${esc(cell.unidade)}</strong><br>Base: ${q(cell.quantidadeBase)} · Calculada: ${q(cell.quantidadeCalculada)} · Atual: ${q(cell.quantidadeFinal)}</div>` + field('Nova quantidade final', decimalInput('quantidade', cell.quantidadeFinal), 'Substitui a quantidade atual. Aceita ponto ou vírgula e até quatro casas decimais.') + field('Justificação', textArea('justificacao', '', 1000), 'Indica o motivo de negócio desta alteração.'), 'Guardar ajuste', { revision: r, cell });break;
     }
     case 'submit': case 'return': case 'approve': {
-      const title = kind === 'submit' ? 'Submeter para revisão' : kind === 'return' ? 'Devolver a revisão' : 'Aprovar e publicar';
+      const title = kind === 'submit' ? 'Enviar para aprovação' : kind === 'return' ? 'Devolver a revisão' : 'Aprovar e publicar';
       const desc = kind === 'submit' ? 'As quantidades ficam congeladas enquanto se aguarda a decisão de um aprovador independente.' : kind === 'return' ? 'A revisão fica preservada com o motivo da devolução. A correção é feita numa revisão nova.' : 'A aprovação publica uma cópia estável das quantidades finais. O plano fica disponível por consulta e CSV.';
-      formHtml(kind, title, `<div class="info">Revisão #${esc(r.id)} · versão ${r.versao} · ${r.totalLinhas} células.<br>${desc}</div>` + (kind === 'return' ? field('Motivo da devolução', textArea('motivo', '', 1000)) : ''), title, { revision: r });break;
+      formHtml(kind, title, `<div class="info"><strong>${esc(state.currentScenario.nome)} · ${esc(revisionCaption(r))}</strong><br>${r.totalLinhas} quantidades previstas.<br>${desc}</div>` + (kind === 'return' ? field('Motivo da devolução', textArea('motivo', '', 1000)) : ''), title, { revision: r });break;
     }
     case 'assessment': {
       const [plans, lots] = await Promise.all([api.all('/planos'), api.all('/lotes')]);
@@ -258,7 +258,7 @@ async function command(form, context) {
     }
     case 'scenario': {
       const value = await api.send('/cenarios', { execucaoId: context.execution, nome: text('nome'), tipo: text('tipo'), fator: decimal(text('fator')), pressupostos: { descricao: text('descricao') } });
-      return { message: 'Cenário e primeira revisão criados.', route: 'revisao/' + value.revisao.id };
+      return { message: 'Cenário criado. Estás na primeira revisão, onde podes ajustar as quantidades.', route: 'revisao/' + value.revisao.id };
     }
     case 'copy': {
       const r = context.revision, body = { revisaoOrigemId: r.id, versaoOrigemEsperada: r.versao, pressupostos: { descricao: text('descricao') } };
@@ -398,7 +398,7 @@ document.addEventListener('change', async event => {
     if (target.name === 'monitorProduct') { state.monitorProduct = target.value;await render();return; }
     if (!modal.contains(target)) return;
     if (target.name === 'tipo' && dialogContext?.kind === 'import') updateImportFormat();
-    if (target.name === 'tipo' && dialogContext?.kind === 'scenario') modal.querySelector('[name=fator]').value = { BASE: '1.000000', OTIMISTA: '1.100000', CONSERVADOR: '0.900000', PERSONALIZADO: '1.000000' }[target.value] || '1.000000';
+    if (target.name === 'tipo' && dialogContext?.kind === 'scenario') modal.querySelector('[name=fator]').value = { BASE: '1.00', OTIMISTA: '1.10', CONSERVADOR: '0.90', PERSONALIZADO: '1.00' }[target.value] || '1.00';
     if (target.name === 'metodo') updateMethod();
     if (target.name === 'recalcular') { modal.querySelector('#new-factor').classList.toggle('display-none', !target.checked);modal.querySelector('[name=fator]').disabled = !target.checked; }
     if (dialogContext?.kind === 'backtest' && ['loteHistoricoId', 'tipoSerie', 'horizonteMeses'].includes(target.name)) await suggestBacktest();

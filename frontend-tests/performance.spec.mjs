@@ -42,8 +42,8 @@ test('guardar e mostrar ajuste: revisão de 300 células, 30 medições sem conc
         const observer = new MutationObserver(() => {
           const button = document.querySelector('[data-action="adjust"][data-index="0"]');
           const quantity = button?.closest('tr')?.querySelectorAll('td')[3]?.textContent.trim();
-          const subtitle = document.querySelector('.page-heading p')?.textContent || '';
-          if (start == null || scheduled || document.querySelector('#modal').open || quantity !== expected || !subtitle.includes(`Revisão #${revision} · versão ${version} ·`)) return;
+          const revisionHeader = document.querySelector('.page-heading[data-revision-id]');
+          if (start == null || scheduled || document.querySelector('#modal').open || quantity !== expected || revisionHeader?.dataset.revisionId !== revision || revisionHeader?.dataset.revisionVersion !== String(version)) return;
           scheduled = true;
           requestAnimationFrame(() => requestAnimationFrame(() => {
             window.__sopPerfResult = { durationMs: performance.now() - start, version };

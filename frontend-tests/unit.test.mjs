@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { esc, quantity, percent, independent, role, lineChart, lastMonth } from '../backend/src/main/resources/static/assets/ui.mjs';
+import { esc, quantity, percent, factorValue, independent, role, lineChart, lastMonth } from '../backend/src/main/resources/static/assets/ui.mjs';
 import { Api, ApiError } from '../backend/src/main/resources/static/assets/api.mjs';
 import { summarize } from './performance-stats.mjs';
 
@@ -19,6 +19,12 @@ test('separates approver permission from independence of revision and inherited 
   assert.equal(independent(user, { criadoPor: '9' }, []), false);
   assert.equal(independent(user, { criadoPor: '1' }, [{ autorId: '9', herdado: true }]), false);
   assert.equal(independent(user, { criadoPor: '1' }, [{ autorId: '2' }]), true);
+});
+test('factor formatting removes padding while preserving every significant decimal', () => {
+  assert.equal(factorValue('1.100000'), '1.10');assert.equal(factorValue('0.900000'), '0.90');
+  assert.equal(factorValue('1'), '1.00');assert.equal(factorValue('1.123456'), '1.123456');
+  assert.equal(factorValue('1.000001'), '1.000001');assert.equal(factorValue('999999.123450'), '999999.12345');
+  assert.equal(quantity(factorValue('0.900000')), '0,90');assert.equal(factorValue(null), '');
 });
 test('uses UTC month boundaries, including the change of year', () => {
   assert.equal(lastMonth(new Date('2026-01-01T00:01:00Z')), '2025-12');

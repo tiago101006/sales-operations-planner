@@ -5,12 +5,19 @@ export const quantity = value => {
   return integer.replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + (decimal ? ',' + decimal : '');
 };
 export const percent = value => value == null ? 'Indisponível' : quantity(value) + '%';
+// Only remove padding: a precise factor must never be rounded for display/editing.
+export const factorValue = value => {
+  if (value == null || value === '') return '';
+  const [integer, fraction = ''] = String(value).split('.');
+  return integer + '.' + fraction.replace(/0+$/, '').padEnd(2, '0');
+};
+export const revisionCaption = revision => `Revisão #${revision.id} · ${revision.numero}.ª versão`;
 export const date = value => value ? new Intl.DateTimeFormat('pt-PT', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) : '—';
 export const month = value => value ? new Intl.DateTimeFormat('pt-PT', { month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(value + '-01T00:00:00Z')) : '—';
 export const lastMonth = (now = new Date()) => new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1)).toISOString().slice(0, 7);
 export const role = (user, ...roles) => !!user && roles.some(r => user.papeis.includes(r));
 export const independent = (user, revision, adjustments) => revision.criadoPor !== user.id && !adjustments.some(a => a.autorId === user.id);
-export const label = value => ({ RASCUNHO: 'Rascunho', EM_REVISAO: 'Em revisão', DEVOLVIDA: 'Devolvida', APROVADA: 'Aprovada',
+export const label = value => ({ RASCUNHO: 'Rascunho', EM_REVISAO: 'A aguardar aprovação', DEVOLVIDA: 'Devolvida', APROVADA: 'Aprovada',
   VALIDADO: 'Validado', REJEITADO: 'Rejeitado', CONCLUIDA: 'Concluída', EM_EXECUCAO: 'Em execução',
   HISTORICO: 'Histórico', REALIZADOS: 'Realizados', OPERACIONAL: 'Operacional', MEDIA_MOVEL: 'Média Móvel', ETS: 'ETS',
   BASE: 'Base', OTIMISTA: 'Otimista', CONSERVADOR: 'Conservador', PERSONALIZADO: 'Personalizado',

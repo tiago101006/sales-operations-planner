@@ -58,6 +58,12 @@
   color: #fff;
 }
 input, select, textarea { border-radius: 7px; }
+.form-grid > .info, .form-grid > .form-span, .form-grid > .check-group { grid-column: 1 / -1; min-width: 0; margin-bottom: 0; }
+.scenario-help { margin-bottom: 20px; }
+.scenario-help p { margin: 10px 0 0; }
+.scenario-source { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; padding: 16px 24px; border-bottom: 1px solid var(--line); }
+.scenario-source .field { flex: 1 1 300px; max-width: 520px; }
+.scenario-source > a { flex-shrink: 0; }
 .form-grid > .csv-help { grid-column: 1 / -1; min-width: 0; margin-bottom: 0; }
 .csv-help-content { margin-top: 12px; }
 .csv-help-content > p { margin: 0 0 12px; }
