@@ -9,6 +9,10 @@ dist/
 tmp/
 __pycache__/
 
+# Backups privados: dados e hashes de autenticação não pertencem ao Git.
+backups/
+*.sql.gz
+
 # Regras Java do repositorio GitHub
 # Compiled class file
 *.class
