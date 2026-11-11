@@ -18,6 +18,11 @@ bloco estão nos documentos específicos ligados no README, incluindo
 [aprovação/publicação](aprovacao-publicacao.md). Importações de calendários e promoções
 descritas abaixo ainda não estão implementadas.
 
+O [manual de utilização](manual-utilizacao.md) e o [plano de adoção](plano-adocao.md)
+estão preparados para a entrega. As sessões com participantes, os dados sintéticos
+alargados e a síntese final de resultados continuam pendentes. A documentação não
+constitui evidência de adoção por uma equipa real.
+
 ## Convenções comuns
 
 - Prefixo `/api/v1`. Identificadores SQL BIGINT como strings nos DTOs, evitando perda
@@ -238,6 +243,8 @@ medida em 30 amostras, com p95 de 95,2 ms no cenário local documentado em
 e conforto com utilizadores e concluir
 manual, resultados de backtest e plano de adoção. O restauro de backup já foi
 verificado conforme o [procedimento operacional](backup-restauro.md).
+O [guião exploratório para colegas](usabilidade.md) já está preparado. As sessões
+reais e a validação do RNF01 com participantes representativos permanecem pendentes.
 
 ```bash
 git add backend frontend scripts docs data

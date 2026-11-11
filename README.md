@@ -228,6 +228,9 @@ As versões de Flyway e Connector/J são geridas pelo parent Spring Boot.
 
 ## Documentação
 
+- [Manual de utilização por perfil e percurso completo](docs/manual-utilizacao.md)
+- [Plano de adoção e passagem a utilização](docs/plano-adocao.md)
+
 - [Arquitetura](docs/arquitetura.md)
 - [Plano por fases](docs/plano-implementacao.md)
 - [SQL inicial](backend/src/main/resources/db/migration/V1__schema_inicial.sql)
@@ -245,4 +248,5 @@ As versões de Flyway e Connector/J são geridas pelo parent Spring Boot.
 - [Painéis e tarefas por perfil](docs/paineis-perfil.md)
 - [Backup, restauro e verificação isolada](docs/backup-restauro.md)
 - [Desempenho: método, resultado e repetição do ensaio](docs/desempenho.md)
+- [Usabilidade: protocolo, tarefas e fichas para testar com colegas](docs/usabilidade.md)
 - [Marco anterior do backend](docs/backend-primeiro-marco.md)
