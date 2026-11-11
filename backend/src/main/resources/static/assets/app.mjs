@@ -1,5 +1,5 @@
 import { Api, ApiError } from './api.mjs';
-import { esc, quantity as q, label, icon, button as b, field, input, select, role, lastMonth, table, independent } from './ui.mjs';
+import { esc, date, quantity as q, label, icon, button as b, field, input, select, role, lastMonth, table, independent } from './ui.mjs';
 import { createViews, miniChart } from './views.mjs';
 
 const api = new Api();
@@ -83,6 +83,49 @@ const decimalInput = (name, value, digits = 14, fraction = 4) => input(name, 'te
 const decimal = value => value.trim().replace(',', '.');
 const localNow = () => { const d = new Date();return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 19); };
 const lotOptions = lots => lots.map(l => [l.id, `#${l.id} · ${l.nomeFicheiro} · ${l.totalLinhas} registos`]);
+const searchText = value => String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-PT').trim();
+const historyInput = () => modal.querySelector('[name=historySearch]');
+const historyId = () => modal.querySelector('[name=loteHistoricoId]');
+const historyTitle = lot => lot.nomeFicheiro;
+const historyDescription = lot => `<strong>${esc(lot.nomeFicheiro)}</strong><span>${esc(lot.origem || 'Sem origem')}</span><small>${esc(date(lot.importadoEm))} · ${esc(lot.totalLinhas)} registos · Lote #${esc(lot.id)}${lot.id === dialogContext?.historyLots?.[0]?.id ? ' · Mais recente' : ''}</small>`;
+function updateHistoryPicker() {
+  if (!dialogContext?.historyLots) return;
+  const input = historyInput(), query = historyId().value ? '' : searchText(input.value);
+  const matches = dialogContext.historyLots.filter(l => /^#?\d+$/.test(query)
+    ? l.id === query.replace(/^#/, '') : searchText(`${l.origem} ${l.nomeFicheiro}`).includes(query));
+  Object.assign(dialogContext, { historyMatches: matches, historyActive: matches.length ? 0 : -1 });
+  modal.querySelector('#history-results').innerHTML = matches.map((lot, index) =>
+    `<div id="history-option-${index}" class="history-option" role="option" aria-selected="${lot.id === historyId().value}" data-history-id="${esc(lot.id)}">${historyDescription(lot)}</div>`).join('');
+  modal.querySelector('#history-results').scrollTop = 0;
+  modal.querySelector('#history-results').hidden = !matches.length;
+  modal.querySelector('#history-details').hidden = true;
+  input.setAttribute('aria-expanded', String(!!matches.length));
+  modal.querySelector('#history-matches').textContent = matches.length
+    ? `${matches.length} ${matches.length === 1 ? 'histórico disponível' : 'históricos disponíveis'} · Mais recentes primeiro. Escolhe pelo ficheiro ou pela origem.`
+    : 'Nenhum histórico encontrado. Altera ou limpa a pesquisa.';
+  highlightHistory();
+}
+function highlightHistory() {
+  const index = dialogContext.historyActive;
+  modal.querySelectorAll('.history-option').forEach((option, i) => option.classList.toggle('is-active', i === index));
+  if (index >= 0) historyInput().setAttribute('aria-activedescendant', `history-option-${index}`);
+  else historyInput().removeAttribute('aria-activedescendant');
+}
+function closeHistoryPicker() {
+  const input = historyInput();if (!input) return;
+  input.setAttribute('aria-expanded', 'false');input.removeAttribute('aria-activedescendant');
+  modal.querySelector('#history-results').hidden = true;
+  const lot = dialogContext.historyLots.find(l => l.id === historyId().value);
+  const details = modal.querySelector('#history-details');
+  details.hidden = !lot;details.innerHTML = lot ? historyDescription(lot) : '';
+  modal.querySelector('#history-matches').textContent = lot ? `Lote #${lot.id} selecionado.` : 'Escolhe um resultado da pesquisa para continuar.';
+}
+function chooseHistory(id) {
+  const lot = dialogContext.historyLots.find(l => l.id === id);if (!lot) return;
+  historyId().value = lot.id;historyInput().value = historyTitle(lot);historyInput().setCustomValidity('');
+  closeHistoryPicker();
+  if (dialogContext.kind === 'backtest') suggestBacktest();
+}
 async function dialog(kind, data = {}) {
   const user = state.user;
   if (!user) return;
@@ -100,12 +143,16 @@ async function dialog(kind, data = {}) {
       formHtml(kind, 'Importar dados CSV', field('Tipo de dados', select('tipo', [['HISTORICO', 'Histórico de vendas / consumo'], ['REALIZADOS', 'Procura realizada'], ['OPERACIONAL', 'Resultados operacionais']], 'HISTORICO')) + field('Origem', input('origem', 'text', '', 'required maxlength="160" placeholder="Ex.: sistema de vendas"')) + field('Ficheiro CSV', '<input name="ficheiro" type="file" accept=".csv,text/csv" required>', 'UTF-8 · separador ; · até 10 MiB. Os produtos devem existir no catálogo.') + field('Corrige um lote anterior', select('substituiLoteId', [], '', false), 'Opcional. Novo snapshot completo do mesmo tipo, sem alterar o anterior.') + `<div class="info csv-help"><details><summary>Consultar o formato esperado</summary><div class="csv-help-content"><p id="csv-description"></p><div class="csv-caption">Cabeçalho (primeira linha)</div><pre class="csv-snippet"><code id="csv-format"></code></pre><div class="csv-caption">Exemplo de uma linha de dados</div><pre class="csv-snippet"><code id="csv-example"></code></pre><p class="csv-note">Exemplos ilustrativos: usa códigos do catálogo, meses AAAA-MM, ponto nas casas decimais e datas de disponibilidade em UTC (Z).</p></div></details></div>`, 'Importar e validar', { lots });updateImportFormat();break;
     }
     case 'forecast': case 'backtest': {
-      const lots = (await api.all('/lotes')).filter(l => l.tipo === 'HISTORICO' && l.estado === 'VALIDADO');
+      const lots = (await api.all('/lotes')).filter(l => l.tipo === 'HISTORICO' && l.estado === 'VALIDADO').sort((a, b) => Date.parse(b.importadoEm) - Date.parse(a.importadoEm));
       if (!lots.length) throw new Error('Importa primeiro um histórico validado.');
-      let content = field('Histórico validado', select('loteHistoricoId', lotOptions(lots), lots[0].id)) + field('Série', select('tipoSerie', [['VENDAS', 'Vendas'], ['CONSUMO', 'Consumo']], 'VENDAS')) + field('Horizonte (meses)', input('horizonteMeses', 'number', '3', 'required min="1" max="12"'));
+      const selectedLot = data.history ? lots.find(l => l.id === data.history) : null;
+      if (data.history && !selectedLot) throw new Error('Este lote já não está disponível como histórico validado. Escolhe outro na página de previsões.');
+      let content = `<div class="history-picker">${field('Histórico validado', input('historySearch', 'text', selectedLot ? historyTitle(selectedLot) : '', 'role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="history-results" aria-describedby="history-matches" placeholder="Escolhe um histórico recente ou pesquisa pelo ficheiro" autocomplete="off" required'))}<input type="hidden" name="loteHistoricoId" value="${esc(selectedLot?.id || '')}"><p id="history-matches" role="status"></p><div id="history-results" class="history-results" role="listbox" aria-label="Históricos disponíveis" hidden></div><div id="history-details" class="history-details" hidden></div></div>` + field('Série', select('tipoSerie', [['VENDAS', 'Vendas'], ['CONSUMO', 'Consumo']], 'VENDAS')) + field('Horizonte (meses)', input('horizonteMeses', 'number', '3', 'required min="1" max="12"'));
       if (kind === 'forecast') content += field('Último mês de treino', input('ultimoPeriodoTreino', 'month', lastMonth(), 'required')) + field('Dados conhecidos até', input('corteTemporal', 'datetime-local', localNow(), 'required step="1"'), 'Hora local. Sem alteração, usa o momento do envio.') + field('Método', select('metodo', [['ETS', 'ETS com tendência aditiva'], ['MEDIA_MOVEL', 'Média Móvel recursiva']], 'ETS')) + `<div data-method="MEDIA_MOVEL">${field('Janela da média móvel', input('janela', 'number', '3', 'required min="1" max="36"'))}</div><div data-method="ETS">${field('Máximo de meses de treino ETS', input('historicoMeses', 'number', '24', 'required min="6" max="120"'))}</div><div data-method="ETS">${field('Recurso para séries curtas', select('recurso', [['SEM_RECURSO', 'Assinalar como insuficiente'], ['MEDIA_MOVEL', 'Usar Média Móvel (janela 3)']], 'SEM_RECURSO'))}</div>`;
       else content += field('Primeiro corte de treino', input('primeiroCorte', 'month', '', 'required')) + field('Último corte de treino', input('ultimoCorte', 'month', '', 'required')) + field('Janela da Média Móvel', input('janelaMediaMovel', 'number', '3', 'required min="1" max="36"')) + field('Máximo de meses ETS', input('historicoEtsMeses', 'number', '24', 'required min="6" max="120"')) + '<div class="info">Os cortes são sugeridos a partir do histórico e do horizonte selecionados. Cada corte identifica o último mês de treino.</div>';
-      formHtml(kind, kind === 'forecast' ? 'Gerar previsão' : 'Comparar os modelos', content, kind === 'forecast' ? 'Gerar previsão' : 'Executar backtest');
+      formHtml(kind, kind === 'forecast' ? 'Gerar previsão' : 'Comparar os modelos', content, kind === 'forecast' ? 'Gerar previsão' : 'Executar backtest', { historyLots: lots });
+      updateHistoryPicker();
+      if (selectedLot) closeHistoryPicker();
       if (kind === 'forecast') updateMethod();else await suggestBacktest();break;
     }
     case 'scenario': {
@@ -171,10 +218,14 @@ let suggestionEpoch = 0;
 async function suggestBacktest() {
   const form = modal.querySelector('form');if (!form) return;
   const version = ++suggestionEpoch, data = new FormData(form);
+  if (!data.get('loteHistoricoId')) {
+    form.elements.primeiroCorte.value = '';form.elements.ultimoCorte.value = '';
+    form.querySelector('.form-error').textContent = '';return;
+  }
   try {
     const result = await api.get('/backtests/sugestao?' + new URLSearchParams({ loteHistoricoId: data.get('loteHistoricoId'), tipoSerie: data.get('tipoSerie'), horizonteMeses: data.get('horizonteMeses') }));
     if (version === suggestionEpoch && form.isConnected) { form.elements.primeiroCorte.value = result.primeiroCorte;form.elements.ultimoCorte.value = result.ultimoCorte;form.querySelector('.form-error').textContent = ''; }
-  } catch (error) { if (form.isConnected) formError(form, error); }
+  } catch (error) { if (version === suggestionEpoch && form.isConnected) formError(form, error); }
 }
 async function suggestWindow(id) {
   const form = modal.querySelector('form');if (!form) return;
@@ -283,7 +334,7 @@ document.addEventListener('click', async event => {
       case 'lot-errors': closeDialog();break;
       case 'logout': target.disabled = true;await api.send('/auth/logout', {});logoutView();break;
       case 'page': state.pages[target.dataset.key] = Math.max(0, Number(target.dataset.page));await render();break;
-      case 'dialog': target.disabled = true;await dialog(target.dataset.kind, { execution: target.dataset.execution, plan: target.dataset.plan });break;
+      case 'dialog': target.disabled = true;await dialog(target.dataset.kind, { execution: target.dataset.execution, plan: target.dataset.plan, history: target.dataset.history });break;
       case 'edit-product': await dialog('product', { id: target.dataset.id });break;
       case 'adjust': await dialog('adjust', { cell: state.revisionCells[Number(target.dataset.index)] });break;
       case 'download': target.disabled = true;await api.download(target.dataset.id);notify('Download do CSV preparado.');break;
@@ -293,6 +344,46 @@ document.addEventListener('click', async event => {
     }
   } catch (error) { notify(error.message); }
   finally { if (target.isConnected) target.disabled = false; }
+});
+modal.addEventListener('focusin', event => {
+  if (event.target.name === 'historySearch') updateHistoryPicker();
+});
+modal.addEventListener('focusout', event => {
+  if (event.target.name === 'historySearch') closeHistoryPicker();
+});
+modal.addEventListener('mousedown', event => {
+  if (event.target.closest('[data-history-id]')) event.preventDefault();
+});
+modal.addEventListener('click', event => {
+  const option = event.target.closest('[data-history-id]');
+  if (option) chooseHistory(option.dataset.historyId);
+  else if (event.target.name === 'historySearch') updateHistoryPicker();
+});
+modal.addEventListener('keydown', event => {
+  if (event.target.name !== 'historySearch') return;
+  const expanded = historyInput().getAttribute('aria-expanded') === 'true';
+  if (['ArrowDown', 'ArrowUp'].includes(event.key)) {
+    event.preventDefault();
+    if (!expanded) updateHistoryPicker();
+    else {
+      const count = dialogContext.historyMatches.length;
+      dialogContext.historyActive = (dialogContext.historyActive + (event.key === 'ArrowDown' ? 1 : count - 1)) % count;
+      highlightHistory();
+    }
+    modal.querySelector('.history-option.is-active')?.scrollIntoView({ block: 'nearest' });
+  } else if (event.key === 'Enter') {
+    event.preventDefault();
+    if (expanded) chooseHistory(dialogContext.historyMatches[dialogContext.historyActive]?.id);
+    else updateHistoryPicker();
+  } else if (event.key === 'Escape' && expanded) {
+    event.preventDefault();event.stopPropagation();closeHistoryPicker();
+  }
+});
+modal.addEventListener('input', event => {
+  if (event.target.name !== 'historySearch') return;
+  historyId().value = '';historyInput().setCustomValidity('Escolhe um histórico nos resultados da pesquisa.');
+  updateHistoryPicker();
+  if (dialogContext.kind === 'backtest') suggestBacktest();
 });
 document.addEventListener('change', async event => {
   const target = event.target;

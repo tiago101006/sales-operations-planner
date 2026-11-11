@@ -124,7 +124,8 @@ export function createViews(ctx) {
       headers = ['Produto', 'Mês', 'Solicitadas / satisfeitas', 'Dias observados / sem stock', 'Stock / limite', 'Perdas', 'Disponível'];
       rows = data.items.map(r => [esc(r.produto), esc(month(r.periodo)), `${q(r.valores.unidades_solicitadas)} / ${q(r.valores.unidades_satisfeitas_no_prazo)}`, `${q(r.valores.dias_observados_com_procura)} / ${q(r.valores.dias_com_procura_sem_stock)}`, `${q(r.valores.stock_fecho)} / ${q(r.valores.limite_stock)}`, q(r.valores.unidades_perdidas), esc(date(r.disponivelEm))]);
     } else { headers = ['Produto', 'Mês', 'Tipo', 'Quantidade', 'Unidade', 'Disponível']; rows = data.items.map(r => [esc(r.produto), esc(month(r.periodo)), esc(r.tipo), `<span class="num">${q(r.quantidade)}</span>`, esc(r.unidade), esc(date(r.disponivelEm))]); }
-    return back('importacoes', 'Importações') + heading('Lote #' + esc(id), esc(lot.nomeFicheiro), 'Origem: ' + esc(lot.origem), badge(lot.estado)) +
+    const forecastAction = lot.tipo === 'HISTORICO' && lot.estado === 'VALIDADO' ? newButton('Gerar previsão', 'forecast', `data-history="${esc(lot.id)}"`) : '';
+    return back('importacoes', 'Importações') + heading('Lote #' + esc(id), esc(lot.nomeFicheiro), 'Origem: ' + esc(lot.origem), badge(lot.estado) + forecastAction) +
       panel('Proveniência', '', meta([['Tipo', esc(label(lot.tipo))], ['Recebido', esc(date(lot.importadoEm))], ['Registos', esc(lot.totalLinhas)], ['Erros', esc(lot.totalErros)], ['Corrige lote', esc(lot.substituiLoteId || '—')]]) + `<div class="detail-description"><small>SHA-256</small><br><code>${esc(lot.sha256)}</code></div>`) +
       panel(rejected ? 'Diagnósticos da importação' : 'Registos validados', rejected ? 'Corrige o ficheiro e importa um lote novo.' : 'Consulta dos dados, sem alterar o lote.', table(headers, rows) + pager(data, 'lotRows'));
   }
