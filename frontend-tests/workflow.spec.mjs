@@ -141,7 +141,17 @@ test('percurso completo com APIs reais, auditoria, aprovação independente e mo
     await page.reload();
     await expect(page.locator('[data-search-key="lotRows"] input[name=desde]')).toHaveValue('2020-01');
     await page.locator('[data-search-key="lotRows"]').getByRole('button', { name: 'Limpar filtros', exact: true }).click();
-    await expect(page.locator('tbody tr')).toHaveCount(20);
+    await expect(page.locator('tbody tr')).toHaveCount(10);
+    const next = page.getByRole('button', { name: 'Seguinte', exact: true });
+    await next.scrollIntoViewIfNeeded();
+    const scrollBefore = await page.evaluate(() => window.scrollY);
+    expect(scrollBefore).toBeGreaterThan(0);
+    await next.click();
+    await expect(page.locator('.pagination')).toContainText('Página 2 de 3');
+    expect(await page.evaluate(() => window.scrollY)).toBeCloseTo(scrollBefore, 0);
+    await expect(page.locator('tbody tr')).toHaveCount(10);
+    await page.getByRole('button', { name: 'Anterior', exact: true }).click();
+    await expect(page.locator('.pagination')).toContainText('Página 1 de 3');
     await page.screenshot({ path: '../tmp/ui-preview/pesquisa-lote.png', fullPage: true });
 
   });

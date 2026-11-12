@@ -48,5 +48,9 @@ public class ScenarioController {
     @GetMapping("/api/v1/revisoes/{id}/eventos")
     public Pagina<EventoDto> events(@PathVariable long id,@RequestParam(defaultValue="0")int page,@RequestParam(defaultValue="50")int size) { return queries.eventos(id,page,size); }
     @GetMapping("/api/v1/comparacao-cenarios")
-    public ComparacaoDto compare(@RequestParam List<Long> revisaoIds,@RequestParam(defaultValue="0")int page,@RequestParam(defaultValue="50")int size) { return queries.comparar(revisaoIds,page,size); }
+    public ComparacaoDto compare(@RequestParam List<Long> revisaoIds,
+            @RequestParam(defaultValue="0") int page, @RequestParam(defaultValue="50") int size,
+            @RequestParam(defaultValue="false") boolean porPeriodo) {
+        return queries.comparar(revisaoIds, page, size, porPeriodo);
+    }
 }

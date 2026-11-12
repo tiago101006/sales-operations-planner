@@ -57,7 +57,7 @@ Os restantes perfis têm painéis próprios, descritos em
 o APROVADOR destaca a fila ordenada de decisões; COMERCIAL e CONSUMIDOR encontram
 os planos e os resultados permitidos pelo respetivo papel.
 
-As tabelas paginadas incluem [pesquisa e filtros](pesquisa-filtros.md) no servidor.
+As tabelas paginadas mostram até 10 linhas por página e incluem [pesquisa e filtros](pesquisa-filtros.md) no servidor. Na comparação de cenários, cada combinação de produto e mês conta como uma linha.
 A Equipa dispõe de listagem pesquisável, apenas para ADMIN.
 
 ## Organização visual e navegação

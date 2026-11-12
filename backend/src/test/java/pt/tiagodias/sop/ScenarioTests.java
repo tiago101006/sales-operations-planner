@@ -187,6 +187,19 @@ class ScenarioTests {
         assertThat(comparison.get("produtos").get("totalElements").asInt()).isEqualTo(2);assertThat(comparison.get("produtos").get("items").size()).isEqualTo(1);
         var values=comparison.get("produtos").get("items").get(0).get("periodos").get(0).get("cenarios");
         assertThat(values.get(0).get("quantidadeFinal").asText()).isEqualTo("110.0000");assertThat(values.get(1).get("quantidadeFinal").asText()).isEqualTo("90.0000");
+        String byPeriod = "/api/v1/comparacao-cenarios?revisaoIds=" + ra + "," + rb + "&porPeriodo=true";
+        var firstPage = admin.get(byPeriod + "&size=4").get("produtos");
+        assertThat(firstPage.get("totalElements").asInt()).isEqualTo(6);
+        assertThat(firstPage.get("items").get(0).get("periodos").size()).isEqualTo(3);
+        assertThat(firstPage.get("items").get(1).get("periodos").size()).isEqualTo(1);
+        var secondPage = admin.get(byPeriod + "&size=4&page=1").get("produtos");
+        var remaining = secondPage.get("items").get(0).get("periodos");
+        assertThat(remaining.size()).isEqualTo(2);
+        assertThat(remaining.get(0).get("periodo").asText()).isEqualTo("2026-12");
+        var filtered = admin.get(byPeriod + "&busca=ZERO&desde=2026-12&ate=2026-12").get("produtos");
+        assertThat(filtered.get("totalElements").asInt()).isEqualTo(1);
+        assertThat(filtered.get("items").get(0).get("periodos").get(0).get("periodo").asText()).isEqualTo("2026-12");
+
         long other=newExecution("200",true,"CONCLUIDA");var response=admin.request("POST","/api/v1/cenarios",createBody(other,"OTIMISTA","1.1"),true);
         String foreign=revision(json.readTree(response.body()));
         assertThat(admin.request("GET","/api/v1/comparacao-cenarios?revisaoIds="+ra+","+foreign,null,false).statusCode()).isEqualTo(409);

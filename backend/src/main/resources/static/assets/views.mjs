@@ -17,7 +17,8 @@ export function createViews(ctx) {
     return params.toString();
   };
   const searchable = (data, key) => ({ ...data, search: key === 'products' ? null : { key, values: state.tableFilters?.[key] || {}, months: !noMonths.has(key) } });
-  const page = async (key, path) => searchable(await api.get(`${path}${path.includes('?') ? '&' : '?'}size=20&page=${state.pages[key] || 0}&${filterParams(key)}`), key);
+  const pageSize = 10;
+  const page = async (key, path) => searchable(await api.get(`${path}${path.includes('?') ? '&' : '?'}size=${pageSize}&page=${state.pages[key] || 0}&${filterParams(key)}`), key);
   const heading = (eyebrow, title, subtitle, actions = '', attributes = '') => `<div class="page-heading" ${attributes}><div><div class="eyebrow">${eyebrow}</div><h1>${title}</h1>${subtitle ? (/^(Cenário #|Origem:|Otimista ·|Conservador ·|Base ·|Personalizado ·)/.test(subtitle) ? `<p class="heading-context">${subtitle}</p>` : `<details class="page-context"><summary>Sobre esta área</summary><p>${subtitle}</p></details>`) : ''}</div><div class="actions">${actions}</div></div>`;
   const newButton = (text, kind, extra = '') => writer() ? b(icon('plus', 16) + text, 'dialog', `data-kind="${kind}" ${extra}`, 'primary') : '';
   const back = (route, text) => `<a class="back" href="#/${route}">← ${text}</a>`;
@@ -178,7 +179,7 @@ export function createViews(ctx) {
     for (const c of data.items) state.compareNames[c.ultimaRevisaoId] = c.nome;
     let result = '';
     if (state.comparison && state.compareIds.length >= 2) {
-      const comparison = await api.get(`/comparacao-cenarios?revisaoIds=${state.compareIds.map(encodeURIComponent).join(',')}&size=10&page=${state.pages.comparison || 0}&${filterParams('comparison')}`);
+      const comparison = await api.get(`/comparacao-cenarios?revisaoIds=${state.compareIds.map(encodeURIComponent).join(',')}&porPeriodo=true&size=${pageSize}&page=${state.pages.comparison || 0}&${filterParams('comparison')}`);
       const revisions = await Promise.all(comparison.revisoes.map(async r => ({ ...r, cenarioNome: state.compareNames[r.id] || (await api.get(`/cenarios/${r.cenarioId}`)).nome })));
       const headers = ['Produto / mês', 'Previsão base', ...revisions.map(r => `${esc(r.cenarioNome)}<br><small>${esc(revisionCaption(r))}</small>`)];
       const first = comparison.produtos.items[0];

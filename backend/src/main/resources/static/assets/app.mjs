@@ -97,7 +97,7 @@ function setNavigation(open) {
   const toggle = document.querySelector('[data-action=toggle-nav]');
   if (toggle) { toggle.setAttribute('aria-expanded', String(open));toggle.setAttribute('aria-label', open ? 'Fechar navegação' : 'Abrir navegação'); }
 }
-async function render() {
+async function render({ pagination } = {}) {
   if (!state.user) return;
   if (!document.querySelector('.shell')) shell();
   const current = route(), active = aliases[current.name] || current.name;
@@ -112,12 +112,29 @@ async function render() {
   document.querySelectorAll('[data-nav]').forEach(el => { el.classList.toggle('active', el.dataset.nav === active); if (el.dataset.nav === active) el.setAttribute('aria-current', 'page'); else el.removeAttribute('aria-current'); });
   document.querySelector('#breadcrumb').textContent = permission?.[1] || 'Página';
   document.title = `${permission?.[1] || 'Página'} — NexoPlan`;
-  main.innerHTML = '<div class="loading" role="status"><span class="spinner"></span>A carregar os dados…</div>';
+  if (!pagination) main.innerHTML = '<div class="loading" role="status"><span class="spinner"></span>A carregar os dados…</div>';
   try {
     if (!permission || !views[current.name]) throw new Error('Esta página não existe. Escolhe uma opção do menu.');
     if (!permission[3]()) throw new Error('O teu perfil não tem acesso a esta área. Consulta os planos publicados e a monitorização.');
     const html = await views[current.name](current.name === 'cenarios' ? current.params : current.id, current.params);
-    if (version === epoch && state.user) { if (typeof html === 'string') main.innerHTML = html; else { Object.assign(state, html.context);main.innerHTML = html.html; } }
+    if (version !== epoch || !state.user) return;
+    const scrollTop = window.scrollY;
+    const restoreFocus = pagination && document.activeElement === pagination.trigger;
+    if (typeof html === 'string') {
+      main.innerHTML = html;
+    } else {
+      Object.assign(state, html.context);
+      main.innerHTML = html.html;
+    }
+    if (pagination) {
+      window.scrollTo({ top: scrollTop, behavior: 'instant' });
+      if (restoreFocus) {
+        const controls = [...main.querySelectorAll(`[data-action="page"][data-key="${CSS.escape(pagination.key)}"]`)];
+        const sameDirection = controls.find(button => Number(button.dataset.page) === pagination.nextTarget);
+        const focusTarget = sameDirection?.disabled ? controls.find(button => !button.disabled) : sameDirection;
+        focusTarget?.focus({ preventScroll: true });
+      }
+    }
   } catch (error) {
     if (version === epoch && state.user) main.innerHTML = `<div class="info error" role="alert">${esc(error.message)}</div>${b('Tentar atualizar', 'refresh')}${Object.keys(state.tableFilters).length ? b('Limpar filtros e voltar à lista', 'reset-search') : ''}`;
   }
@@ -408,7 +425,14 @@ document.addEventListener('click', async event => {
       case 'refresh-stale': closeDialog();await render();break;
       case 'lot-errors': closeDialog();break;
       case 'logout': target.disabled = true;await api.send('/auth/logout', {});logoutView();break;
-      case 'page': state.pages[target.dataset.key] = Math.max(0, Number(target.dataset.page));await render();break;
+      case 'page': {
+        const { key, page } = target.dataset;
+        const currentPage = state.pages[key] || 0;
+        const nextPage = Math.max(0, Number(page));
+        state.pages[key] = nextPage;
+        await render({ pagination: { key, trigger: target, nextTarget: nextPage + (nextPage - currentPage) } });
+        break;
+      }
       case 'dialog': target.disabled = true;await dialog(target.dataset.kind, { execution: target.dataset.execution, plan: target.dataset.plan, history: target.dataset.history });break;
       case 'edit-product': await dialog('product', { id: target.dataset.id });break;
       case 'adjust': await dialog('adjust', { cell: state.revisionCells[Number(target.dataset.index)] });break;

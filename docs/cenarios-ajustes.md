@@ -110,8 +110,11 @@ Escritas exigem sessão e CSRF, como nos outros módulos.
 
 Listas usam `page=0&size=50`, máximo 200. Linhas ordenadas por código e mês;
 ajustes herdados aparecem antes dos locais, sem incluir alterações posteriores à cópia.
-A comparação exige a mesma execução; pagina produtos e mantém todos os meses e
-revisões selecionadas de cada produto. Mantém a ordem de `revisaoIds` nas colunas.
+A comparação exige a mesma execução e mantém a ordem de `revisaoIds` nas colunas.
+Por omissão, a API pagina produtos e mantém todos os meses de cada produto.
+Com `porPeriodo=true`, usado pela interface, `size` e `totalElements` contam
+linhas de produto e mês. A resposta continua a agrupar os meses da página por
+produto. Os filtros são aplicados antes da paginação.
 
 IDs são strings nas respostas. Quantidades têm quatro casas; fatores seis.
 

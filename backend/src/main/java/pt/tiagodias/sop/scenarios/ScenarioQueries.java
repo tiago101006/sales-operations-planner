@@ -96,7 +96,7 @@ public class ScenarioQueries {
                 """,Boolean.class,revision,true,author));
     }
     private record Product(long id,String code,String unit) {}
-    public ComparacaoDto comparar(List<Long> revisions,int page,int size) {
+    public ComparacaoDto comparar(List<Long> revisions,int page,int size,boolean byPeriod) {
         int offset=ImportQueries.offset(page,size);
         if(revisions.size()<2 || revisions.size()>5 || new HashSet<>(revisions).size()!=revisions.size()) {
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,"Seleciona 2 a 5 revisões distintas.");
@@ -104,16 +104,33 @@ public class ScenarioQueries {
         var headers=revisions.stream().map(this::revisao).toList();String execution=headers.get(0).execucaoId();
         if(headers.stream().anyMatch(r->!r.execucaoId().equals(execution))) { throw new ResponseStatusException(HttpStatus.CONFLICT,"A comparação exige revisões da mesma execução."); }
         var filter=SearchPage.filter("SELECT p.id,p.codigo,p.nome,p.unidade,l.periodo FROM linha_cenario l JOIN produto p ON p.id=l.produto_id WHERE l.revisao_id=?","codigo,nome","periodo",revisions.get(0));
-        long count=jdbc.queryForObject("SELECT COUNT(DISTINCT id) FROM ("+filter.sql()+") f",Long.class,filter.args());
-        var searchArgs=new ArrayList<Object>(Arrays.asList(filter.args()));searchArgs.add(size);searchArgs.add(offset);
-        var products=jdbc.query("SELECT DISTINCT id,codigo,unidade FROM ("+filter.sql()+") f ORDER BY codigo,id LIMIT ? OFFSET ?",(rs,n)->new Product(rs.getLong("id"),rs.getString("codigo"),rs.getString("unidade")),searchArgs.toArray());
+        String source = " FROM (" + filter.sql() + ") f";
+        String countExpression = byPeriod ? "COUNT(*)" : "COUNT(DISTINCT id)";
+        long count = jdbc.queryForObject("SELECT " + countExpression + source, Long.class, filter.args());
+        var searchArgs = new ArrayList<Object>(Arrays.asList(filter.args()));
+        searchArgs.add(size);
+        searchArgs.add(offset);
+        String selection = byPeriod ? "id,codigo,unidade,periodo" : "DISTINCT id,codigo,unidade";
+        String order = byPeriod ? "codigo,id,periodo" : "codigo,id";
+        var pageProducts = new LinkedHashMap<Product, Set<String>>();
+        jdbc.query("SELECT " + selection + source + " ORDER BY " + order + " LIMIT ? OFFSET ?", rs -> {
+            var product = new Product(rs.getLong("id"), rs.getString("codigo"), rs.getString("unidade"));
+            var months = pageProducts.computeIfAbsent(product, ignored -> new HashSet<>());
+            if (byPeriod) months.add(month(rs, "periodo"));
+        }, searchArgs.toArray());
+        var products = pageProducts.keySet();
         if(products.isEmpty()) { return new ComparacaoDto(execution,headers,new Pagina<>(List.of(),page,size,count,pages(count,size))); }
         var data=named.query(LINHAS+"WHERE l.revisao_id IN (:revisoes) AND l.produto_id IN (:produtos) ORDER BY p.codigo,l.periodo,l.revisao_id",
                 Map.of("revisoes",revisions,"produtos",products.stream().map(Product::id).toList()),(rs,n)->Map.entry(rs.getLong("revisao_id"),line(rs,n)));
         var output=new ArrayList<ProdutoComparado>();
         for(var product:products) {
             var byMonth=new TreeMap<String,List<Map.Entry<Long,LinhaDto>>>();
-            for(var row:data) { if(SearchPage.monthMatches(row.getValue().periodo()) && row.getValue().produtoId().equals(Long.toString(product.id()))) { byMonth.computeIfAbsent(row.getValue().periodo(),k->new ArrayList<>()).add(row); } }
+            for (var row : data) {
+                var line = row.getValue();
+                if (!line.produtoId().equals(Long.toString(product.id()))) continue;
+                boolean included = byPeriod ? pageProducts.get(product).contains(line.periodo()) : SearchPage.monthMatches(line.periodo());
+                if (included) byMonth.computeIfAbsent(line.periodo(), ignored -> new ArrayList<>()).add(row);
+            }
             var periods=new ArrayList<PeriodoComparado>();
             byMonth.forEach((month,rows)->{
                 var values=new ArrayList<ValorComparado>();
