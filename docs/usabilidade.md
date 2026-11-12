@@ -1,6 +1,6 @@
 # NexoPlan — Avaliação exploratória de usabilidade e conforto
 
-**Estado:** protocolo preparado; piloto guiado do autor em curso; recolha com colegas pendente.
+**Estado:** protocolo preparado. [Piloto funcional guiado concluído](validacao-piloto.md). Recolha com colegas pendente.
 
 ## Objetivo e amostra
 

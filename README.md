@@ -261,4 +261,5 @@ python3 scripts/importar_demonstracao.py
 - [Backup, restauro e verificação isolada](docs/backup-restauro.md)
 - [Desempenho: método, resultado e repetição do ensaio](docs/desempenho.md)
 - [Usabilidade: protocolo, tarefas e fichas para testar com colegas](docs/usabilidade.md)
+- [Validação funcional e resultados do piloto](docs/validacao-piloto.md)
 - [Marco anterior do backend](docs/backend-primeiro-marco.md)
