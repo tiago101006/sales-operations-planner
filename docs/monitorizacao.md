@@ -203,14 +203,3 @@ A verificação sintática Python e os contratos JSON/links locais passaram. Doc
 reconstruído com backend/MySQL saudáveis; saúde/identificação 200; avaliações sem
 sessão 401. O SHA-256 do dump de dados de todas as tabelas ficou igual antes/depois
 do arranque. O ensaio interativo com credenciais locais fica para o utilizador.
-
-Após o ensaio manual bem-sucedido:
-
-```bash
-git add backend README.md docs scripts/testar_monitorizacao.py
-git add data/exemplos/realizados_sku001.csv data/exemplos/operacional_sku001.csv
-git diff --cached --check
-git --no-pager diff --cached --stat
-git commit -m "feat: monitorizar planos com realizados e indicadores operacionais"
-git push
-```

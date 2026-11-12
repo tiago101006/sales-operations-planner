@@ -216,13 +216,3 @@ backend e MySQL saudáveis; saúde/identificação responderam 200 e cenários s
 responderam 401. A comparação SHA-256 do dump de dados de todas as tabelas antes e
 depois do arranque confirmou preservação dos dados existentes. O ensaio interativo
 com a conta local fica para o utilizador, sem guardar a sua password.
-
-Depois do ensaio manual, na raiz do repositório:
-
-```bash
-git add backend README.md docs/cenarios-ajustes.md docs/plano-implementacao.md scripts/testar_cenarios.py
-git diff --cached --check
-git --no-pager diff --cached --stat
-git commit -m "feat: gerir cenarios e revisoes com ajustes manuais auditados"
-git push
-```

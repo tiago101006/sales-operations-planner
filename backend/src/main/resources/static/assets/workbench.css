@@ -51,8 +51,8 @@ h2 { font-size: 16px; letter-spacing: -.4px; font-weight: 600; }
 .actions { gap: 8px; }
 .btn { color: #284b3c; background: #fafbf6; border-color: #ccd4c4; border-radius: 6px; font-weight: 600; padding: 10px 15px; box-shadow: none; }
 .btn:hover:not(:disabled) { color: #173d34; background: #e5ebda; border-color: #b3c1a5; }
-.btn.primary, .btn.dark { background: var(--green); color: #fffdf0; border-color: var(--green); }
-.btn.primary:hover:not(:disabled), .btn.dark:hover:not(:disabled), .btn.primary:focus-visible, .btn.dark:focus-visible { background: #173d34; color: #fffdf0; border-color: #173d34; }
+.btn.primary{ background: var(--green); color: #fffdf0; border-color: var(--green); }
+.btn.primary:hover:not(:disabled), .btn.primary:focus-visible{ background: #173d34; color: #fffdf0; border-color: #173d34; }
 .btn.link { background: transparent; color: #29664c; box-shadow: none; }
 .btn.link:hover:not(:disabled) { background: transparent; text-decoration: underline; }
 .btn.danger { color: #963d2e; border-color: #dab1a0; background: #fff8f4; }
@@ -96,8 +96,7 @@ td small { color: #66755f; font-size: 11px; }
 .info { background: #e8eeda; border-color: #d2ddc0; color: #4c6340; border-radius: 7px; margin-bottom: 16px; }
 .info.warn { background: #f4e8ce; border-color: #dfc99f; color: #79531f; }
 .info.error { background: #f5dfd5; border-color: #e2b9a7; color: #8b3529; }
-.scenario-help { background: transparent; border-style: dashed; padding-block: 9px; }
-.scenario-help summary { font-size: 11px; }
+
 .form-grid { gap: 18px; }
 .field { color: #3f5945; }
 input, select, textarea { background: #fffef9; border-color: #c6d1bb; color: #243f31; border-radius: 6px; }
@@ -121,8 +120,7 @@ dialog form { padding: 23px 26px; }
 .chart text { fill: #63725e; }
 .chart svg { max-height: 300px; }
 .legend { font-size: 11px; color: #586b50; }
-.tabs { background: #f0f3e5; }
-.tabs button { color: #536b49; }
+
 .timeline { background: #f5f7ed; }
 .event { border-color: #dfe6d3; }
 .back { color: #556a49; margin-bottom: 15px; }
@@ -175,7 +173,7 @@ dialog form { padding: 23px 26px; }
 .workbench .dashboard-chart .chart { padding: 20px; }
 .workbench .dashboard-chart .chart svg { min-height: 200px; max-height: 275px; }
 .workbench .chart-context { background: #eef2e2; padding: 14px 20px; }
-.workbench .dashboard-date { font-size: 10px; }
+
 .workbench .overview-columns .panel:last-child { margin-bottom: 0; }
 /* Identity also continues through the entry screen. */
 .login { background: var(--bg); }
@@ -334,7 +332,6 @@ a.work-item:hover .work-copy strong { text-decoration: underline; text-underline
 @media(max-width:800px) { .table-search { padding: 15px;gap: 10px; }.table-search .field { flex: 1 1 130px; }.table-search .field:first-child { flex-basis: 100%; } }
 
 .chart-scale-note { font-size: 10px; color: #607155; margin: 0 0 7px; }
-
 
 .secondary-details {
   margin: 0 0 20px;

@@ -5,7 +5,7 @@ Usa a conta ADMIN existente ou outra conta criada para a equipa, incluindo o
 APROVADOR dos ensaios anteriores. Não há dados de demonstração nem contas criadas
 automaticamente na base de desenvolvimento.
 
-## Experimentar esta entrega
+## Percurso de verificação
 
 Com o Docker iniciado, abrir a aplicação e entrar com email/password existentes.
 
@@ -37,7 +37,7 @@ Para um ensaio que não altere os teus dados, usar o teste isolado descrito abai
 | Importações | HISTORICO/REALIZADOS/OPERACIONAL, origem, ficheiro, correção opcional; diagnósticos e dados do lote |
 | Previsões | Média Móvel/ETS, histórico, corte, último treino e horizonte; linhas/gráfico/diagnósticos |
 | Comparar modelos | Sugestões de cortes do backend, backtest, MAE/MAPE/cobertura e células |
-| Cenários | Criação com pressupostos; revisões; comparação de 2 a 5 revisões da mesma execução |
+| Cenários | Criação com pressupostos; revisões; comparação de 2 a 5 cenários da mesma previsão |
 | Revisão | Base/calculada/final, ajustes justificados, cópia/recálculo, auditoria herdada, eventos e workflow |
 | Planos publicados | Metadados de aprovação, células paginadas, CSV completo e entrada para avaliação |
 | Monitorização | Plano/lotes/corte, seleção de produto, precisão por horizonte, operação e motivos de exclusão |
@@ -57,7 +57,10 @@ Os restantes perfis têm painéis próprios, descritos em
 o APROVADOR destaca a fila ordenada de decisões; COMERCIAL e CONSUMIDOR encontram
 os planos e os resultados permitidos pelo respetivo papel.
 
-As tabelas paginadas mostram até 10 linhas por página e incluem [pesquisa e filtros](pesquisa-filtros.md) no servidor. Na comparação de cenários, cada combinação de produto e mês conta como uma linha.
+As tabelas paginadas mostram até 10 linhas por página. A mudança de página
+conserva a posição vertical. A [pesquisa e os filtros](pesquisa-filtros.md) são
+aplicados no servidor. Na comparação de cenários, cada combinação de produto e
+mês conta como uma linha.
 A Equipa dispõe de listagem pesquisável, apenas para ADMIN.
 
 ## Organização visual e navegação
@@ -108,8 +111,8 @@ A grelha compara quantidades finais e desvios; o gráfico representa o primeiro
 produto da página de comparação, com o produto identificado na legenda.
 As colunas, a legenda e as seleções identificam os cenários pelo nome. O botão
 **Novo cenário** também está disponível no detalhe de uma revisão; **Criar nova
-revisão** guarda outra versão do mesmo cenário. Uma ajuda expansível explica as
-duas ações. **Enviar para aprovação** congela a revisão para decisão independente.
+revisão** guarda outra versão do mesmo cenário. **Enviar para aprovação** congela
+a revisão para decisão independente.
 O contador de concorrência permanece na API e no controlo dos pedidos, sem ser
 confundido na apresentação com o número da revisão guardada.
 O ID aparece sempre primeiro, por exemplo **Revisão #9**; a ordem surge como
@@ -232,25 +235,7 @@ Referências: [recursos web Spring Boot](https://docs.spring.io/spring-boot/refe
 [módulos JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules)
 e [cache de contextos nos testes](https://docs.spring.io/spring-framework/reference/testing/testcontext-framework/ctx-management/caching.html).
 
-## Trabalho seguinte
-
-A interface é funcional, mas isto ainda não constitui a avaliação académica final.
-Falta medir as tarefas com utilizadores e o conforto de utilização, consolidar o
-conjunto de dados e concluir manual, resultados e
-relatório. Essas evidências não são substituídas pelos testes automáticos.
-O [backup/restauro](backup-restauro.md) já foi verificado numa cópia isolada.
-A [meta de desempenho do ajuste](desempenho.md) foi medida no cenário local documentado.
-O [protocolo de usabilidade](usabilidade.md) e as fichas estão preparados para
-sessões exploratórias com colegas. A recolha e a avaliação em público representativo
-continuam pendentes; não existem ainda resultados dessas sessões.
-
-A iteração visual atual reduz as explicações permanentes, substitui a barra
-lateral por navegação horizontal e diferencia o espaço de planeamento através
-da composição e da cor. A aceitação desta iteração e o conforto em sessões
-prolongadas ficam para avaliação com utilizadores; não são inferidos a partir
-das capturas de ecrã ou dos testes automáticos.
-
-## Validação desta entrega
+## Registo de validação
 
 Em 2026-11-10 passaram 93 testes Java (`BUILD SUCCESS`, zero falhas, erros ou
 ignorados), 8 testes Node e 2 testes Playwright num Chrome real. A bateria Java foi
@@ -272,17 +257,6 @@ Playwright, incluindo painel vazio, previsão sem plano, valores aprovados iguai
 à API e largura móvel de 390 px. A imagem Docker foi reconstruída e os recursos
 servidos comparados com os ficheiros locais. As tabelas da base de desenvolvimento
 mantiveram a mesma impressão SHA-256 antes e depois do arranque.
-
-Depois da revisão manual, na raiz do repositório:
-
-```bash
-git add backend README.md docs/interface-web.md docs/plano-implementacao.md
-git add frontend-tests scripts/testar_interface.py
-git diff --cached --check
-git --no-pager diff --cached --stat
-git commit -m "feat: criar interface web para planeamento e monitorizacao"
-git push
-```
 
 ### Escala vertical dos gráficos
 

@@ -162,7 +162,7 @@ Esperado: CONCLUIDA, 1 produto previsto, 0 insuficientes, 3 linhas e logout. O s
 não importa dados nem cria produtos. Se só houver lotes rejeitados, importar primeiro
 um histórico válido. Para outro dataset, esperar os valores resultantes desse dataset.
 
-## Verificação e Git
+## Verificação
 
 ```bash
 cd backend
@@ -181,14 +181,6 @@ novas execuções. A imagem foi construída e os dois serviços Docker ficaram s
 saúde HTTP respondeu UP e o acesso a previsões sem sessão respondeu 401. Não foram
 criadas previsões na base do projeto pelo assistente. O script interativo foi
 verificado sintaticamente; o ensaio com credenciais reais é feito pelo estudante.
-
-```bash
-git add backend scripts/testar_previsao.py README.md docs/previsao-media-movel.md
-git diff --cached --check
-git --no-pager diff --cached --stat
-git commit -m "feat: gerar previsoes por media movel com corte temporal e diagnosticos"
-git push
-```
 
 ## Referência de avaliação
 

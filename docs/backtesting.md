@@ -128,7 +128,7 @@ Um MAE menor indica menor erro nessa amostra e unidade. Não constitui, por si s
 garantia de desempenho futuro. Escolher parâmetros repetidamente pelos mesmos
 scores exige reservar um período final independente antes da avaliação académica.
 
-## Testes e Git
+## Testes
 
 ```bash
 cd backend
@@ -149,18 +149,6 @@ antes/depois. Os serviços Docker ficaram saudáveis; saúde respondeu UP e aces
 backtests sem sessão respondeu 401. Não foram criados backtests na base do projeto.
 O script interativo foi verificado sintaticamente; o ensaio com a conta real é feito
 pelo estudante.
-
-```bash
-git add backend README.md docs/previsao-media-movel.md docs/previsao-ets.md docs/backtesting.md
-git add scripts/testar_previsao.py scripts/testar_ets.py scripts/gerar_referencia_ets.py scripts/testar_backtest.py
-git diff --cached --check
-git --no-pager diff --cached --stat
-git commit -m "feat: avaliar media movel e ETS com backtesting temporal e cobertura"
-git push
-```
-
-Os comandos também incluem ficheiros ETS que ainda estejam locais. Não incluir
-backups de `tmp/` nem credenciais `.env` no Git.
 
 ## Referência
 

@@ -159,7 +159,7 @@ Estes valores correspondem ao CSV de exemplo, não a qualquer histórico.
 O script comum `testar_previsao.py` continua a propor MEDIA_MOVEL e agora permite
 escolher o método. Ainda não existe um endpoint de comparação de métricas.
 
-## Testes e Git
+## Testes
 
 ```bash
 cd backend
@@ -178,16 +178,6 @@ serviços ficaram saudáveis e os dados da execução de Média Móvel já exist
 comparados antes/depois sem alterações. O endpoint sem sessão continua a devolver
 401. Os scripts interativos foram verificados sintaticamente; o ensaio com a conta
 real fica para o estudante. Não foram criadas execuções ETS na base do projeto.
-
-Na raiz, para guardar este bloco após o commit da Média Móvel:
-
-```bash
-git add backend README.md docs/previsao-media-movel.md docs/previsao-ets.md scripts/testar_previsao.py scripts/testar_ets.py scripts/gerar_referencia_ets.py
-git diff --cached --check
-git --no-pager diff --cached --stat
-git commit -m "feat: acrescentar ETS com parametros e recurso explicito"
-git push
-```
 
 ## Fontes
 

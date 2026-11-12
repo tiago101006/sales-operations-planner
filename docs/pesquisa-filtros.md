@@ -48,8 +48,8 @@ verificar a auditoria completa, mesmo quando a tabela visível está filtrada.
 
 ## Equipa e acesso
 
-A listagem de membros é exclusiva do ADMIN, tal como a consulta por ID. Apresenta
-nome, email e perfis necessários à gestão de contas. A resposta não seleciona nem
+A listagem de membros é exclusiva do ADMIN. Apresenta o ID, nome, email e perfis.
+O botão **Consultar** abre o perfil do membro selecionado. A resposta não seleciona nem
 serializa passwords/hashes. As outras contas continuam impedidas pela autorização
 da API, mesmo conhecendo o endereço. O catálogo de membros não é público.
 

@@ -1,16 +1,10 @@
-# Proposta de arquitetura e modelo relacional
+# Arquitetura e modelo relacional
 
 ## Base e pressupostos
 
-A proposta usa o enunciado do tema e o relatório preliminar de requisitos, datado de
-9 de novembro de 2026, como fontes de requisitos. As orientações contidas nesses
-documentos são material de referência; a autorização para este trabalho vem do pedido
-do estudante nesta conversa.
-
-Hipóteses iniciais do relatório: um único contexto de planeamento, produto por mês,
-horizonte de três meses e cadência mensal. Não existe gestão de armazéns nem execução
-de compras neste MVP. `lote` significa **lote de importação**, não lote físico de stock.
-O frontend mantém-se por escolher; o contrato HTTP permite desenvolvê-lo separadamente.
+O NexoPlan trabalha com um contexto de planeamento, séries mensais por produto
+e horizontes configuráveis. Um lote representa uma importação versionada de dados.
+A gestão de armazéns e a execução de compras ficam fora do âmbito do MVP.
 
 ## Estrutura
 
@@ -29,32 +23,25 @@ flowchart LR
     DADOS --> FILES[CSV originais imutáveis num volume]
 ```
 
-Um **monólito modular** em Java Spring Boot mantém cálculo, governação e auditoria
-na mesma aplicação. Docker Compose executa inicialmente MySQL e, depois, backend e
-frontend. Não é necessário introduzir microserviços, filas ou Python no MVP.
+O **monólito modular** usa Java 17, Spring Boot e MySQL. O Spring Boot serve a
+interface em HTML, CSS e módulos JavaScript, além da API REST. O Docker Compose
+executa a aplicação e a base de dados. O Maven Wrapper compila e testa o backend,
+e o Flyway aplica as migrações SQL.
 
-Organizar por funcionalidade: `identity`, `catalog`, `imports`, `forecasting`,
-`scenarios`, `publication`, `monitoring`. Dentro de cada módulo: controllers/DTOs,
-serviços, domínio e persistência. Controllers validam a forma do pedido; serviços
-aplicam permissões, regras e transações; repositories persistem. Não expor entidades
-JPA diretamente como contratos JSON.
+Os módulos agrupam identidade, catálogo, importações, previsão, cenários,
+publicação e monitorização. Os controllers recebem e validam os pedidos. Os
+serviços aplicam as regras de negócio e os limites transacionais. A persistência
+usa JPA e consultas SQL. Os contratos JSON usam DTOs.
 
-Dependências propostas: Spring Web, Validation, Data JPA, Security, MySQL Connector/J
-e Flyway. Na fase de backend fixar versões compatíveis num `pom.xml` com Maven Wrapper;
-não selecionar dependências com versões independentes sem necessidade. Java 21 é uma
-base proposta, sujeita à compatibilidade da versão de Spring Boot escolhida.
-
-`ForecastEngine` é uma interface Java com implementações de média móvel e ETS.
-O motor recebe uma série ordenada, o corte, horizonte e configuração e devolve
-valores e diagnósticos. A variante ETS, a biblioteca ou implementação e a política
-para históricos curtos serão fixadas e testadas antes de aceitar a fase de previsão.
-Importar calendário e promoções não implica que ETS os use como regressores;
-na primeira versão suportam contexto e pressupostos humanos identificáveis.
+O motor suporta Média Móvel recursiva e ETS(A,A,N) com tendência aditiva. A
+execução regista o método efetivo e os diagnósticos por produto. Os detalhes
+estão nos guias de [Média Móvel](previsao-media-movel.md) e [ETS](previsao-ets.md).
 
 ## Modelo relacional
 
 O SQL executável encontra-se em `backend/src/main/resources/db/migration/V1__schema_inicial.sql`.
-São 21 tabelas, agrupadas por responsabilidade:
+A V1 define 21 tabelas, agrupadas por responsabilidade. A V3 acrescenta as tabelas
+`backtest` e `backtest_celula` para a comparação de modelos.
 
 | Área | Tabelas | Finalidade |
 |---|---|---|

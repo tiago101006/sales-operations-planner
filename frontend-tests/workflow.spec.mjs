@@ -294,8 +294,12 @@ test('percurso completo com APIs reais, auditoria, aprovação independente e mo
     await page.goto(`/#/previsao/${executionId}`);
   });
   await test.step('cenário otimista, ajuste justificado e cópia com auditoria', async () => {
+    const scenarioHelp = page.getByText('Cenário ou revisão: qual é a diferença?', { exact: true });
     await page.getByRole('link', { name: /Explorar cenários/ }).click();
-    await page.getByRole('button', { name: 'Novo cenário', exact: true }).click();
+    const newScenario = page.getByRole('button', { name: 'Novo cenário', exact: true });
+    await expect(newScenario).toBeVisible();
+    await expect(scenarioHelp).toHaveCount(0);
+    await newScenario.click();
     await expect(modal(page).getByLabel('Fator', { exact: true })).toHaveValue('1.10');
     await modal(page).getByLabel('Tipo', { exact: true }).selectOption('CONSERVADOR');
     await expect(modal(page).getByLabel('Fator', { exact: true })).toHaveValue('0.90');
@@ -313,9 +317,7 @@ test('percurso completo com APIs reais, auditoria, aprovação independente e mo
     await expect(page.locator('.page-heading .eyebrow')).toHaveText('Revisão #' + revisionId);
     await expect(page.locator('.page-heading p')).toContainText('1.ª versão deste cenário');
     await expect(page.locator('.detail-meta')).toContainText('1,10');
-    await page.getByText('Cenário ou revisão: qual é a diferença?', { exact: true }).click();
-    await expect(page.locator('.scenario-help')).toContainText('uma hipótese de procura');
-    await page.getByText('Cenário ou revisão: qual é a diferença?', { exact: true }).click();
+    await expect(scenarioHelp).toHaveCount(0);
     await page.getByRole('button', { name: 'Novo cenário', exact: true }).click();
     await modal(page).getByLabel('Nome', { exact: true }).fill('Alternativa da mesma previsão');
     await modal(page).getByLabel('Fator', { exact: true }).fill('1.123456');
@@ -355,6 +357,8 @@ test('percurso completo com APIs reais, auditoria, aprovação independente e mo
     await expect(page.locator('.page-heading p')).toContainText('2.ª versão deste cenário');
     await page.getByRole('link', { name: 'Histórico de revisões deste cenário', exact: true }).click();
     await expect(page).toHaveURL(new RegExp('#/cenario/' + scenarioId + '\\?revisaoId=' + revisionId + '$'));
+    await expect(page.getByRole('heading', { name: 'Histórico de revisões', exact: true })).toBeVisible();
+    await expect(scenarioHelp).toHaveCount(0);
     const latestRow = page.getByRole('row').filter({ has: page.getByText('Revisão #' + revisionId, { exact: true }) });
     await expect(latestRow).toContainText('2.ª versão deste cenário');
     await expect(page.getByRole('link', { name: 'Voltar ao cenário', exact: true })).toHaveAttribute('href', '#/revisao/' + revisionId);

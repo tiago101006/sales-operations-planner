@@ -128,14 +128,6 @@ catálogo sem autenticação respondeu 401. Não foram inseridos produtos de tes
 base do projeto. O script interativo foi verificado sintaticamente; o ensaio com
 as credenciais do estudante é feito pelo próprio no terminal.
 
-```bash
-git add backend README.md docs/catalogo.md scripts/testar_catalogo.py
-git diff --cached --check
-git --no-pager diff --cached --stat
-git commit -m "feat: gerir catalogo de produtos com perfis e controlo de versao"
-git push
-```
-
 ## Referências
 
 - [Spring Data JPA: bloqueios](https://docs.spring.io/spring-data/jpa/reference/jpa/locking.html)

@@ -128,16 +128,6 @@ terminou com sucesso e recusou uma segunda execução. A password de teste não 
 nos logs. A primeira conta real é criada pelo estudante no terminal, com as suas
 credenciais, usando o script acima.
 
-## Git
-
-```bash
-git add backend compose.yaml .env.example scripts/criar_admin.sh scripts/testar_login.py README.md docs/autenticacao.md
-git diff --cached --check
-git --no-pager diff --cached --stat
-git commit -m "feat: autenticar utilizadores por sessao com CSRF e perfis"
-git push
-```
-
 ## Referências
 
 - [Spring Security: persistência de autenticação](https://docs.spring.io/spring-security/reference/servlet/authentication/session-management.html)

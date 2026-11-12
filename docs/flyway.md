@@ -75,18 +75,6 @@ O Compose foi reconstruído e ambos os serviços ficaram saudáveis. Nos logs, o
 reconheceu a versão 1 e não reaplicou V1. Os endpoints de estado e saúde responderam
 com HTTP 200. A base mantém 21 tabelas de negócio, mais a tabela técnica do histórico.
 
-## Git
-
-Na raiz do projeto:
-
-```bash
-git add backend compose.yaml database scripts README.md docs
-git diff --cached --check
-git --no-pager diff --cached --stat
-git commit -m "feat: gerir esquema MySQL com Flyway e baseline verificado"
-git push
-```
-
 ## Referências
 
 - [Spring Boot: inicialização de dados](https://docs.spring.io/spring-boot/how-to/data-initialization.html)

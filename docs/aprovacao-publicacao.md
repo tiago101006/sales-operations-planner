@@ -202,13 +202,3 @@ saudáveis; saúde e identificação 200; planos/CSV sem sessão 401. O SHA-256 
 de dados de todas as tabelas permaneceu igual antes/depois do arranque, confirmando
 preservação dos dados existentes. Não foram criadas contas ou publicações na base
 local durante estes testes automáticos.
-
-Após o ensaio manual bem-sucedido, na raiz do repositório:
-
-```bash
-git add backend README.md docs/aprovacao-publicacao.md docs/cenarios-ajustes.md docs/plano-implementacao.md scripts/testar_aprovacao.py
-git diff --cached --check
-git --no-pager diff --cached --stat
-git commit -m "feat: aprovar revisoes e publicar planos por API e CSV"
-git push
-```

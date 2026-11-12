@@ -146,7 +146,7 @@ estado REJEITADO e diagnóstico CHAVE_DUPLICADA são resultados esperados.
 Após uma importação válida, código/unidade de SKU001 ficam fixos. Nome e estado
 continuam editáveis pelo catálogo.
 
-## Testes e Git
+## Testes
 
 ```bash
 cd backend
@@ -165,14 +165,6 @@ A imagem Docker foi construída, ambos os serviços ficaram saudáveis e a escri
 no volume de originais foi confirmada com o utilizador sem privilégios do backend.
 Não foram importados históricos de teste para a base do projeto. O script interativo
 foi compilado sintaticamente; o ensaio com a conta real é executado pelo estudante.
-
-```bash
-git add backend compose.yaml scripts/testar_importacao.py data/exemplos README.md docs/importacao-historicos.md
-git diff --cached --check
-git --no-pager diff --cached --stat
-git commit -m "feat: importar historicos CSV com validacao atomica e proveniencia"
-git push
-```
 
 ## Referências
 
