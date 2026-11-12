@@ -17,19 +17,27 @@ export function accountPage(user, revision) {
   const newPasswordAttrs = 'required minlength="12" maxlength="72" autocomplete="new-password"';
   return `<div class="page-heading"><h1>A minha conta</h1></div>
     <div class="account-layout">
-      <section class="panel profile-card" aria-labelledby="account-details-title">
-        <div class="panel-head"><h2 id="account-details-title">Dados da conta</h2></div>
+      <section class="profile-identity" aria-labelledby="account-details-title">
+        <div class="profile-person">
+          ${accountAvatar(user, revision, true)}
+          <div>
+            <h2 id="account-details-title">Dados da conta</h2>
+            <p class="profile-name">${esc(user.nome)}</p>
+          </div>
+        </div>
         <dl class="profile-details">
-          <div><dt>Nome</dt><dd>${esc(user.nome)}</dd></div>
           <div><dt>Email</dt><dd>${esc(user.email)}</dd></div>
-          <div><dt>Papéis atribuídos</dt><dd>${user.papeis.map(role => esc(label(role))).join(' · ')}</dd></div>
+          <div>
+            <dt>Papéis atribuídos</dt>
+            <dd class="profile-roles">${user.papeis.map(role => `<span>${esc(label(role))}</span>`).join('')}</dd>
+          </div>
         </dl>
       </section>
       <section class="panel profile-card" aria-labelledby="account-photo-title">
         <div class="panel-head"><h2 id="account-photo-title">Foto de perfil</h2></div>
         <form id="account-photo-form" class="profile-form">
+          <p class="profile-help">A fotografia aparece junto ao teu nome no cabeçalho.</p>
           <div class="profile-photo-fields">
-            ${accountAvatar(user, revision, true)}
             ${field('Fotografia', '<input name="foto" type="file" accept="image/jpeg,image/png" required>', 'JPEG ou PNG, até 2 MB e 4096 × 4096 px.')}
           </div>
           <div class="form-error" role="alert"></div>
