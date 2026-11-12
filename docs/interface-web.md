@@ -79,9 +79,10 @@ atalho na Visão geral. As opções dentro de cada etapa têm separação própr
 permitem deslocação dentro da sua própria área, sem alargar a página.
 
 A tipografia usa DM Sans, servida localmente com licença SIL Open Font License.
-O login ocupa o ecrã inteiro, com o formulário à esquerda e uma fotografia de
-um centro de distribuição gerada para a NexoPlan à direita. Em ecrãs pequenos,
-o formulário ocupa a largura disponível.
+O login ocupa o ecrã inteiro, com um painel areia para o formulário e uma
+composição verde profunda com percursos abstratos que representam alternativas
+de planeamento. A ilustração SVG é decorativa e não contém dados de negócio.
+Em ecrãs pequenos, apresenta apenas o painel de entrada.
 Verde profundo, areia e cobre identificam a NexoPlan. O destaque principal enquadra
 a tarefa do perfil e apresenta uma contagem real. Os elementos gráficos de fundo
 são decorativos; não apresentam medidas de negócio nem variações percentuais.

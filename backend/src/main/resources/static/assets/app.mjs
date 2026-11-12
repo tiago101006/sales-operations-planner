@@ -82,27 +82,50 @@ function logoutView(message = '') {
   epoch++;for (const key of Object.keys(state)) delete state[key];Object.assign(state, { user: null, pages: {}, compareIds: [], comparison: null });
   closeDialog();
   root.innerHTML = `<main id="conteudo" class="login" tabindex="-1">
-    <div class="login-card">
-      <section class="login-form" aria-labelledby="login-title">
-        <a class="brand" href="#/visao" aria-label="NexoPlan">
-          <img src="/assets/brand.svg" width="38" height="38" alt="">
-          <div><strong>NexoPlan<span>.</span></strong><small>PLANEAMENTO S&OP</small></div>
-        </a>
+    <section class="login-panel" aria-labelledby="login-title">
+      <a class="brand login-brand" href="#/visao" aria-label="NexoPlan">
+        <img src="/assets/brand.svg" width="42" height="42" alt="">
+        <div><strong>NexoPlan<span class="brand-period">.</span></strong><small>PROCURA → DECISÃO</small></div>
+      </a>
+      <div class="login-entry">
+        <span class="login-eyebrow">O TEU ESPAÇO DE PLANEAMENTO</span>
+        <h1 id="login-title">Entrar na aplicação</h1>
+        <p class="login-welcome">Bom ter-te de volta.</p>
         <form id="login-form">
-          <h1 id="login-title">Entrar na aplicação</h1>
-          <p class="intro">Bem-vindo de volta. Vamos planear o próximo passo.</p>
           ${field('Email', input('email', 'email', '', 'required maxlength="254" autocomplete="username" placeholder="nome@empresa.pt"'))}
           ${field('Password', input('password', 'password', '', 'required maxlength="200" autocomplete="current-password" placeholder="A tua password"'))}
           <div class="form-error" role="alert">${esc(message)}</div>
-          <button class="btn primary" type="submit">Entrar ${icon('arrow', 16)}</button>
-          <p class="login-footer">Precisas de acesso? Contacta o administrador da equipa.</p>
+          <button class="btn primary" type="submit">Entrar ${icon('arrow', 19)}</button>
         </form>
-        <span class="login-caption">Da Procura à Decisão.</span>
-      </section>
-      <div class="login-visual" aria-hidden="true">
-        <img src="/assets/login-operations.webp" width="1024" height="1536" alt="" fetchpriority="high">
+        <p class="login-help">Precisas de acesso?<br><span>Contacta o administrador da equipa.</span></p>
       </div>
-    </div>
+      <div class="login-panel-footer"><span>Um plano. Toda a equipa.</span><span>S&OP</span></div>
+    </section>
+    <section class="login-story" aria-labelledby="login-story-title">
+      <div class="login-story-top"><span>MENOS INCERTEZA.</span><span>MAIS DIREÇÃO.</span></div>
+      <div class="login-art" aria-hidden="true">
+        <svg viewBox="0 0 720 440" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs><pattern id="login-grid" width="40" height="40" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#abc2aa" opacity=".22"/></pattern></defs>
+          <rect width="720" height="440" fill="url(#login-grid)"/>
+          <path d="M0 105H160Q200 105 230 135L330 235Q360 265 400 265H720" stroke="#6c9780" stroke-width="2"/>
+          <path d="M0 330H190Q230 330 260 300L350 210Q380 180 420 180H720" stroke="#dba780" stroke-width="2"/>
+          <path d="M0 220H170Q210 220 240 250L320 330Q350 360 390 360H470Q510 360 540 330L650 220H720" stroke="#385e4f" stroke-width="2"/>
+          <path d="M0 400H120Q160 400 190 370L365 195Q395 165 435 165H475Q515 165 545 195L585 235Q615 265 655 265H720" stroke="#bcd38a" stroke-width="4"/>
+          <circle cx="160" cy="105" r="7" fill="#173c31" stroke="#6c9780" stroke-width="2"/>
+          <circle cx="260" cy="300" r="7" fill="#173c31" stroke="#dba780" stroke-width="2"/>
+          <circle cx="470" cy="360" r="7" fill="#173c31" stroke="#6c9780" stroke-width="2"/>
+          <rect x="431" y="121" width="88" height="88" rx="24" fill="#dfe8bb" transform="rotate(8 475 165)"/>
+          <path d="M456 181V150L493 180V149" stroke="#214e3c" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="456" cy="150" r="4" fill="#214e3c"/><circle cx="493" cy="149" r="4" fill="#b56f48"/><circle cx="493" cy="180" r="4" fill="#214e3c"/>
+        </svg>
+        <span class="login-art-caption">DIFERENTES POSSIBILIDADES. UMA DIREÇÃO COMUM.</span>
+      </div>
+      <div class="login-story-bottom">
+        <h2 id="login-story-title">O próximo passo<br>começa <em>aqui.</em></h2>
+        <p>Liga os dados às decisões.<br>O futuro planeia-se em equipa.</p>
+      </div>
+      <div class="login-story-footer"><span>VENDAS & OPERAÇÕES</span><span>NEXOPLAN — PLANEAMENTO COM CONTEXTO</span></div>
+    </section>
   </main>`;
 }
 function shell() {
