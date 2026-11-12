@@ -18,6 +18,7 @@ export const lastMonth = (now = new Date()) => new Date(Date.UTC(now.getUTCFullY
 export const role = (user, ...roles) => !!user && roles.some(r => user.papeis.includes(r));
 export const independent = (user, revision, adjustments) => revision.criadoPor !== user.id && !adjustments.some(a => a.autorId === user.id);
 export const label = value => ({ RASCUNHO: 'Rascunho', EM_REVISAO: 'A aguardar aprovação', DEVOLVIDA: 'Devolvida', APROVADA: 'Aprovada',
+  ATIVO: 'Ativo', INATIVO: 'Inativo', POR_ATIVAR: 'Por ativar',
   VALIDADO: 'Validado', REJEITADO: 'Rejeitado', CONCLUIDA: 'Concluída', EM_EXECUCAO: 'Em execução',
   HISTORICO: 'Histórico', REALIZADOS: 'Realizados', OPERACIONAL: 'Operacional', MEDIA_MOVEL: 'Média Móvel', ETS: 'ETS',
   BASE: 'Base', OTIMISTA: 'Otimista', CONSERVADOR: 'Conservador', PERSONALIZADO: 'Personalizado',
@@ -27,7 +28,7 @@ export const label = value => ({ RASCUNHO: 'Rascunho', EM_REVISAO: 'A aguardar a
   OPERACIONAL_APOS_CORTE: 'Operacional conhecido após o corte', PREVISTO: 'Previsto', RECURSO: 'Método de recurso', INSUFICIENTE: 'Histórico insuficiente', ERRO: 'Erro',
   ADMIN: 'Administrador', PLANEADOR: 'Planeador', COMERCIAL: 'Comercial', APROVADOR: 'Aprovador', CONSUMIDOR: 'Consumidor' }[value] || value || '—');
 export function badge(value) {
-  const tone = ['VALIDADO', 'CONCLUIDA', 'APROVADA', 'PREVISTO'].includes(value) ? 'good' : ['REJEITADO', 'ERRO', 'FALHOU'].includes(value) ? 'bad' : ['EM_REVISAO', 'DEVOLVIDA', 'INSUFICIENTE', 'RECURSO'].includes(value) ? 'warn' : 'neutral';
+  const tone = ['ATIVO', 'VALIDADO', 'CONCLUIDA', 'APROVADA', 'PREVISTO'].includes(value) ? 'good' : ['INATIVO', 'REJEITADO', 'DEVOLVIDA', 'ERRO', 'FALHOU'].includes(value) ? 'bad' : ['POR_ATIVAR', 'EM_REVISAO', 'INSUFICIENTE', 'RECURSO'].includes(value) ? 'warn' : 'neutral';
   return `<span class="badge ${tone}"><span></span>${esc(label(value))}</span>`;
 }
 const paths = {

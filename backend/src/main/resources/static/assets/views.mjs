@@ -112,7 +112,7 @@ export function createViews(ctx) {
     const data = await page('products', '/produtos' + (state.search ? '?q=' + encodeURIComponent(state.search) : ''));
     return heading('Dados de base', 'Catálogo de produtos', 'Códigos, unidades e estado dos produtos utilizados no planeamento.', newButton('Novo produto', 'product')) +
       panel('Produtos', `${data.totalElements} produtos no resultado`, `<form id="product-search" class="toolbar">${field('Procurar no catálogo', input('q', 'search', state.search || '', 'placeholder="Código ou nome do produto" maxlength="160"'))}<button class="btn" type="submit">Pesquisar</button>${state.search ? b('Limpar', 'clear-search') : ''}</form>` +
-        table(['Código / produto', 'Unidade', 'Estado', ''], data.items.map(p => [`<strong>${esc(p.codigo)}</strong><small>${esc(p.nome)}</small>`, esc(p.unidade), badge(p.ativo ? 'VALIDADO' : 'RASCUNHO').replace('Validado', 'Ativo').replace('Rascunho', 'Inativo'), writer() ? rowAction('Editar', 'edit-product', p.id) : 'Consulta'])) + pager(data, 'products'));
+        table(['Código / produto', 'Unidade', 'Estado', ''], data.items.map(p => [`<strong>${esc(p.codigo)}</strong><small>${esc(p.nome)}</small>`, esc(p.unidade), badge(p.ativo ? 'ATIVO' : 'INATIVO'), writer() ? rowAction('Editar', 'edit-product', p.id) : 'Consulta'])) + pager(data, 'products'));
   }
 
   async function imports() {
@@ -256,7 +256,7 @@ export function createViews(ctx) {
   async function team() {
     const users = await page('team', '/utilizadores');
     return heading('Acesso e responsabilidades', 'Equipa', 'Cria contas com os papéis necessários. A aprovação exige independência de quem preparou ou ajustou a revisão.', b(icon('plus', 16) + 'Criar utilizador', 'dialog', 'data-kind="user"', 'primary')) +
-      panel('Membros da equipa', 'Consulta reservada ao administrador.', table(['ID', 'Nome', 'Email', 'Perfis', 'Estado', ''], users.items.map(u => [`<strong>#${esc(u.id)}</strong>`, esc(u.nome), esc(u.email), esc(u.papeis.map(label).join(' · ')), badge(!u.ativo ? 'RASCUNHO' : u.passwordDefinida ? 'VALIDADO' : 'EM_REVISAO').replace('Validado', 'Ativo').replace('Rascunho', 'Inativo').replace('A aguardar aprovação', 'Por ativar'), rowAction('Consultar', 'lookup-user', u.id)])) + pager(users, 'team')) +
+      panel('Membros da equipa', 'Consulta reservada ao administrador.', table(['ID', 'Nome', 'Email', 'Perfis', 'Estado', ''], users.items.map(u => [`<strong>#${esc(u.id)}</strong>`, esc(u.nome), esc(u.email), esc(u.papeis.map(label).join(' · ')), badge(!u.ativo ? 'INATIVO' : u.passwordDefinida ? 'ATIVO' : 'POR_ATIVAR'), rowAction('Consultar', 'lookup-user', u.id)])) + pager(users, 'team')) +
       `<details class="secondary-details">
         <summary>Responsabilidades por perfil</summary>
         <dl class="team-roles">

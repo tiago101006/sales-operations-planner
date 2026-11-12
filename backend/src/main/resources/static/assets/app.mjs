@@ -1,5 +1,5 @@
 import { Api, ApiError } from './api.mjs';
-import { esc, date, month, quantity as q, factorValue, revisionCaption, label, icon, button as b, field, input, select, role, lastMonth, independent } from './ui.mjs';
+import { esc, date, month, quantity as q, factorValue, revisionCaption, label, badge, icon, button as b, field, input, select, role, lastMonth, independent } from './ui.mjs';
 import { createViews } from './views.mjs';
 
 const api = new Api();
@@ -72,8 +72,10 @@ const route = () => {
   return { name: name || 'visao', id, params: url.searchParams };
 };
 const navigate = path => { if (location.hash === '#/' + path) render(); else location.hash = '#/' + path; };
-function notify(text) {
-  const box = document.querySelector('#notice');box.textContent = text;box.classList.add('visible');clearTimeout(noticeTimer);
+function notify(text, tone = 'default') {
+  const box = document.querySelector('#notice');
+  box.classList.toggle('error', tone === 'error');
+  box.textContent = text;box.classList.add('visible');clearTimeout(noticeTimer);
   noticeTimer = setTimeout(() => box.classList.remove('visible'), 6500);
 }
 let activationToken = '';
@@ -116,9 +118,12 @@ function showInvitation(invite) {
     <div class="invitation-content"><p>Entrega este link a <strong>${esc(invite.utilizador.nome)}</strong>, através de um canal privado. O funcionário escolhe a sua password.</p>
       ${field('Link de ativação', input('invitationLink', 'url', url.href, 'readonly autocomplete="off" spellcheck="false"'))}
       ${b('Copiar link', 'copy-invitation')}
-      <p>Válido até ${esc(new Date(invite.expiraEm).toLocaleString('pt-PT'))}.</p>
-      <small>O link é mostrado apenas agora. Se precisares de outro, gera um novo convite na ficha do utilizador.</small></div>
-    <div class="form-actions">${b('Concluir', 'close-dialog')}</div>`;
+      <div class="invitation-meta">
+        <p>Válido até <strong>${esc(new Date(invite.expiraEm).toLocaleString('pt-PT'))}</strong>.</p>
+        <small>O link só aparece aqui. Podes gerar outro na ficha do utilizador.</small>
+      </div>
+    </div>
+    <div class="form-actions invitation-actions">${b('Concluir', 'close-dialog')}</div>`;
   modal.showModal();modal.querySelector('input').focus();
 }
 function logoutView(message = '', loggedIn = false) {
@@ -244,10 +249,10 @@ function formError(form, error) {
   }
   box.scrollIntoView({ block: 'nearest' });
 }
-function formHtml(kind, title, content, submit, context = {}) {
+function formHtml(kind, title, content, submit, context = {}, submitStyle = 'primary') {
   hideChartTooltip();
   dialogContext = { kind, ...context };
-  modal.innerHTML = `<div class="modal-head"><h2 id="modal-title">${title}</h2><button class="close" type="button" data-action="close-dialog" aria-label="Fechar">×</button></div><form id="command-form" data-kind="${kind}"><div class="form-grid">${content}</div><div class="form-error" role="alert"></div><div class="form-actions">${b('Cancelar', 'close-dialog')}<button class="btn primary" type="submit">${submit}</button></div></form>`;
+  modal.innerHTML = `<div class="modal-head"><h2 id="modal-title">${title}</h2><button class="close" type="button" data-action="close-dialog" aria-label="Fechar">×</button></div><form id="command-form" data-kind="${kind}"><div class="form-grid">${content}</div><div class="form-error" role="alert"></div><div class="form-actions">${b('Cancelar', 'close-dialog')}<button class="btn ${submitStyle}" type="submit">${submit}</button></div></form>`;
   modal.querySelectorAll('input[type=datetime-local]').forEach(input => input.dataset.initial = input.value);
   if (!modal.open) modal.showModal();
   modal.querySelector('input:not([type=hidden]),select,textarea,button[type=submit]')?.focus();
@@ -341,7 +346,7 @@ async function dialog(kind, data = {}) {
     case 'submit': case 'return': case 'approve': {
       const title = kind === 'submit' ? 'Enviar para aprovação' : kind === 'return' ? 'Devolver a revisão' : 'Aprovar e publicar';
       const desc = kind === 'submit' ? 'As quantidades ficam congeladas enquanto se aguarda a decisão de um aprovador independente.' : kind === 'return' ? 'A revisão fica preservada com o motivo da devolução. A correção é feita numa revisão nova.' : 'A aprovação publica uma cópia estável das quantidades finais. O plano fica disponível por consulta e CSV.';
-      formHtml(kind, title, `<div class="info"><strong>${esc(state.currentScenario.nome)} · ${esc(revisionCaption(r))}</strong><br>${r.totalLinhas} quantidades previstas.<br>${desc}</div>` + (kind === 'return' ? field('Motivo da devolução', textArea('motivo', '', 1000)) : ''), title, { revision: r });break;
+      formHtml(kind, title, `<div class="info"><strong>${esc(state.currentScenario.nome)} · ${esc(revisionCaption(r))}</strong><br>${r.totalLinhas} quantidades previstas.<br>${desc}</div>` + (kind === 'return' ? field('Motivo da devolução', textArea('motivo', '', 1000)) : ''), title, { revision: r }, kind === 'return' ? 'danger' : 'primary');break;
     }
     case 'assessment': {
       const [plans, lots] = await Promise.all([api.all('/planos'), api.all('/lotes')]);
@@ -356,7 +361,7 @@ async function dialog(kind, data = {}) {
       const member = await api.get('/utilizadores/' + encodeURIComponent(data.id));
       if (member.id === user.id && member.ativo) throw new Error('Não podes desativar a tua própria conta.');
       const title = member.ativo ? 'Desativar utilizador' : 'Reativar utilizador';
-      formHtml(kind, title, `<div class="info form-span"><strong>${esc(member.nome)}</strong><br>${esc(member.email)}<br><br>${member.ativo ? 'Esta conta deixa de poder entrar. As sessões existentes perdem o acesso no pedido seguinte. O histórico de ajustes e aprovações fica preservado.' : 'Esta conta volta a poder entrar com a password e os perfis existentes. As sessões antigas continuam inválidas.'}</div>`, title, { member });
+      formHtml(kind, title, `<div class="info form-span"><strong>${esc(member.nome)}</strong><br>${esc(member.email)}<br><br>${member.ativo ? 'Esta conta deixa de poder entrar. As sessões existentes perdem o acesso no pedido seguinte. O histórico de ajustes e aprovações fica preservado.' : 'Esta conta volta a poder entrar com a password e os perfis existentes. As sessões antigas continuam inválidas.'}</div>`, title, { member }, member.ativo ? 'danger' : 'primary');
       break;
     }
     case 'user-invite': {
@@ -588,9 +593,9 @@ document.addEventListener('click', async event => {
           <div><dt>ID</dt><dd>#${esc(member.id)}</dd></div>
           <div><dt>Email</dt><dd>${esc(member.email)}</dd></div>
           <div><dt>Perfis</dt><dd>${member.papeis.map(p => esc(label(p))).join(' · ')}</dd></div>
-          <div><dt>Estado</dt><dd>${!member.ativo ? 'Inativo' : member.passwordDefinida ? 'Ativo' : 'Por ativar'}</dd></div>
+          <div><dt>Estado</dt><dd>${badge(!member.ativo ? 'INATIVO' : member.passwordDefinida ? 'ATIVO' : 'POR_ATIVAR')}</dd></div>
         </dl>
-        <div class="member-status-actions">${member.id === state.user.id ? '<p>Esta é a tua conta. A desativação exige outro administrador.</p>' : b(member.ativo ? 'Desativar utilizador' : 'Reativar utilizador', 'user-status', `data-id="${esc(member.id)}"`)}${member.ativo && !member.passwordDefinida ? b('Gerar novo convite', 'user-invite', `data-id="${esc(member.id)}"`) : ''}</div>`;
+        <div class="member-status-actions">${member.id === state.user.id ? '<p>Esta é a tua conta. A desativação exige outro administrador.</p>' : b(member.ativo ? 'Desativar utilizador' : 'Reativar utilizador', 'user-status', `data-id="${esc(member.id)}"`, member.ativo ? 'danger' : '')}${member.ativo && !member.passwordDefinida ? b('Gerar novo convite', 'user-invite', `data-id="${esc(member.id)}"`) : ''}</div>`;
         target.disabled = false;
         target.focus({ preventScroll: true });
         modal.showModal();
@@ -600,7 +605,7 @@ document.addEventListener('click', async event => {
       case 'remove-compare': state.compareIds = state.compareIds.filter(id => id !== target.dataset.id);if (state.compareIds.length < 2) state.comparison = null;await render();break;
       case 'compare': if (state.compareIds.length < 2) throw new Error('Seleciona pelo menos duas revisões.');state.comparison = true;state.pages.comparison = 0;await render();break;
     }
-  } catch (error) { notify(error.message); }
+  } catch (error) { notify(error.message, 'error'); }
   finally { if (target.isConnected) target.disabled = false; }
 });
 function chartPointer(event) {
@@ -704,7 +709,7 @@ document.addEventListener('change', async event => {
     if (target.name === 'recalcular') { modal.querySelector('#new-factor').classList.toggle('display-none', !target.checked);modal.querySelector('[name=fator]').disabled = !target.checked; }
     if (dialogContext?.kind === 'backtest' && ['loteHistoricoId', 'tipoSerie', 'horizonteMeses'].includes(target.name)) await suggestBacktest();
     if (dialogContext?.kind === 'assessment' && target.name === 'planoId') await suggestWindow(target.value);
-  } catch (error) { const form = modal.querySelector('form');if (form) formError(form, error);else notify(error.message); }
+  } catch (error) { const form = modal.querySelector('form');if (form) formError(form, error);else notify(error.message, 'error'); }
 });
 modal.addEventListener('cancel', event => { if (modal.querySelector('[data-busy]')) event.preventDefault(); });
 modal.addEventListener('close', () => { if (!modal.open) { modal.innerHTML = '';dialogContext = null; } });
