@@ -16,7 +16,7 @@ public class DatabaseUserDetailsService implements UserDetailsService {
         var user = repository.findByEmail(IdentityService.normalizeEmail(email))
                 .orElseThrow(() -> new UsernameNotFoundException("Credenciais inválidas."));
         return User.withUsername(user.getEmail()).password(user.getPasswordHash())
-                .disabled(!user.isAtivo())
+                .disabled(!user.isAtivo() || !user.isPasswordDefinida())
                 .roles(user.getPapeis().stream().map(Enum::name).toArray(String[]::new)).build();
     }
 }

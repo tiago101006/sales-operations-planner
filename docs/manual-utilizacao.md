@@ -222,3 +222,17 @@ Para manutenção, cópias e recuperação, seguir [backup e restauro](backup-re
 Na área Equipa, a pesquisa encontra membros na lista. O botão **Consultar** de
 cada linha abre os detalhes da pessoa selecionada numa janela; não é necessário introduzir
 o ID noutra pesquisa. As responsabilidades estão disponíveis em **Responsabilidades por perfil**.
+
+Os estados **Ativo**, **Por ativar** e **Inativo** aparecem na lista de membros. Nos detalhes de outra
+pessoa, **Desativar utilizador** pede confirmação antes de bloquear o acesso.
+O histórico e os dados da conta permanecem guardados. Para recuperar o acesso,
+usa **Reativar utilizador**; a pessoa terá de iniciar sessão novamente.
+Não é possível desativar a própria conta: essa ação exige outro administrador.
+
+Em **Equipa → Criar utilizador**, indica o nome, o email e o perfil do funcionário.
+Depois de criar a conta, copia o link de ativação e entrega-o por um canal privado.
+O funcionário abre o link, escolhe e confirma a password e entra com o email indicado.
+
+O convite expira ao fim de 24 horas e só pode ser usado uma vez. Em **Consultar**,
+usa **Gerar novo convite** para substituir o link de uma conta por ativar.
+Para experimentar localmente, abre o link numa janela privada no mesmo computador.

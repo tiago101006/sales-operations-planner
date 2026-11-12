@@ -3,8 +3,7 @@
 ## Funcionamento
 
 Spring Security autentica contas guardadas em `utilizador` e carrega os papéis de
-`utilizador_papel`. O mapeamento JPA é validado contra o esquema existente. Não houve
-alteração à V1 nem foi necessária uma V2.
+`utilizador_papel`. O mapeamento JPA é validado contra o esquema gerido pelo Flyway.
 
 Passwords são guardadas como hashes BCrypt, custo 12. Novas passwords exigem pelo
 menos 12 caracteres e no máximo 72 bytes UTF-8; não são cortadas silenciosamente.
@@ -56,13 +55,14 @@ Não existe registo público de contas. As restantes contas são criadas por ADM
 | `POST /api/v1/auth/login` | Público + CSRF | Autentica e guarda a sessão |
 | `GET /api/v1/auth/me` | Autenticado | ID, nome, email e papéis |
 | `POST /api/v1/auth/logout` | CSRF | HTTP 204, invalida sessão |
-| `POST /api/v1/utilizadores` | ADMIN + CSRF | HTTP 201, nova conta |
+| `POST /api/v1/utilizadores` | ADMIN + CSRF | HTTP 201, conta por ativar e convite |
+| `POST /api/v1/utilizadores/{id}/convites` | ADMIN + CSRF | Novo convite para uma conta por ativar. Exige `versaoEsperada` |
+| `POST /api/v1/auth/ativacao` | Convite + CSRF | HTTP 204, password definida |
 | `GET /api/v1/utilizadores?busca=texto&page=0&size=50` | ADMIN | Lista paginada de ID, nome, email e perfis; sem credenciais |
-| `GET /api/v1/utilizadores/{id}` | ADMIN | DTO da conta ou 404 |
+| `GET /api/v1/utilizadores/{id}` | ADMIN | DTO com estado e versão da conta ou 404 |
+| `PATCH /api/v1/utilizadores/{id}/estado` | ADMIN + CSRF | Desativa/reativa; exige `ativo` e `versaoEsperada` |
 
-Os endpoints de estado e saúde continuam públicos. Os restantes pedidos exigem
-autenticação; as rotas de utilizadores exigem ADMIN. A autorização das futuras
-operações de planeamento será acrescentada ao implementar cada módulo.
+Os endpoints de estado e saúde são públicos. As rotas de gestão de utilizadores exigem ADMIN.
 
 CSRF devolve, por exemplo:
 
@@ -89,19 +89,33 @@ Criação de uma conta por ADMIN:
 {
   "nome":"Planeador de procura",
   "email":"planeador@example.test",
-  "password":"password-propria-com-12-ou-mais-caracteres",
   "papeis":["PLANEADOR"]
 }
 ```
 
+A resposta inclui `utilizador`, `token` e `expiraEm`. O administrador copia o link e entrega-o
+por um canal privado. O destinatário escolhe e confirma a password no formulário de ativação.
+
+```json
+{"token":"token-do-convite","password":"password-escolhida","confirmacao":"password-escolhida"}
+```
+
+Cada convite dura 24 horas. A base guarda o hash do token, o autor e as datas de
+emissão, expiração e utilização. Gerar outro convite ou desativar a conta invalida
+o link anterior. A ativação consome o convite e guarda a password na mesma
+transação. Depois de ativar, o funcionário entra com o seu email e a password
+que escolheu. A migração V5 marca as contas existentes como já ativadas.
+
+O token segue no fragmento do endereço e é retirado do URL quando a página abre.
+A rota de ativação exige CSRF e partilha o limite por endereço do login.
+Consulte a [orientação da OWASP sobre tokens de acesso](https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html#url-tokens).
+
 Papéis disponíveis: ADMIN, PLANEADOR, COMERCIAL, APROVADOR e CONSUMIDOR.
-Sem endpoints para alterar contas ou papéis neste bloco. A reavaliação por pedido
-já impede que uma futura alteração conserve privilégios numa sessão antiga.
 
 Erros: 401 para ausência de sessão ou credenciais inválidas; 403 para papel inadequado
 ou CSRF ausente/inválido; 422 para validação; 409 para email duplicado; 400 para JSON
 malformado ou papel desconhecido. Credenciais erradas, conta desconhecida e conta
-desativada produzem a mesma mensagem de login. Erros não incluem valores de passwords.
+desativada ou por ativar produzem a mesma mensagem de login. Erros não incluem valores de passwords.
 
 ## Experimentar sem gerir cookies manualmente
 
@@ -137,3 +151,31 @@ credenciais, usando o script acima.
 
 - [Spring Security: persistência de autenticação](https://docs.spring.io/spring-security/reference/servlet/authentication/session-management.html)
 - [Spring Security: CSRF](https://docs.spring.io/spring-security/reference/servlet/exploits/csrf.html)
+
+## Desativação e reativação de contas
+
+Em **Equipa → Consultar**, o administrador pode desativar ou reativar outra conta,
+com confirmação. A tabela identifica os estados Ativo/Inativo; a pesquisa também
+aceita estes termos. Não existe eliminação de utilizadores. A própria conta não
+pode ser desativada nesta sessão: é necessária a intervenção de outro administrador.
+
+```json
+{"ativo":false,"versaoEsperada":0}
+```
+
+O endpoint devolve o DTO atualizado com `ativo` e `versao`. Versões antigas recebem
+409, sem gravar alterações. Repetir o estado atual com a versão atual é idempotente.
+As alterações de estado são serializadas entre administradores e confirmam novamente
+que o autor está ativo e tem o papel ADMIN dentro da transação.
+
+A migração V4 acrescenta `utilizador.versao_acesso` e a tabela
+`evento_estado_utilizador`, com FKs para a conta e para o administrador responsável,
+estados anterior/novo e instante UTC. A versão incrementa a cada mudança de estado.
+O login guarda a versão na sessão e cada pedido autenticado compara-a com a base.
+Contas inativas não podem entrar e as sessões anteriores são recusadas no pedido
+seguinte, mesmo que a conta tenha entretanto sido reativada. As ações já executadas
+permanecem no histórico. A reativação conserva password e perfis e exige novo login.
+
+Os testes de autenticação cobrem autorização, CSRF, concorrência por versão,
+autodesativação, revogação de sessões, reativação e auditoria. O ensaio no navegador
+cobre consulta, cancelamento, desativação e reativação na área da equipa.

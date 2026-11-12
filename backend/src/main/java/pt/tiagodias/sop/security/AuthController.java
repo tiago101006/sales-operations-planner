@@ -44,7 +44,8 @@ public class AuthController {
                                               HttpServletRequest request, HttpServletResponse response) {
         String email = IdentityService.normalizeEmail(login.email());
         // Use the stored identity so database collation aliases share the same limit.
-        String account = users.findByEmail(email).map(Utilizador::getEmail).orElse(email);
+        var loginUser = users.findByEmail(email).orElse(null);
+        String account = loginUser == null ? email : loginUser.getEmail();
         long retry = throttle.reserveAccount(account);
         if (retry > 0) {
             response.setHeader("Retry-After", Long.toString(retry));
@@ -66,6 +67,7 @@ public class AuthController {
         sessions.onAuthentication(auth, request, response);
         throttle.succeeded(account);
         request.getSession().setAttribute(CurrentAccountFilter.AUTHENTICATED_AT, System.currentTimeMillis());
+        request.getSession().setAttribute(CurrentAccountFilter.ACCESS_VERSION, loginUser == null ? -1L : loginUser.getVersao());
         var context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(auth);
         SecurityContextHolder.setContext(context);

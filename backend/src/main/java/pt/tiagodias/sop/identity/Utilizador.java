@@ -17,6 +17,11 @@ public class Utilizador {
     private String passwordHash;
     @Column(nullable = false)
     private boolean ativo = true;
+    @Column(name = "password_definida", nullable = false)
+    private boolean passwordDefinida = true;
+    @Version
+    @Column(name = "versao_acesso", nullable = false)
+    private long versao;
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "utilizador_papel", joinColumns = @JoinColumn(name = "utilizador_id"))
     @Enumerated(EnumType.STRING)
@@ -36,6 +41,10 @@ public class Utilizador {
     public String getNome() { return nome; }
     public String getEmail() { return email; }
     public String getPasswordHash() { return passwordHash; }
+    public boolean isPasswordDefinida() { return passwordDefinida; }
+    void pendenteAtivacao() { passwordDefinida = false; }
+    public long getVersao() { return versao; }
+    public void setAtivo(boolean ativo) { this.ativo = ativo; }
     public boolean isAtivo() { return ativo; }
     public Set<Papel> getPapeis() { return Set.copyOf(papeis); }
 }

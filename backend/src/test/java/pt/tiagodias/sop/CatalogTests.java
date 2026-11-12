@@ -77,8 +77,8 @@ class CatalogTests {
         var data=json.readTree(response.body());
         assertThat(data.get("totalElements").asInt()).isEqualTo(1);
         assertThat(data.get("items").get(0).get("email").asText()).isEqualTo("admin@catalog.test");
-        assertThat(data.get("items").get(0).size()).isEqualTo(4);
-        assertThat(response.body()).doesNotContain("password", "hash");
+        assertThat(data.get("items").get(0).size()).isEqualTo(7);
+        assertThat(response.body()).doesNotContain("\"password\":", "password_hash", "$2");
         assertThat(new Browser().request("GET","/api/v1/utilizadores",null,false).statusCode()).isEqualTo(401);
         assertThat(login("planeador@catalog.test").request("GET","/api/v1/utilizadores",null,false).statusCode()).isEqualTo(403);
     }

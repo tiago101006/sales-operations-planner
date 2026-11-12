@@ -394,3 +394,12 @@ a.work-item:hover .work-copy strong { text-decoration: underline; text-underline
 @media (min-width: 1600px) { .login { padding: 32px; gap: 48px; } .login-panel { padding: 44px 60px 30px; } .login-story { padding: 28px 40px 8px; } .login-art svg { max-height: 480px; } }
 @media (max-width: 1000px) { .login { grid-template-columns: minmax(350px, 1fr) minmax(0, 1fr); padding: 16px; gap: 16px; } .login-panel { padding: 28px 28px 22px; } .login-story { padding: 18px 12px 0; } .login-story h2 { font-size: 44px; } .login-story-footer > :last-child { display: none; } }
 @media (max-width: 760px) { .login { display: flex; padding: 12px; } .login-panel { width: 100%; border-radius: 16px; padding: 24px; } .login-story { display: none; } .login-entry { padding: 54px 0; } .login-entry h1 { font-size: 30px; } .login-brand strong { font-size: 25px; } }
+
+.member-status-actions { padding: 0 24px 24px; }
+.member-status-actions p { margin: 0; color: var(--muted); font-size: 12px; }
+
+.invitation-content { padding: 4px 28px 24px; }
+.invitation-content p { line-height: 1.7; }
+.invitation-content small { display: block; line-height: 1.7; color: var(--muted); }
+.invitation-content input { width: 100%; min-width: 0; }
+.member-status-actions { display: flex; gap: 12px; flex-wrap: wrap; }

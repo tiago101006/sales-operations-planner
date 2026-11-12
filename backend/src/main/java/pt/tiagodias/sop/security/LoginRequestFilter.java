@@ -14,7 +14,7 @@ final class LoginRequestFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
-        if (request.getMethod().equals("POST") && request.getServletPath().equals("/api/v1/auth/login")) {
+        if (request.getMethod().equals("POST") && java.util.Set.of("/api/v1/auth/login", "/api/v1/auth/ativacao").contains(request.getServletPath())) {
             // Forwarded headers are untrusted input. The TCP peer is the address used here.
             long retry = throttle.reserveAddress(request.getRemoteAddr());
             if (retry > 0) {

@@ -25,6 +25,7 @@ class AuthenticationTests {
     @LocalServerPort private int port;
     @Autowired private IdentityService users;
     @Autowired private JdbcTemplate jdbc;
+    @Autowired private InvitationService invitations;
 
     @BeforeAll
     void accounts() {
@@ -80,7 +81,7 @@ class AuthenticationTests {
         String oldToken = browser.token;
         var login = browser.request("POST", "/api/v1/auth/login", Map.of("email", "ADMIN@example.test", "password", PASSWORD), true);
         assertThat(login.statusCode()).isEqualTo(200);
-        assertThat(login.body()).contains("ADMIN").doesNotContain("password", "$2");
+        assertThat(login.body()).contains("ADMIN").doesNotContain("\"password\":", "password_hash", "$2");
         assertThat(browser.sessionId()).isNotEqualTo(oldSession);
         var me = browser.request("GET", "/api/v1/auth/me", null, false);
         assertThat(me.statusCode()).isEqualTo(200);
@@ -107,8 +108,8 @@ class AuthenticationTests {
         admin.csrf();
         var created = admin.request("POST", "/api/v1/utilizadores", request, true);
         assertThat(created.statusCode()).isEqualTo(201);
-        assertThat(created.body()).doesNotContain("password", "$2");
-        String id = json.readTree(created.body()).get("id").asText();
+        assertThat(created.body()).doesNotContain("\"password\":", "password_hash", "$2");
+        String id = json.readTree(created.body()).get("utilizador").get("id").asText();
         assertThat(admin.request("GET", "/api/v1/utilizadores/" + id, null, false).statusCode()).isEqualTo(200);
         assertThat(planner.request("GET", "/api/v1/utilizadores/" + id, null, false).statusCode()).isEqualTo(403);
         assertThat(admin.request("POST", "/api/v1/utilizadores", request, true).statusCode()).isEqualTo(409);
@@ -116,7 +117,12 @@ class AuthenticationTests {
         assertThat(admin.request("POST", "/api/v1/utilizadores", invalid, true).statusCode()).isEqualTo(422);
         assertThat(jdbc.queryForObject("SELECT password_hash FROM utilizador WHERE email='consumer@example.test'", String.class))
                 .startsWith("$2").isNotEqualTo(PASSWORD);
-        assertThat(new Browser().login("consumer@example.test", PASSWORD).statusCode()).isEqualTo(200);
+        var employee = new Browser();
+        assertThat(employee.login("consumer@example.test", PASSWORD).statusCode()).isEqualTo(401);
+        employee.csrf();
+        String token = json.readTree(created.body()).get("token").asText();
+        assertThat(employee.request("POST", "/api/v1/auth/ativacao", Map.of("token", token, "password", PASSWORD, "confirmacao", PASSWORD), true).statusCode()).isEqualTo(204);
+        assertThat(employee.login("consumer@example.test", PASSWORD).statusCode()).isEqualTo(200);
     }
 
     @Test
@@ -129,6 +135,122 @@ class AuthenticationTests {
         jdbc.update("UPDATE utilizador SET ativo=false WHERE email='disabled@example.test'");
         assertThat(browser.request("GET", "/api/v1/auth/me", null, false).statusCode()).isEqualTo(401);
         assertThat(new Browser().login("disabled@example.test", PASSWORD).statusCode()).isEqualTo(401);
+    }
+
+    @Test
+    void adminDeactivationPreservesIdentityRevokesSessionsAndRequiresNewLoginAfterReactivation() throws Exception {
+        var member = users.create("Colaborador", "lifecycle@example.test", PASSWORD, Set.of(Papel.PLANEADOR));
+        var active = new Browser();var idle = new Browser();var admin = new Browser();
+        assertThat(active.login(member.email(), PASSWORD).statusCode()).isEqualTo(200);
+        assertThat(idle.login(member.email(), PASSWORD).statusCode()).isEqualTo(200);
+        assertThat(admin.login("admin@example.test", PASSWORD).statusCode()).isEqualTo(200);
+        admin.csrf();
+        String path = "/api/v1/utilizadores/" + member.id() + "/estado";
+        var disabled = admin.request("PATCH", path, Map.of("ativo", false, "versaoEsperada", 0), true);
+        assertThat(disabled.statusCode()).isEqualTo(200);
+        assertThat(json.readTree(disabled.body()).get("ativo").asBoolean()).isFalse();
+        assertThat(json.readTree(disabled.body()).get("versao").asLong()).isEqualTo(1);
+        assertThat(active.request("GET", "/api/v1/auth/me", null, false).statusCode()).isEqualTo(401);
+        assertThat(new Browser().login(member.email(), PASSWORD).statusCode()).isEqualTo(401);
+        assertThat(admin.request("GET", "/api/v1/utilizadores?busca=Inativo", null, false).body()).contains(member.email());
+        assertThat(admin.request("PATCH", path, Map.of("ativo", true, "versaoEsperada", 0), true).statusCode()).isEqualTo(409);
+        assertThat(admin.request("PATCH", path, Map.of("ativo", true, "versaoEsperada", 1), true).statusCode()).isEqualTo(200);
+        // Idle during deactivation: its old session must stay invalid even after reactivation.
+        assertThat(idle.request("GET", "/api/v1/auth/me", null, false).statusCode()).isEqualTo(401);
+        assertThat(new Browser().login(member.email(), PASSWORD).statusCode()).isEqualTo(200);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM utilizador WHERE id=? AND email=?", Integer.class,
+                Long.valueOf(member.id()), member.email())).isEqualTo(1);
+        assertThat(jdbc.queryForList("SELECT ativo_novo FROM evento_estado_utilizador WHERE utilizador_id=? ORDER BY id",
+                Boolean.class, Long.valueOf(member.id()))).containsExactly(false, true);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM evento_estado_utilizador e JOIN utilizador u ON u.id=e.alterado_por "
+                + "WHERE e.utilizador_id=? AND u.email='admin@example.test'", Integer.class, Long.valueOf(member.id()))).isEqualTo(2);
+        assertThat(admin.request("DELETE", "/api/v1/utilizadores/" + member.id(), null, true).statusCode()).isEqualTo(405);
+    }
+
+    @Test
+    void statusChangesRequireAdminCsrfValidVersionAndCannotDisableOwnAccount() throws Exception {
+        var member = users.create("Estado protegido", "protected-state@example.test", PASSWORD, Set.of(Papel.CONSUMIDOR));
+        String path = "/api/v1/utilizadores/" + member.id() + "/estado";
+        var body = Map.of("ativo", false, "versaoEsperada", 0);
+        var planner = new Browser();
+        assertThat(planner.login("planner@example.test", PASSWORD).statusCode()).isEqualTo(200);
+        planner.csrf();
+        assertThat(planner.request("PATCH", path, body, true).statusCode()).isEqualTo(403);
+        var admin = new Browser();
+        String adminId = json.readTree(admin.login("admin@example.test", PASSWORD).body()).get("id").asText();
+        assertThat(admin.request("PATCH", path, body, false).statusCode()).isEqualTo(403);
+        admin.csrf();
+        assertThat(admin.request("PATCH", "/api/v1/utilizadores/" + adminId + "/estado", body, true).statusCode()).isEqualTo(409);
+        assertThat(admin.request("PATCH", path, Map.of("ativo", false), true).statusCode()).isEqualTo(422);
+        assertThat(admin.request("PATCH", "/api/v1/utilizadores/999999999/estado", body, true).statusCode()).isEqualTo(404);
+        assertThat(admin.request("PATCH", path, Map.of("ativo", true, "versaoEsperada", 0), true).statusCode()).isEqualTo(200);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM evento_estado_utilizador WHERE utilizador_id=?", Integer.class,
+                Long.valueOf(member.id()))).isZero();
+    }
+
+    @Test
+    void invitationsArePrivateExpireAndNewLinksInvalidatePreviousOnes() throws Exception {
+        var invite = invitations.create("Novo colaborador", "invite@example.test", Set.of(Papel.CONSUMIDOR), "admin@example.test");
+        assertThat(invite.token()).hasSize(43);
+        assertThat(invite.utilizador().passwordDefinida()).isFalse();
+        assertThat(jdbc.queryForObject("SELECT token_hash FROM convite_utilizador WHERE utilizador_id=?", String.class,
+                Long.valueOf(invite.utilizador().id()))).hasSize(64).isNotEqualTo(invite.token());
+        var admin = new Browser();assertThat(admin.login("admin@example.test", PASSWORD).statusCode()).isEqualTo(200);admin.csrf();
+        String path = "/api/v1/utilizadores/" + invite.utilizador().id();
+        assertThat(admin.request("GET", path, null, false).body()).doesNotContain(invite.token(), "token_hash");
+        var replacement = admin.request("POST", path + "/convites", Map.of("versaoEsperada", invite.utilizador().versao()), true);
+        assertThat(replacement.statusCode()).isEqualTo(200);
+        String newToken = json.readTree(replacement.body()).get("token").asText();
+        var employee = new Browser();employee.csrf();
+        assertThat(employee.request("POST", "/api/v1/auth/ativacao", Map.of("token", invite.token(), "password", PASSWORD, "confirmacao", PASSWORD), true).statusCode()).isEqualTo(400);
+        assertThat(employee.request("POST", "/api/v1/auth/ativacao", Map.of("token", newToken, "password", PASSWORD, "confirmacao", PASSWORD), false).statusCode()).isEqualTo(403);
+        jdbc.update("UPDATE convite_utilizador SET expira_em=DATE_SUB(UTC_TIMESTAMP(6),INTERVAL 1 SECOND) WHERE utilizador_id=?", Long.valueOf(invite.utilizador().id()));
+        assertThat(employee.request("POST", "/api/v1/auth/ativacao", Map.of("token", newToken, "password", PASSWORD, "confirmacao", PASSWORD), true).statusCode()).isEqualTo(400);
+        assertThat(jdbc.queryForObject("SELECT password_definida FROM utilizador WHERE id=?", Boolean.class, Long.valueOf(invite.utilizador().id()))).isFalse();
+        var planner = new Browser();planner.login("planner@example.test", PASSWORD);planner.csrf();
+        assertThat(planner.request("POST", path + "/convites", Map.of("versaoEsperada", 2), true).statusCode()).isEqualTo(403);
+    }
+
+    @Test
+    void disabledPendingAccountsCannotActivateAndPasswordsMustMatchUtf8Policy() throws Exception {
+        var invite = invitations.create("Pendente", "pending@example.test", Set.of(Papel.PLANEADOR), "admin@example.test");
+        var admin = new Browser();admin.login("admin@example.test", PASSWORD);admin.csrf();
+        String path = "/api/v1/utilizadores/" + invite.utilizador().id();
+        assertThat(admin.request("PATCH", path + "/estado", Map.of("ativo", false, "versaoEsperada", 1), true).statusCode()).isEqualTo(200);
+        var employee = new Browser();employee.csrf();
+        var body = Map.of("token", invite.token(), "password", PASSWORD, "confirmacao", PASSWORD);
+        assertThat(employee.request("POST", "/api/v1/auth/ativacao", body, true).statusCode()).isEqualTo(400);
+        assertThat(admin.request("PATCH", path + "/estado", Map.of("ativo", true, "versaoEsperada", 2), true).statusCode()).isEqualTo(200);
+        assertThat(employee.request("POST", "/api/v1/auth/ativacao", body, true).statusCode()).isEqualTo(400);
+        var fresh = invitations.reissue(Long.valueOf(invite.utilizador().id()), 3, "admin@example.test");
+        assertThat(employee.request("POST", "/api/v1/auth/ativacao", Map.of("token", fresh.token(), "password", PASSWORD, "confirmacao", PASSWORD + "x"), true).statusCode()).isEqualTo(422);
+        assertThat(employee.request("POST", "/api/v1/auth/ativacao", Map.of("token", fresh.token(), "password", "á".repeat(40), "confirmacao", "á".repeat(40)), true).statusCode()).isEqualTo(422);
+        var valid = Map.of("token", fresh.token(), "password", PASSWORD, "confirmacao", PASSWORD);
+        assertThat(employee.request("POST", "/api/v1/auth/ativacao", valid, true).statusCode()).isEqualTo(204);
+        assertThat(employee.request("POST", "/api/v1/auth/ativacao", valid, true).statusCode()).isEqualTo(400);
+        assertThat(employee.request("GET", "/api/v1/auth/me", null, false).statusCode()).isEqualTo(401);
+        assertThat(employee.login(fresh.utilizador().email(), PASSWORD).statusCode()).isEqualTo(200);
+        assertThat(admin.request("POST", path + "/convites", Map.of("versaoEsperada", 5), true).statusCode()).isEqualTo(409);
+    }
+
+    @Test
+    void onlyOneConcurrentActivationCanConsumeTheInvitation() throws Exception {
+        var invite = invitations.create("Concorrente", "parallel-invite@example.test", Set.of(Papel.CONSUMIDOR), "admin@example.test");
+        var start = new java.util.concurrent.CountDownLatch(1);
+        var executor = java.util.concurrent.Executors.newFixedThreadPool(2);
+        try {
+            java.util.concurrent.Callable<Boolean> activation = () -> {
+                start.await();
+                try { invitations.activate(invite.token(), PASSWORD, PASSWORD);return true; }
+                catch (org.springframework.web.server.ResponseStatusException error) {
+                    assertThat(error.getStatusCode().value()).isEqualTo(400);return false;
+                }
+            };
+            var first = executor.submit(activation);var second = executor.submit(activation);start.countDown();
+            assertThat(java.util.List.of(first.get(), second.get())).containsExactlyInAnyOrder(true, false);
+        } finally { executor.shutdownNow(); }
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM convite_utilizador WHERE utilizador_id=? AND usado_em IS NOT NULL", Integer.class,
+                Long.valueOf(invite.utilizador().id()))).isEqualTo(1);
     }
 
     @Test

@@ -85,15 +85,16 @@ def main():
             if not 12 <= len(approver_password) <= 72 or len(approver_password.encode()) > 72:
                 raise SystemExit('A password exige 12 caracteres no minimo e ate 72 bytes UTF-8.')
             try:
-                admin.request('POST', '/api/v1/utilizadores', {
+                invite = admin.request('POST', '/api/v1/utilizadores', {
                     'nome': 'Aprovador de ensaios', 'email': approver_email,
-                    'password': approver_password, 'papeis': ['APROVADOR']})
+                    'papeis': ['APROVADOR']})
+                approver.request('POST', '/api/v1/auth/ativacao', {'token': invite['token'], 'password': approver_password, 'confirmacao': approver_password})
             except urllib.error.HTTPError as error:
                 if error.code == 409:
                     error.read()
                     raise SystemExit('Este email ja existe. Repete o script, escolhe n e usa a password dessa conta.') from None
                 raise
-            print('Conta criada apenas com o papel APROVADOR. Conserva as credenciais para os proximos ensaios.')
+            print('Conta de ensaio ativada pelo cliente APROVADOR. Este script simula a escolha da password pelo funcionário.')
         decision_maker = approver.login(approver_email, approver_password)
         approver_password = None
         if 'APROVADOR' not in decision_maker['papeis'] or decision_maker['id'] == author['id']:

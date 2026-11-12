@@ -19,7 +19,8 @@ python3 scripts/testar_aprovacao.py
 2. Na primeira utilização, Enter em criar APROVADOR escolhe sim. O email proposto
    é `aprovador@exemplo.local`. Escolher uma password com pelo menos 12 caracteres
    e até 72 bytes UTF-8, e repeti-la. O script usa a API de gestão de utilizadores
-   para criar outra conta, apenas com APROVADOR. Não atribui esse papel ao ADMIN.
+   para convidar outra conta com o papel APROVADOR. O cliente de ensaio simula
+   a ativação dessa conta com a password escolhida no terminal.
 3. Nas utilizações seguintes, escolher `n` e indicar as credenciais dessa conta.
    Tentar criar novamente um email existente termina com instruções para repetir.
 

@@ -76,7 +76,52 @@ function notify(text) {
   const box = document.querySelector('#notice');box.textContent = text;box.classList.add('visible');clearTimeout(noticeTimer);
   noticeTimer = setTimeout(() => box.classList.remove('visible'), 6500);
 }
-function logoutView(message = '') {
+let activationToken = '';
+const activationRequested = () => /^#\/ativar(?:\?|$)/.test(location.hash);
+function activationView(loggedIn = false) {
+  const query = new URLSearchParams(location.hash.split('?')[1] || '');
+  if (query.has('token')) {
+    activationToken = query.get('token') || '';
+    history.replaceState(null, '', '#/ativar');
+  }
+  document.title = 'Ativar conta — NexoPlan';
+  const entry = root.querySelector('.login-entry');
+  if (loggedIn) {
+    entry.innerHTML = `<h1>Já tens uma sessão iniciada</h1>
+      <p class="login-welcome">Termina sessão para ativar outra conta.</p>
+      <p class="login-help">${b('Terminar sessão', 'logout', '', 'primary')}</p>
+      <p class="login-help"><a href="/#/visao">Voltar à aplicação</a></p>`;
+    entry.querySelector('a').addEventListener('click', event => {
+      event.preventDefault();
+      history.replaceState(null, '', '#/visao');
+      location.reload();
+    });
+    return;
+  }
+  entry.innerHTML = `
+    <span class="login-eyebrow">BEM-VINDO À EQUIPA</span>
+    <h1>Escolhe a tua password</h1>
+    <p class="login-welcome">A tua password é pessoal. Não a partilhes com o administrador.</p>
+    ${activationToken ? `<form id="activation-form">
+      ${field('Nova password', input('password', 'password', '', 'required minlength="12" maxlength="72" autocomplete="new-password"'), 'Pelo menos 12 caracteres e até 72 bytes UTF-8.')}
+      ${field('Confirmar password', input('confirmacao', 'password', '', 'required minlength="12" maxlength="72" autocomplete="new-password"'))}
+      <div class="form-error" role="alert"></div>
+      <button type="submit" class="btn primary">Ativar conta ${icon('arrow', 19)}</button>
+    </form>` : '<p class="login-help">Abre o link recebido do administrador. Se já não o tiveres, pede um novo convite.</p>'}
+    <p class="login-help"><a href="#/visao">Voltar ao login</a></p>`;
+}
+function showInvitation(invite) {
+  const url = new URL('/', location.origin);url.hash = '/ativar?token=' + encodeURIComponent(invite.token);
+  modal.innerHTML = `<div class="modal-head"><h2 id="modal-title">Convite preparado</h2><button type="button" class="close" data-action="close-dialog" aria-label="Fechar">×</button></div>
+    <div class="invitation-content"><p>Entrega este link a <strong>${esc(invite.utilizador.nome)}</strong>, através de um canal privado. O funcionário escolhe a sua password.</p>
+      ${field('Link de ativação', input('invitationLink', 'url', url.href, 'readonly autocomplete="off" spellcheck="false"'))}
+      ${b('Copiar link', 'copy-invitation')}
+      <p>Válido até ${esc(new Date(invite.expiraEm).toLocaleString('pt-PT'))}.</p>
+      <small>O link é mostrado apenas agora. Se precisares de outro, gera um novo convite na ficha do utilizador.</small></div>
+    <div class="form-actions">${b('Concluir', 'close-dialog')}</div>`;
+  modal.showModal();modal.querySelector('input').focus();
+}
+function logoutView(message = '', loggedIn = false) {
   hideChartTooltip();
   document.title = 'Entrar — NexoPlan';
   epoch++;for (const key of Object.keys(state)) delete state[key];Object.assign(state, { user: null, pages: {}, compareIds: [], comparison: null });
@@ -127,6 +172,7 @@ function logoutView(message = '') {
       <div class="login-story-footer"><span>VENDAS & OPERAÇÕES</span><span>NEXOPLAN — PLANEAMENTO COM CONTEXTO</span></div>
     </section>
   </main>`;
+  if (activationRequested()) activationView(loggedIn);
 }
 function shell() {
   const navLink = key => {
@@ -259,7 +305,7 @@ async function dialog(kind, data = {}) {
   if (!user) return;
   if (['approve', 'return'].includes(kind)) {
     if (!approver() || !independent(user, state.revision, state.adjustments)) throw new Error('A decisão exige um aprovador independente.');
-  } else if (kind === 'user' ? !role(user, 'ADMIN') : !writer()) throw new Error('O teu perfil não permite esta operação.');
+  } else if (['user', 'user-status', 'user-invite'].includes(kind) ? !role(user, 'ADMIN') : !writer()) throw new Error('O teu perfil não permite esta operação.');
   const r = state.revision;
   switch (kind) {
     case 'product': {
@@ -306,7 +352,18 @@ async function dialog(kind, data = {}) {
       const id = data.plan || plans[0].id;
       formHtml(kind, 'Nova avaliação', field('Plano publicado', select('planoId', plans.map(p => [p.id, `Plano #${p.id} · revisão #${p.revisaoId}`]), id)) + field('Lote de realizados', select('loteRealizadosId', lotOptions(realized), realized[0].id)) + field('Lote operacional', select('loteOperacionalId', lotOptions(ops), '', false)) + field('Resultados conhecidos até', input('corteRealizados', 'datetime-local', localNow(), 'required step="1"'), 'Hora local. Sem alteração, usa o momento do envio; o corte fica preservado.') + field('Primeiro mês', input('periodoInicio', 'month', '', 'required')) + field('Último mês', input('periodoFim', 'month', '', 'required')) + '<div class="info">Meses ainda não fechados, publicação tardia e dados em falta ficam identificados na cobertura. Uma métrica indisponível não equivale a zero.</div>', 'Criar avaliação');await suggestWindow(id);break;
     }
-    case 'user': formHtml(kind, 'Criar utilizador', field('Nome', input('nome', 'text', '', 'required maxlength="120" autocomplete="name"')) + field('Email', input('email', 'email', '', 'required maxlength="254" autocomplete="off"')) + field('Password inicial', input('password', 'password', '', 'required minlength="12" maxlength="72" autocomplete="new-password"'), 'Pelo menos 12 caracteres e até 72 bytes UTF-8.') + `<div><label>Papéis atribuídos</label><div class="check-group">${['PLANEADOR', 'COMERCIAL', 'APROVADOR', 'CONSUMIDOR', 'ADMIN'].map(p => `<label><input name="papeis" type="checkbox" value="${p}" ${p === 'PLANEADOR' ? 'checked' : ''}>${label(p)}</label>`).join('')}</div></div>`, 'Criar conta');break;
+    case 'user-status': {
+      const member = await api.get('/utilizadores/' + encodeURIComponent(data.id));
+      if (member.id === user.id && member.ativo) throw new Error('Não podes desativar a tua própria conta.');
+      const title = member.ativo ? 'Desativar utilizador' : 'Reativar utilizador';
+      formHtml(kind, title, `<div class="info form-span"><strong>${esc(member.nome)}</strong><br>${esc(member.email)}<br><br>${member.ativo ? 'Esta conta deixa de poder entrar. As sessões existentes perdem o acesso no pedido seguinte. O histórico de ajustes e aprovações fica preservado.' : 'Esta conta volta a poder entrar com a password e os perfis existentes. As sessões antigas continuam inválidas.'}</div>`, title, { member });
+      break;
+    }
+    case 'user-invite': {
+      const member = await api.get('/utilizadores/' + encodeURIComponent(data.id));
+      formHtml(kind, 'Gerar novo convite', `<div class="info form-span">Vais preparar um novo link para <strong>${esc(member.nome)}</strong>. Os links anteriores deixam de funcionar. O novo convite é válido durante 24 horas.</div>`, 'Gerar convite', { member });break;
+    }
+    case 'user': formHtml(kind, 'Criar utilizador', field('Nome', input('nome', 'text', '', 'required maxlength="120" autocomplete="name"')) + field('Email', input('email', 'email', '', 'required maxlength="254" autocomplete="off"')) + `<div><label>Papéis atribuídos</label><div class="check-group">${['PLANEADOR', 'COMERCIAL', 'APROVADOR', 'CONSUMIDOR', 'ADMIN'].map(p => `<label><input name="papeis" type="checkbox" value="${p}" ${p === 'PLANEADOR' ? 'checked' : ''}>${label(p)}</label>`).join('')}</div></div><p class="info form-span">Será gerado um convite para o funcionário escolher a própria password.</p>`, 'Criar conta');break;
     default: throw new Error('Operação desconhecida.');
   }
 }
@@ -405,10 +462,19 @@ async function command(form, context) {
     case 'assessment': {
       const value = await api.send('/avaliacoes', { planoId: text('planoId'), loteRealizadosId: text('loteRealizadosId'), ...(text('loteOperacionalId') ? { loteOperacionalId: text('loteOperacionalId') } : {}), periodoInicio: text('periodoInicio'), periodoFim: text('periodoFim'), corteRealizados: instant('corteRealizados') });return { message: 'Avaliação criada com cobertura e exclusões.', route: 'avaliacao/' + value.id };
     }
+    case 'user-status': {
+      const member = context.member;
+      await api.send(`/utilizadores/${encodeURIComponent(member.id)}/estado`, { ativo: !member.ativo, versaoEsperada: member.versao }, 'PATCH');
+      return { message: member.ativo ? 'Conta desativada. O histórico foi preservado.' : 'Conta reativada. Já pode iniciar uma nova sessão.' };
+    }
+    case 'user-invite': {
+      const invite = await api.send(`/utilizadores/${encodeURIComponent(context.member.id)}/convites`, { versaoEsperada: context.member.versao });
+      return { message: 'Novo convite preparado.', invite };
+    }
     case 'user': {
-      const password = String(d.get('password') || '');if (new TextEncoder().encode(password).length > 72) throw new Error('A password não pode exceder 72 bytes UTF-8.');
       const roles = d.getAll('papeis');if (!roles.length) throw new Error('Seleciona pelo menos um papel.');
-      const user = await api.send('/utilizadores', { nome: text('nome'), email: text('email'), password, papeis: roles });return { message: `Conta criada: ${user.email} · identificador ${user.id}.` };
+      const invite = await api.send('/utilizadores', { nome: text('nome'), email: text('email'), papeis: roles });
+      return { message: 'Conta criada. Entrega o convite ao funcionário.', invite };
     }
     default: throw new Error('Operação desconhecida.');
   }
@@ -436,7 +502,14 @@ document.addEventListener('submit', async event => {
   const submission = form.id === 'login-form' ? new FormData(form) : null;
   const submit = form.querySelector('button[type=submit]');if (submit) submit.disabled = true;
   try {
-    if (form.id === 'login-form') {
+    if (form.id === 'activation-form') {
+      const values = new FormData(form), password = String(values.get('password') || ''), confirmation = String(values.get('confirmacao') || '');
+      if (password !== confirmation) throw new Error('As passwords não coincidem.');
+      if (new TextEncoder().encode(password).length > 72) throw new Error('A password não pode exceder 72 bytes UTF-8.');
+      await api.send('/auth/ativacao', { token: activationToken, password, confirmacao: confirmation });
+      activationToken = '';form.reset();history.replaceState(null, '', '#/visao');logoutView();
+      notify('Conta ativada. Já podes entrar com o teu email e a password que escolheste.');
+    } else if (form.id === 'login-form') {
       const user = await api.send('/auth/login', { email: String(submission.get('email') || '').trim(), password: submission.get('password') });
       form.reset();state.user = user;
       history.replaceState(null, '', '#/visao');
@@ -445,6 +518,7 @@ document.addEventListener('submit', async event => {
       const result = await command(form, context);
       closeDialog();notify(result.message);
       if (result.route) navigate(result.route);else await render();
+      if (result.invite) showInvitation(result.invite);
     }
   } catch (error) {
     if (form.isConnected) {
@@ -493,6 +567,14 @@ document.addEventListener('click', async event => {
         for (const field of ['busca', 'desde', 'ate']) current.params.delete(`f_${key}_${field}`);
         state.pages[key] = 0;navigate(current.name + (current.id ? '/' + current.id : '') + (current.params.toString() ? '?' + current.params : ''));break;
       }
+      case 'copy-invitation': {
+        const input = modal.querySelector('[name=invitationLink]');
+        try { await navigator.clipboard.writeText(input.value);notify('Link copiado.'); }
+        catch { input.focus();input.select();notify('Selecionámos o link. Usa Ctrl+C para copiar.'); }
+        break;
+      }
+      case 'user-invite': await dialog('user-invite', { id: target.dataset.id });break;
+      case 'user-status': await dialog('user-status', { id: target.dataset.id });break;
       case 'lookup-user': {
         const version = epoch;
         target.disabled = true;
@@ -506,7 +588,9 @@ document.addEventListener('click', async event => {
           <div><dt>ID</dt><dd>#${esc(member.id)}</dd></div>
           <div><dt>Email</dt><dd>${esc(member.email)}</dd></div>
           <div><dt>Perfis</dt><dd>${member.papeis.map(p => esc(label(p))).join(' · ')}</dd></div>
-        </dl>`;
+          <div><dt>Estado</dt><dd>${!member.ativo ? 'Inativo' : member.passwordDefinida ? 'Ativo' : 'Por ativar'}</dd></div>
+        </dl>
+        <div class="member-status-actions">${member.id === state.user.id ? '<p>Esta é a tua conta. A desativação exige outro administrador.</p>' : b(member.ativo ? 'Desativar utilizador' : 'Reativar utilizador', 'user-status', `data-id="${esc(member.id)}"`)}${member.ativo && !member.passwordDefinida ? b('Gerar novo convite', 'user-invite', `data-id="${esc(member.id)}"`) : ''}</div>`;
         target.disabled = false;
         target.focus({ preventScroll: true });
         modal.showModal();
@@ -624,11 +708,11 @@ document.addEventListener('change', async event => {
 });
 modal.addEventListener('cancel', event => { if (modal.querySelector('[data-busy]')) event.preventDefault(); });
 modal.addEventListener('close', () => { if (!modal.open) { modal.innerHTML = '';dialogContext = null; } });
-window.addEventListener('hashchange', () => { if (modal.querySelector('[data-busy]')) return;closeDialog();setNavigation(false);state.pages = {};render(); });
+window.addEventListener('hashchange', () => { if (modal.querySelector('[data-busy]')) return;closeDialog();setNavigation(false);state.pages = {};if (activationRequested()) logoutView('', Boolean(state.user));else if (state.user) render();else { activationToken = '';logoutView(); } });
 document.addEventListener('keydown', event => {
   if (event.key === 'Escape' && !modal.open && document.querySelector('.sidebar.open')) {
     setNavigation(false);document.querySelector('[data-action=toggle-nav]')?.focus();
   }
 });
-try { state.user = await api.get('/auth/me');shell();await render(); }
+try { state.user = await api.get('/auth/me');if (activationRequested()) logoutView('', true);else { shell();await render(); } }
 catch (error) { logoutView(error instanceof ApiError && error.status === 401 ? '' : error.message); }

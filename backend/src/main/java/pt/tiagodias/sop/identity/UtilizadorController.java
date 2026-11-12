@@ -14,10 +14,12 @@ import org.springframework.web.bind.annotation.*;
 public class UtilizadorController {
     private final IdentityService service;
     private final UtilizadorRepository repository;
+    private final InvitationService invitations;
 
-    public UtilizadorController(IdentityService service, UtilizadorRepository repository) {
+    public UtilizadorController(IdentityService service, UtilizadorRepository repository, InvitationService invitations) {
         this.service = service;
         this.repository = repository;
+        this.invitations = invitations;
     }
 
     @GetMapping
@@ -33,14 +35,30 @@ public class UtilizadorController {
     }
 
     @PostMapping
-    public ResponseEntity<IdentityService.UtilizadorDto> create(@Valid @RequestBody CreateUser request) {
-        var user = service.create(request.nome(), request.email(), request.password(), request.papeis());
-        return ResponseEntity.created(URI.create("/api/v1/utilizadores/" + user.id())).body(user);
+    public ResponseEntity<InvitationService.ConviteDto> create(@Valid @RequestBody CreateUser request,
+            org.springframework.security.core.Authentication actor) {
+        var invite = invitations.create(request.nome(), request.email(), request.papeis(), actor.getName());
+        return ResponseEntity.created(URI.create("/api/v1/utilizadores/" + invite.utilizador().id())).body(invite);
     }
+
+    @PostMapping("/{id}/convites")
+    public InvitationService.ConviteDto reissue(@PathVariable Long id,
+            @Valid @RequestBody Reissue request, org.springframework.security.core.Authentication actor) {
+        return invitations.reissue(id, request.versaoEsperada(), actor.getName());
+    }
+
+    public record Reissue(@NotNull @PositiveOrZero Long versaoEsperada) {}
+
+    @PatchMapping("/{id}/estado")
+    public IdentityService.UtilizadorDto changeStatus(@PathVariable Long id,
+            @Valid @RequestBody ChangeStatus request, org.springframework.security.core.Authentication actor) {
+        return service.changeStatus(id, request.ativo(), request.versaoEsperada(), actor.getName());
+    }
+
+    public record ChangeStatus(@NotNull Boolean ativo, @NotNull @PositiveOrZero Long versaoEsperada) {}
 
     public record CreateUser(
             @NotBlank @Size(max = 120) String nome,
             @NotBlank @Email @Size(max = 254) String email,
-            @NotBlank @Size(min = 12, max = 72) String password,
             @NotEmpty Set<@NotNull Papel> papeis) {}
 }

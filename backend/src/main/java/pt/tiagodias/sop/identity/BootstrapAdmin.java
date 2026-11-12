@@ -1,7 +1,7 @@
 package pt.tiagodias.sop.identity;
 
 import jakarta.validation.Validator;
-import java.util.Set;
+import jakarta.validation.constraints.*;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnNotWebApplication;
@@ -27,10 +27,13 @@ public class BootstrapAdmin implements ApplicationRunner {
         this.context = context;
     }
 
+    private record BootstrapRequest(String nome, @NotBlank @Email @Size(max=254) String email,
+            @NotBlank @Size(min=12,max=72) String password) {}
+
     @Override
     public void run(ApplicationArguments args) {
-        var request = new UtilizadorController.CreateUser("Administrador", environment.getRequiredProperty("SOP_ADMIN_EMAIL"),
-                environment.getRequiredProperty("SOP_ADMIN_PASSWORD"), Set.of(Papel.ADMIN));
+        var request = new BootstrapRequest("Administrador", environment.getRequiredProperty("SOP_ADMIN_EMAIL"),
+                environment.getRequiredProperty("SOP_ADMIN_PASSWORD"));
         if (!validator.validate(request).isEmpty()) {
             throw new IllegalArgumentException("Email inválido ou password fora dos limites (12 caracteres a 72 bytes UTF-8).");
         }

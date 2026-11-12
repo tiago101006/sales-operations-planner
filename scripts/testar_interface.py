@@ -139,7 +139,8 @@ def main(performance_seed=None, validation_seed=None):
             print('Medição concluída; relatório em ' + str(logs / 'result.json'), flush=True)
             return
         for name, role in [('approver', 'APROVADOR'), ('consumer', 'CONSUMIDOR'), ('commercial', 'COMERCIAL')]:
-            request('POST', '/api/v1/utilizadores', {'nome': name.title(), 'email': name + '@ui.test', 'password': password, 'papeis': [role]})
+            invite = request('POST', '/api/v1/utilizadores', {'nome': name.title(), 'email': name + '@ui.test', 'papeis': [role]})
+            request('POST', '/api/v1/auth/ativacao', {'token': invite['token'], 'password': password, 'confirmacao': password})
         request('POST', '/api/v1/produtos', {'codigo': 'SKU_UI_ONE', 'nome': 'Produto de ensaio', 'unidade': 'un'})
         now = datetime.now(timezone.utc)
         serial = now.year * 12 + now.month - 2

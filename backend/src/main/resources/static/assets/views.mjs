@@ -256,7 +256,7 @@ export function createViews(ctx) {
   async function team() {
     const users = await page('team', '/utilizadores');
     return heading('Acesso e responsabilidades', 'Equipa', 'Cria contas com os papéis necessários. A aprovação exige independência de quem preparou ou ajustou a revisão.', b(icon('plus', 16) + 'Criar utilizador', 'dialog', 'data-kind="user"', 'primary')) +
-      panel('Membros da equipa', 'Consulta reservada ao administrador.', table(['ID', 'Nome', 'Email', 'Perfis', ''], users.items.map(u => [`<strong>#${esc(u.id)}</strong>`, esc(u.nome), esc(u.email), esc(u.papeis.map(label).join(' · ')), rowAction('Consultar', 'lookup-user', u.id)])) + pager(users, 'team')) +
+      panel('Membros da equipa', 'Consulta reservada ao administrador.', table(['ID', 'Nome', 'Email', 'Perfis', 'Estado', ''], users.items.map(u => [`<strong>#${esc(u.id)}</strong>`, esc(u.nome), esc(u.email), esc(u.papeis.map(label).join(' · ')), badge(!u.ativo ? 'RASCUNHO' : u.passwordDefinida ? 'VALIDADO' : 'EM_REVISAO').replace('Validado', 'Ativo').replace('Rascunho', 'Inativo').replace('A aguardar aprovação', 'Por ativar'), rowAction('Consultar', 'lookup-user', u.id)])) + pager(users, 'team')) +
       `<details class="secondary-details">
         <summary>Responsabilidades por perfil</summary>
         <dl class="team-roles">

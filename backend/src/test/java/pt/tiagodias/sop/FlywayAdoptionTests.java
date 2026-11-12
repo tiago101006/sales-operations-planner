@@ -27,7 +27,7 @@ class FlywayAdoptionTests {
                         .baselineVersion("1").baselineOnMigrate(false).cleanDisabled(true).load();
                 assertThatThrownBy(flyway::migrate).isInstanceOf(FlywayException.class);
                 flyway.baseline();
-                assertThat(flyway.migrate().migrationsExecuted).isEqualTo(2);
+                assertThat(flyway.migrate().migrationsExecuted).isEqualTo(4);
                 assertThat(flyway.migrate().migrationsExecuted).isZero();
                 try (var statement = connection.createStatement();
                      var result = statement.executeQuery("SELECT nome FROM produto WHERE codigo='TESTE'")) {

@@ -13,6 +13,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 /** Reavalia estado e papeis para nao conservar permissoes revogadas numa sessao. */
 final class CurrentAccountFilter extends OncePerRequestFilter {
     static final String AUTHENTICATED_AT = CurrentAccountFilter.class.getName() + ".authenticatedAt";
+    static final String ACCESS_VERSION = CurrentAccountFilter.class.getName() + ".accessVersion";
     private static final long MAX_SESSION_MILLIS = java.time.Duration.ofHours(8).toMillis();
     private final UtilizadorRepository users;
     private final SecurityContextRepository contexts;
@@ -36,7 +37,8 @@ final class CurrentAccountFilter extends OncePerRequestFilter {
                 return;
             }
             var user = users.findByEmail(authentication.getName()).orElse(null);
-            if (user == null || !user.isAtivo()) {
+            if (user == null || !user.isAtivo() || !user.isPasswordDefinida() || !(session.getAttribute(ACCESS_VERSION) instanceof Long version)
+                    || version.longValue() != user.getVersao()) {
                 SecurityContextHolder.clearContext();
                 if (request.getSession(false) != null) { request.getSession(false).invalidate(); }
                 SecurityErrors.write(response, 401, "SESSION_REVOKED", "Sessão inválida.");
