@@ -116,7 +116,7 @@ function showInvitation(invite) {
   const url = new URL('/', location.origin);url.hash = '/ativar?token=' + encodeURIComponent(invite.token);
   modal.innerHTML = `<div class="modal-head"><h2 id="modal-title">Convite preparado</h2><button type="button" class="close" data-action="close-dialog" aria-label="Fechar">×</button></div>
     <div class="invitation-content"><p>Entrega este link a <strong>${esc(invite.utilizador.nome)}</strong>, através de um canal privado. O funcionário escolhe a sua password.</p>
-      ${field('Link de ativação', input('invitationLink', 'url', url.href, 'readonly autocomplete="off" spellcheck="false"'))}
+      ${field('Link de ativação', `<textarea name="invitationLink" rows="3" readonly spellcheck="false">${esc(url.href)}</textarea>`)}
       ${b('Copiar link', 'copy-invitation')}
       <div class="invitation-meta">
         <p>Válido até <strong>${esc(new Date(invite.expiraEm).toLocaleString('pt-PT'))}</strong>.</p>
@@ -124,7 +124,8 @@ function showInvitation(invite) {
       </div>
     </div>
     <div class="form-actions invitation-actions">${b('Concluir', 'close-dialog')}</div>`;
-  modal.showModal();modal.querySelector('input').focus();
+  modal.showModal();
+  modal.querySelector('[name=invitationLink]').focus();
 }
 function logoutView(message = '', loggedIn = false) {
   hideChartTooltip();

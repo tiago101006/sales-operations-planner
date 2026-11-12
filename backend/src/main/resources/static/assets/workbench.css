@@ -409,8 +409,8 @@ a.work-item:hover .work-copy strong { text-decoration: underline; text-underline
 
 .invitation-content {
   display: grid;
-  gap: 16px;
-  padding: 22px 26px;
+  gap: 24px;
+  padding: 26px 28px;
 }
 .invitation-content p, .invitation-content small {
   margin: 0;
@@ -418,13 +418,23 @@ a.work-item:hover .work-copy strong { text-decoration: underline; text-underline
   overflow-wrap: anywhere;
 }
 .invitation-content small { display: block; color: var(--muted); }
-.invitation-content input[readonly] {
-  background: #fffef9;
-  color: var(--ink);
-  border-color: #aebca8;
+.invitation-content textarea[readonly] {
+  field-sizing: content;
+  min-height: 72px;
+  max-height: 180px;
+  resize: none;
+  padding: 12px 14px;
+  background: #fff;
+  color: #132d22;
+  border-color: #98a991;
+  font: 600 14px/1.6 ui-monospace, monospace;
+  overflow-wrap: anywhere;
 }
 .invitation-content .btn { justify-self: start; }
-.invitation-meta { display: grid; gap: 4px; }
-.invitation-actions.form-actions { margin-top: 0; padding: 16px 26px; }
+.invitation-meta { display: grid; gap: 8px; }
+.invitation-actions.form-actions { margin-top: 0; padding: 24px 28px; }
+@media (max-width: 480px) {
+  .invitation-content, .invitation-actions.form-actions { padding-inline: 20px; }
+}
 
 .member-status-actions { display: flex; gap: 12px; flex-wrap: wrap; }
