@@ -1,6 +1,6 @@
 import { Api, ApiError } from './api.mjs';
 import { esc, date, month, quantity as q, factorValue, revisionCaption, label, icon, button as b, field, input, select, role, lastMonth, independent } from './ui.mjs';
-import { createViews, miniChart } from './views.mjs';
+import { createViews } from './views.mjs';
 
 const api = new Api();
 const root = document.querySelector('#app');
@@ -81,7 +81,29 @@ function logoutView(message = '') {
   document.title = 'Entrar — NexoPlan';
   epoch++;for (const key of Object.keys(state)) delete state[key];Object.assign(state, { user: null, pages: {}, compareIds: [], comparison: null });
   closeDialog();
-  root.innerHTML = `<main id="conteudo" class="login" tabindex="-1"><section class="login-story"><a class="brand" href="#/visao"><img src="/assets/brand.svg" width="43" height="43" alt=""><div><strong>NexoPlan</strong><small>PLANEAMENTO S&OP</small></div></a><div><h1>Antecipar a procura.<br><em>Planear com confiança.</em></h1><p>Históricos, previsões e decisões ligadas num único espaço de trabalho.</p>${miniChart}</div><footer>Da previsão à decisão · Com rastreabilidade</footer></section><section class="login-form"><form id="login-form"><div class="eyebrow">Bem-vindo ao teu espaço</div><h2>Entrar na aplicação</h2><p class="intro">Acede aos planos e ferramentas disponíveis para a tua equipa.</p>${field('Email', input('email', 'email', '', 'required maxlength="254" autocomplete="username" placeholder="O teu email"'))}${field('Password', input('password', 'password', '', 'required maxlength="200" autocomplete="current-password" placeholder="A tua password"'))}<div class="form-error" role="alert">${esc(message)}</div><button class="btn primary" type="submit">Entrar ${icon('arrow', 16)}</button><p class="login-footer">O acesso é atribuído pelo administrador da equipa.<br>As decisões e os ajustes ficam associados à tua conta.</p></form></section></main>`;
+  root.innerHTML = `<main id="conteudo" class="login" tabindex="-1">
+    <div class="login-card">
+      <section class="login-form" aria-labelledby="login-title">
+        <a class="brand" href="#/visao" aria-label="NexoPlan">
+          <img src="/assets/brand.svg" width="38" height="38" alt="">
+          <div><strong>NexoPlan<span>.</span></strong><small>PLANEAMENTO S&OP</small></div>
+        </a>
+        <form id="login-form">
+          <h1 id="login-title">Entrar na aplicação</h1>
+          <p class="intro">Bem-vindo de volta. Vamos planear o próximo passo.</p>
+          ${field('Email', input('email', 'email', '', 'required maxlength="254" autocomplete="username" placeholder="nome@empresa.pt"'))}
+          ${field('Password', input('password', 'password', '', 'required maxlength="200" autocomplete="current-password" placeholder="A tua password"'))}
+          <div class="form-error" role="alert">${esc(message)}</div>
+          <button class="btn primary" type="submit">Entrar ${icon('arrow', 16)}</button>
+          <p class="login-footer">Precisas de acesso? Contacta o administrador da equipa.</p>
+        </form>
+        <span class="login-caption">Da Procura à Decisão.</span>
+      </section>
+      <div class="login-visual" aria-hidden="true">
+        <img src="/assets/login-operations.webp" width="1024" height="1536" alt="" fetchpriority="high">
+      </div>
+    </div>
+  </main>`;
 }
 function shell() {
   const navLink = key => {

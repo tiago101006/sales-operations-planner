@@ -20,7 +20,7 @@ uma conta desativada perde a sessão; papéis revogados deixam de autorizar o pe
 seguinte. As sessões estão em memória e terminam ao reiniciar o backend.
 
 `SESSION_COOKIE_SECURE=false` destina-se ao HTTP local. Com HTTPS deve ser `true`.
-Ainda não existem frontend, recuperação de password, MFA, limitação de tentativas
+Ainda não existem recuperação de password, MFA, limitação de tentativas
 ou persistência de sessões entre instâncias; esta entrega destina-se ao ambiente local.
 
 ## Primeira conta ADMIN

@@ -78,6 +78,10 @@ Equipa mantém-se como acesso de gestão separado à direita, sem repetir esse
 atalho na Visão geral. As opções dentro de cada etapa têm separação própria. Tabelas e gráficos largos
 permitem deslocação dentro da sua própria área, sem alargar a página.
 
+A tipografia usa DM Sans, servida localmente com licença SIL Open Font License.
+O login ocupa o ecrã inteiro, com o formulário à esquerda e uma fotografia de
+um centro de distribuição gerada para a NexoPlan à direita. Em ecrãs pequenos,
+o formulário ocupa a largura disponível.
 Verde profundo, areia e cobre identificam a NexoPlan. O destaque principal enquadra
 a tarefa do perfil e apresenta uma contagem real. Os elementos gráficos de fundo
 são decorativos; não apresentam medidas de negócio nem variações percentuais.

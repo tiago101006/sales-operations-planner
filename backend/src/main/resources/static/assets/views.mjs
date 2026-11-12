@@ -3,8 +3,6 @@ import { esc, quantity as q, factorValue, revisionCaption, percent, date, month,
 const rowAction = (text, action, id) => b(text, action, `data-id="${esc(id)}"`, 'small');
 const meta = values => `<div class="detail-meta">${values.map(([name, value]) => `<div><small>${name}</small><p>${value}</p></div>`).join('')}</div>`;
 const info = (text, warn = false) => `<div class="info ${warn ? 'warn' : ''}">${text}</div>`;
-const miniChart = `<svg class="mini-chart" viewBox="0 0 420 180" fill="none" aria-hidden="true"><path d="M10 150H410M10 110H410M10 70H410M10 30H410" stroke="currentColor" opacity=".12"/><path d="M10 144 68 122 125 132 183 84 240 98 298 55 355 66 410 24V165H10Z" fill="currentColor" opacity=".08"/><path d="M10 144 68 122 125 132 183 84 240 98 298 55 355 66 410 24" stroke="currentColor" stroke-width="2.5"/><path d="m240 98 58-15 57 10 55-25" stroke="currentColor" opacity=".45" stroke-width="2" stroke-dasharray="6 5"/><circle cx="410" cy="24" r="5" fill="currentColor"/></svg>`;
-export { miniChart };
 
 export function createViews(ctx) {
   const { api, state, writer } = ctx;
