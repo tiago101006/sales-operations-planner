@@ -251,6 +251,22 @@ class PlanWorkflowTests {
         try { assertThat(consumer.request("GET","/api/v1/planos/"+plan+"/exportacao.csv",null,false).body()).isEqualTo(csv.body()); }
         finally { jdbc.update("UPDATE produto SET codigo='PLAN_Z',unidade=? WHERE id=?",UNIT,zero); }
     }
+
+    @Test
+    void exportedLegacySnapshotCannotInjectSpreadsheetFormulas() throws Exception {
+        String revision = rev(create());
+        submit(revision, 0);
+        String plan = approve(revision, 1).get("planoId").asText();
+        jdbc.update("UPDATE linha_plano SET codigo_produto='-1+1',unidade='=1+1' WHERE plano_id=? AND produto_id=?", Long.valueOf(plan), product);
+        var csv = consumer.request("GET", "/api/v1/planos/" + plan + "/exportacao.csv", null, false);
+        assertThat(csv.statusCode()).isEqualTo(200);
+        try (var parser = CSVFormat.DEFAULT.builder().setDelimiter(';').setHeader().setSkipHeaderRecord(true).get().parse(new StringReader(csv.body()))) {
+            var rows = parser.getRecords();
+            assertThat(rows).filteredOn(row -> row.get("produto").equals("'-1+1")).hasSize(3)
+                    .allSatisfy(row -> assertThat(row.get("unidade")).isEqualTo("'=1+1"));
+        }
+        assertThat(consumer.get("/api/v1/planos/" + plan + "/linhas").toString()).contains("=1+1").doesNotContain("'=1+1");
+    }
     @Test
     void enforcesRolesCsrfReadOnlyPlansAndValidationWithoutExposingDrafts()throws Exception {
         String draft=rev(create());String r=rev(create());submit(r,0);String plan=approve(r,1).get("planoId").asText();

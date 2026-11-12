@@ -11,7 +11,7 @@ menos 12 caracteres e no máximo 72 bytes UTF-8; não são cortadas silenciosame
 Os DTOs nunca devolvem password ou hash. O email é normalizado para minúsculas.
 
 A sessão usa cookie JSESSIONID HttpOnly e SameSite=Lax, expira após 30 minutos sem
-atividade e muda de ID ao fazer login. Não se usa JWT nem HTTP Basic. Os pedidos de
+atividade ou oito horas desde o login e muda de ID ao fazer login. Não se usa JWT nem HTTP Basic. Os pedidos de
 escrita, incluindo login e logout, exigem CSRF. O token deve ser obtido outra vez
 depois do login e logout. Cookies e token pertencem à mesma sessão.
 
@@ -20,8 +20,13 @@ uma conta desativada perde a sessão; papéis revogados deixam de autorizar o pe
 seguinte. As sessões estão em memória e terminam ao reiniciar o backend.
 
 `SESSION_COOKIE_SECURE=false` destina-se ao HTTP local. Com HTTPS deve ser `true`.
-Ainda não existem recuperação de password, MFA, limitação de tentativas
-ou persistência de sessões entre instâncias; esta entrega destina-se ao ambiente local.
+O login admite cinco tentativas por conta e 60 por endereço numa janela de
+15 minutos. Uma autenticação bem-sucedida limpa o contador da conta. Limites
+atingidos devolvem 429 e Retry-After. A identificação da origem usa a ligação TCP.
+
+Ainda estão por implementar recuperação de password, MFA e persistência das
+sessões e contadores entre instâncias. A instalação atual usa HTTP local.
+Consulta a [revisão de segurança](seguranca.md) antes de preparar acesso público.
 
 ## Primeira conta ADMIN
 

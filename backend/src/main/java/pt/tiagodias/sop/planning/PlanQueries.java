@@ -67,12 +67,21 @@ public class PlanQueries {
             },(ResultSetExtractor<Void>) rows->{
                 while(rows.next()) {
                     var row=mapLine(rows,0);
-                    try { printer.printRecord(Long.toString(id),row.produto(),row.periodo(),row.unidade(),row.quantidadeBase(),row.quantidade()); }
+                    try { printer.printRecord(Long.toString(id),safeCsvText(row.produto()),row.periodo(),safeCsvText(row.unidade()),row.quantidadeBase(),row.quantidade()); }
                     catch(IOException exception) { throw new UncheckedIOException(exception); }
                 }
                 return null;
             });
         } catch(UncheckedIOException exception) { throw exception.getCause(); }
+    }
+    static String safeCsvText(String value) {
+        int first = 0;
+        while (first < value.length() && (Character.isWhitespace(value.charAt(first))
+                || Character.isSpaceChar(value.charAt(first)) || Character.isISOControl(value.charAt(first))
+                || value.charAt(first) == '\uFEFF')) { first++; }
+        boolean formula = first < value.length() && "=+-@＝＋－＠".indexOf(value.charAt(first)) >= 0;
+        boolean control = !value.isEmpty() && (Character.isISOControl(value.charAt(0)) || value.charAt(0) == '\uFEFF');
+        return formula || control ? "'" + value : value;
     }
     private static int pages(long count,int size) { return (int)((count+size-1)/size); }
 }

@@ -150,4 +150,53 @@ class AuthenticationTests {
         assertThat(browser.request("GET", "/api/v1/utilizadores/" + roleUser.id(), null, false).statusCode()).isEqualTo(403);
         assertThat(browser.request("GET", "/api/v1/auth/me", null, false).body()).contains("CONSUMIDOR").doesNotContain("ADMIN");
     }
+
+    @Test
+    void throttlesCanonicalAccountAcrossNewSessionsAndDoesNotExposeItsExistence() throws Exception {
+        users.create("Limite", "rate@example.test", PASSWORD, Set.of(Papel.CONSUMIDOR));
+        for (int i = 0; i < 5; i++) {
+            String alias = i % 2 == 0 ? "RATE@example.test" : "ráté@example.test";
+            var response = new Browser().login(alias, "wrong-password");
+            assertThat(response.statusCode()).isEqualTo(401);
+            assertThat(response.body()).contains("Credenciais inválidas").doesNotContain("disabled", "UsernameNotFound");
+        }
+        var blocked = new Browser().login("rate@example.test", PASSWORD);
+        assertThat(blocked.statusCode()).isEqualTo(429);
+        assertThat(blocked.headers().firstValue("Retry-After")).isPresent();
+        for (int i = 0; i < 5; i++) { assertThat(new Browser().login("unknown-rate@example.test", PASSWORD).statusCode()).isEqualTo(401); }
+        assertThat(new Browser().login("unknown-rate@example.test", PASSWORD).statusCode()).isEqualTo(429);
+    }
+
+    @Test
+    void protectsResponseHeadersAndDeniesUnconfiguredAndPrivatePaths() throws Exception {
+        var browser = new Browser();
+        var response = browser.request("GET", "/", null, false);
+        assertThat(response.headers().firstValue("Content-Security-Policy").orElse("")).contains("frame-ancestors 'none'", "object-src 'none'");
+        assertThat(response.headers().firstValue("X-Frame-Options").orElse("")).isEqualTo("DENY");
+        assertThat(response.headers().firstValue("X-Content-Type-Options").orElse("")).isEqualTo("nosniff");
+        assertThat(response.headers().firstValue("Referrer-Policy").orElse("")).isEqualTo("no-referrer");
+        assertThat(response.headers().firstValue("Permissions-Policy").orElse("")).contains("camera=()", "microphone=()");
+        assertThat(response.headers().firstValue("Cache-Control").orElse("")).contains("no-store");
+        assertThat(browser.login("planner@example.test", PASSWORD).statusCode()).isEqualTo(200);
+        for (String path : new String[]{"/.env", "/actuator/env", "/actuator/heapdump", "/api/v1/unconfigured", "/tmp/backups"}) {
+            var denied = browser.request("GET", path, null, false);
+            assertThat(denied.statusCode()).as(path).isEqualTo(403);
+            assertThat(denied.body()).doesNotContain("MYSQL_PASSWORD", "$2", "java.lang");
+        }
+    }
+
+    @Test
+    void limitsJsonBeforeLoginAndHandlesMalformedInputWithoutEchoingSecrets() throws Exception {
+        var browser = new Browser();
+        browser.csrf();
+        var large = browser.request("POST", "/api/v1/auth/login", Map.of("email", "admin@example.test", "password", "x".repeat(70_000)), true);
+        assertThat(large.statusCode()).isEqualTo(413);
+        String malformed = "{\"password\":\"secret-in-malformed-json\",";
+        var request = HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/api/v1/auth/login"))
+                .header("Content-Type", "application/json").header("X-CSRF-TOKEN", browser.token)
+                .POST(HttpRequest.BodyPublishers.ofString(malformed)).build();
+        var response = browser.client.send(request, HttpResponse.BodyHandlers.ofString());
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.body()).doesNotContain("secret-in-malformed-json", "Exception", "java.lang");
+    }
 }

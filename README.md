@@ -66,6 +66,8 @@ As [migrações SQL](backend/src/main/resources/db/migration/) são a fonte do e
 
 ## Documentação
 
+- [Revisão de segurança e preparação da instalação pública](docs/seguranca.md).
+
 - [Manual de utilização](docs/manual-utilizacao.md), [painéis por perfil](docs/paineis-perfil.md) e [pesquisa e filtros](docs/pesquisa-filtros.md).
 - [Arquitetura e modelo relacional](docs/arquitetura.md), [autenticação](docs/autenticacao.md) e [catálogo](docs/catalogo.md).
 - [Importação CSV](docs/importacao-historicos.md), [Média Móvel](docs/previsao-media-movel.md), [ETS](docs/previsao-ets.md) e [comparação de modelos](docs/backtesting.md).

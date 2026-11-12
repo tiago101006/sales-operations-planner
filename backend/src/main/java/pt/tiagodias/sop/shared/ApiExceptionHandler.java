@@ -11,6 +11,16 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
+    @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
+    public ProblemDetail unreadable(org.springframework.http.converter.HttpMessageNotReadableException exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "JSON inválido ou fora dos limites suportados.");
+    }
+
+    @ExceptionHandler(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)
+    public ProblemDetail invalidParameter(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Parâmetro inválido.");
+    }
+
     @ExceptionHandler(VersionConflictException.class)
     public ProblemDetail version(VersionConflictException exception) {
         var problem=ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,exception.getMessage());

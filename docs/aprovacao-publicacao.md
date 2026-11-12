@@ -202,3 +202,9 @@ saudáveis; saúde e identificação 200; planos/CSV sem sessão 401. O SHA-256 
 de dados de todas as tabelas permaneceu igual antes/depois do arranque, confirmando
 preservação dos dados existentes. Não foram criadas contas ou publicações na base
 local durante estes testes automáticos.
+
+## Proteção da exportação CSV
+
+Códigos e unidades que possam ser interpretados como fórmulas recebem um
+apóstrofo na exportação. A proteção abrange também snapshots antigos e preserva
+os valores guardados. Os detalhes e limites estão na [revisão de segurança](seguranca.md).

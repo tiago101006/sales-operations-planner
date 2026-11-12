@@ -16,6 +16,8 @@ import org.springframework.security.web.authentication.session.*;
 import org.springframework.security.web.context.*;
 import org.springframework.security.web.csrf.*;
 import org.springframework.security.web.savedrequest.NullRequestCache;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy;
+import org.springframework.security.web.header.writers.StaticHeadersWriter;
 import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import pt.tiagodias.sop.identity.UtilizadorRepository;
 
@@ -26,6 +28,9 @@ public class SecurityConfiguration {
     AuthenticationManager authenticationManager(UserDetailsService users, PasswordEncoder encoder) {
         var provider = new DaoAuthenticationProvider(users);
         provider.setPasswordEncoder(encoder);
+        // Check account status after BCrypt so disabled accounts do not return early.
+        provider.setPreAuthenticationChecks(user -> {});
+        provider.setPostAuthenticationChecks(new AccountStatusUserDetailsChecker());
         return new ProviderManager(provider);
     }
 
@@ -43,20 +48,26 @@ public class SecurityConfiguration {
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http, SecurityContextRepository context, CsrfTokenRepository csrf,
-                                          UtilizadorRepository users) throws Exception {
+                                          UtilizadorRepository users, LoginThrottle throttle) throws Exception {
         return http
+                .addFilterBefore(new LoginRequestFilter(throttle), CsrfFilter.class)
                 .addFilterBefore(new CurrentAccountFilter(users, context), AuthorizationFilter.class)
+                .addFilterAfter(new RequestLimitsFilter(), AuthorizationFilter.class)
                 .csrf(config -> config.csrfTokenRepository(csrf))
                 .securityContext(config -> config.securityContextRepository(context))
                 .requestCache(config -> config.requestCache(new NullRequestCache()))
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
-                .headers(headers -> headers.contentSecurityPolicy(csp -> csp.policyDirectives(
-                        "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; object-src 'none'")))
+                .headers(headers -> headers
+                        .referrerPolicy(policy -> policy.policy(ReferrerPolicy.NO_REFERRER))
+                        .addHeaderWriter(new StaticHeadersWriter("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()"))
+                        .contentSecurityPolicy(csp -> csp.policyDirectives(
+                                "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; object-src 'none'")))
                 .authorizeHttpRequests(auth -> auth
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers(HttpMethod.GET, "/", "/index.html", "/assets/**").permitAll()
                         .requestMatchers("/api/v1/status", "/actuator/health", "/actuator/health/**", "/api/v1/auth/csrf", "/api/v1/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/auth/me").authenticated()
                         .requestMatchers("/api/v1/utilizadores", "/api/v1/utilizadores/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/v1/avaliacoes", "/api/v1/avaliacoes/**").hasAnyRole("ADMIN", "PLANEADOR", "COMERCIAL", "APROVADOR", "CONSUMIDOR")
                         .requestMatchers(HttpMethod.POST, "/api/v1/avaliacoes").hasAnyRole("ADMIN", "PLANEADOR")
@@ -83,7 +94,7 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.POST, "/api/v1/produtos").hasAnyRole("ADMIN", "PLANEADOR")
                         .requestMatchers(HttpMethod.PATCH, "/api/v1/produtos/*").hasAnyRole("ADMIN", "PLANEADOR")
                         .requestMatchers("/api/v1/produtos", "/api/v1/produtos/**").denyAll()
-                        .anyRequest().authenticated())
+                        .anyRequest().denyAll())
                 .exceptionHandling(errors -> errors
                         .authenticationEntryPoint((req, res, ex) -> SecurityErrors.write(res, 401, "AUTHENTICATION_REQUIRED", "Autenticação necessária."))
                         .accessDeniedHandler((req, res, ex) -> SecurityErrors.write(res, 403, "ACCESS_DENIED", "Acesso recusado ou token CSRF inválido.")))

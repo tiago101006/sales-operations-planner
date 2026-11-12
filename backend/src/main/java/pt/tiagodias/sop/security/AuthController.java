@@ -23,13 +23,15 @@ public class AuthController {
     private final SecurityContextRepository contexts;
     private final SessionAuthenticationStrategy sessions;
     private final UtilizadorRepository users;
+    private final LoginThrottle throttle;
 
     public AuthController(AuthenticationManager manager, SecurityContextRepository contexts,
-                          SessionAuthenticationStrategy sessions, UtilizadorRepository users) {
+                          SessionAuthenticationStrategy sessions, UtilizadorRepository users, LoginThrottle throttle) {
         this.manager = manager;
         this.contexts = contexts;
         this.sessions = sessions;
         this.users = users;
+        this.throttle = throttle;
     }
 
     @GetMapping("/csrf")
@@ -40,18 +42,30 @@ public class AuthController {
     @PostMapping("/login")
     public IdentityService.UtilizadorDto login(@Valid @RequestBody LoginRequest login,
                                               HttpServletRequest request, HttpServletResponse response) {
+        String email = IdentityService.normalizeEmail(login.email());
+        // Use the stored identity so database collation aliases share the same limit.
+        String account = users.findByEmail(email).map(Utilizador::getEmail).orElse(email);
+        long retry = throttle.reserveAccount(account);
+        if (retry > 0) {
+            response.setHeader("Retry-After", Long.toString(retry));
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.TOO_MANY_REQUESTS,
+                    "Demasiadas tentativas de entrada. Aguarda antes de tentar novamente.");
+        }
         Authentication auth;
         try {
             if (login.password().getBytes(StandardCharsets.UTF_8).length > 72) {
                 throw new BadCredentialsException("Credenciais inválidas.");
             }
-            auth = manager.authenticate(UsernamePasswordAuthenticationToken.unauthenticated(login.email(), login.password()));
+            auth = manager.authenticate(UsernamePasswordAuthenticationToken.unauthenticated(email, login.password()));
         } catch (AuthenticationException exception) {
             SecurityContextHolder.clearContext();
             if (request.getSession(false) != null) { request.getSession(false).invalidate(); }
             throw exception;
         }
         sessions.onAuthentication(auth, request, response);
+        throttle.succeeded(account);
+        request.getSession().setAttribute(CurrentAccountFilter.AUTHENTICATED_AT, System.currentTimeMillis());
         var context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(auth);
         SecurityContextHolder.setContext(context);
