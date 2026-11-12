@@ -41,7 +41,7 @@ Para um ensaio que não altere os teus dados, usar o teste isolado descrito abai
 | Revisão | Base/calculada/final, ajustes justificados, cópia/recálculo, auditoria herdada, eventos e workflow |
 | Planos publicados | Metadados de aprovação, células paginadas, CSV completo e entrada para avaliação |
 | Monitorização | Plano/lotes/corte, seleção de produto, precisão por horizonte, operação e motivos de exclusão |
-| Equipa | ADMIN cria contas com papéis explícitos e consulta utilizadores por ID |
+| Equipa | ADMIN cria contas com papéis explícitos, pesquisa membros e abre o perfil pelo botão Consultar |
 
 O painel ADMIN apresenta os totais de lotes, execuções, cenários e planos num
 percurso de planeamento, com acesso direto a cada área. Estes valores são contagens

@@ -59,7 +59,7 @@ h2 { font-size: 16px; letter-spacing: -.4px; font-weight: 600; }
 .btn.danger:hover:not(:disabled), .btn.danger:focus-visible { color: #7c2d21; background: #f5e0d5; border-color: #b97962; }
 .btn.small { font-size: 11px; min-height: 31px; }
 .panel { background: var(--paper); border: 1px solid #d8ddce; border-radius: 11px; box-shadow: none; margin-bottom: 20px; overflow: hidden; }
-.panel-head, .admin-dashboard .panel-head { min-height: 64px; padding: 18px 22px; background: #f7f7ef; border-bottom: 1px solid #dfe4d5; align-items: center; }
+.panel-head, .admin-dashboard .panel-head { min-height: 64px; padding: 18px 22px; background: var(--paper); border-bottom: 1px solid #e1ded3; align-items: center; }
 .panel-head .actions { margin-left: auto; }
 .panel-head h2 { font-size: 15px; }
 .panel-context { max-width: 370px; }
@@ -70,17 +70,16 @@ h2 { font-size: 16px; letter-spacing: -.4px; font-weight: 600; }
 .panel-context[open]>summary { justify-content: flex-end; }
 .panel-context p { margin: 4px 0; line-height: 1.7; font-size: 11px; color: #485e48; }
 .panel-body { padding: 20px 22px; }
-th, .admin-dashboard th { background: #edf0e3; color: #526450; font-size: 9px; letter-spacing: .8px; padding: 12px 20px; }
-td, .admin-dashboard td { padding: 15px 20px; font-size: 12px; border-color: #e0e5d8; }
-tbody tr:nth-child(even) { background: #f1f3e9; }
-tbody tr:hover { background: #eaf0de; }
+th, .admin-dashboard th { background: #ece9df; color: #484e48; font-size: 10px; letter-spacing: .8px; padding: 12px 20px; }
+td, .admin-dashboard td { padding: 15px 20px; font-size: 13px; border-color: #e4e1d7; }
+tbody tr:hover, tbody tr:focus-within { background: #eeece3; }
 td small { color: #66755f; font-size: 11px; }
 .badge { font-size: 10px; padding: 5px 8px; border-radius: 4px; }
 .badge.good { background: #e1ecd5; color: #365c2e; }
 .badge.warn { background: #f4e3c2; color: #7e521f; }
 .badge.bad { background: #f3dfd3; color: #963d2e; }
 .badge.neutral { background: #e4e9df; color: #52614c; }
-.pagination { background: #f5f6ed; border-color: #dfe4d5; padding: 12px 20px; }
+.pagination { background: var(--paper); border-color: #e4e1d7; padding: 12px 20px; }
 .empty { padding: 27px 24px; background: #f4f6ec; }
 .empty h3 { color: #526446; font-size: 14px; }
 .empty p { color: #65745d; font-size: 11px; }
@@ -326,7 +325,7 @@ a.work-item:hover .work-copy strong { text-decoration: underline; text-underline
 .chart-tooltip-row .chart-tooltip-series { display: flex; gap: 6px; align-items: center; }
 .chart-tooltip-series i { width: 8px; height: 8px; border-radius: 50%; background: var(--line); flex-shrink: 0; }
 .chart-tooltip-series .line-0 { --line: #23786a; }.chart-tooltip-series .line-1 { --line: #b28142; }.chart-tooltip-series .line-2 { --line: #7b9b92; }.chart-tooltip-series .line-3 { --line: #7769ad; }.chart-tooltip-series .line-4 { --line: #be6670; }
-.table-search { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; padding: 17px 20px; background: #edf1e3; border-bottom: 1px solid var(--line); }
+.table-search { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; padding: 17px 20px; background: #f0ede4; border-bottom: 1px solid #e1ded3; }
 .table-search .field:first-child { flex: 1 1 230px; }
 .table-search .field { min-width: 145px; }
 .search-scope { flex-basis: 100%; font-size: 10px; color: #607155; }
@@ -335,3 +334,27 @@ a.work-item:hover .work-copy strong { text-decoration: underline; text-underline
 @media(max-width:800px) { .table-search { padding: 15px;gap: 10px; }.table-search .field { flex: 1 1 130px; }.table-search .field:first-child { flex-basis: 100%; } }
 
 .chart-scale-note { font-size: 10px; color: #607155; margin: 0 0 7px; }
+
+
+.secondary-details {
+  margin: 0 0 20px;
+  border: 1px solid #d8d6ca;
+  border-radius: 10px;
+  background: var(--paper);
+  overflow: hidden;
+}
+.secondary-details > summary {
+  padding: 15px 20px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.secondary-details[open] > summary { border-bottom: 1px solid #e1ded3; }
+.team-roles, .member-profile {
+  display: grid;
+  gap: 16px 24px;
+  margin: 0;
+  padding: 20px 24px;
+}
+.team-roles { grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); }
+.team-roles dt, .member-profile dt { font-weight: 650; margin-bottom: 4px; }
+.team-roles dd, .member-profile dd { margin: 0; line-height: 1.55; overflow-wrap: anywhere; }

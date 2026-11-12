@@ -1,5 +1,5 @@
 import { Api, ApiError } from './api.mjs';
-import { esc, date, month, quantity as q, factorValue, revisionCaption, label, icon, button as b, field, input, select, role, lastMonth, table, independent } from './ui.mjs';
+import { esc, date, month, quantity as q, factorValue, revisionCaption, label, icon, button as b, field, input, select, role, lastMonth, independent } from './ui.mjs';
 import { createViews, miniChart } from './views.mjs';
 
 const api = new Api();
@@ -368,10 +368,6 @@ document.addEventListener('submit', async event => {
     return navigate(current.name + (current.id ? '/' + current.id : '') + (current.params.toString() ? '?' + current.params : ''));
   }
   if (form.id === 'product-search') { state.search = String(new FormData(form).get('q') || '').trim();state.pages.products = 0;return render(); }
-  if (form.id === 'user-lookup') {
-    try { const value = await api.get('/utilizadores/' + encodeURIComponent(new FormData(form).get('userId')));const box = document.querySelector('#user-result');if (box) box.innerHTML = table(['ID', 'Nome', 'Email', 'Papéis'], [[esc(value.id), esc(value.nome), esc(value.email), value.papeis.map(p => esc(label(p))).join(', ')]]); }
-    catch (error) { notify(error.message); }return;
-  }
   const context = dialogContext;
   form.dataset.busy = 'true';form.setAttribute('aria-busy', 'true');
   // Build the request before disabling controls; disabled fields are omitted from FormData.
@@ -429,7 +425,23 @@ document.addEventListener('click', async event => {
         state.pages[key] = 0;navigate(current.name + (current.id ? '/' + current.id : '') + (current.params.toString() ? '?' + current.params : ''));break;
       }
       case 'lookup-user': {
-        const form = document.querySelector('#user-lookup');form.querySelector('[name=userId]').value = target.dataset.id;form.requestSubmit();break;
+        const version = epoch;
+        target.disabled = true;
+        const member = await api.get('/utilizadores/' + encodeURIComponent(target.dataset.id));
+        if (version !== epoch || !target.isConnected || modal.open) break;
+        modal.innerHTML = `<div class="modal-head">
+          <h2 id="modal-title">${esc(member.nome)}</h2>
+          <button type="button" class="close" data-action="close-dialog" aria-label="Fechar">×</button>
+        </div>
+        <dl class="member-profile">
+          <div><dt>ID</dt><dd>#${esc(member.id)}</dd></div>
+          <div><dt>Email</dt><dd>${esc(member.email)}</dd></div>
+          <div><dt>Perfis</dt><dd>${member.papeis.map(p => esc(label(p))).join(' · ')}</dd></div>
+        </dl>`;
+        target.disabled = false;
+        target.focus({ preventScroll: true });
+        modal.showModal();
+        break;
       }
       case 'clear-search': state.search = '';state.pages.products = 0;await render();break;
       case 'remove-compare': state.compareIds = state.compareIds.filter(id => id !== target.dataset.id);if (state.compareIds.length < 2) state.comparison = null;await render();break;

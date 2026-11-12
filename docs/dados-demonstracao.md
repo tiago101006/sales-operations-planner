@@ -115,3 +115,46 @@ repetição sem duplicados, previsões de 100 produtos por ambos os métodos e r
 dos cinco ficheiros inválidos. Remove os recursos temporários ao terminar.
 Requer o JAR já construído e as dependências do ambiente de testes descritas no README.
 Os resultados privados ficam em `tmp/demonstracao/validacao.json`.
+
+## Ensaio guiado de comparação com 100 produtos
+
+Na área **Comparar modelos**, clicar em **Novo backtest**,
+escolher `historico_atual.csv` e configurar:
+
+| Campo | Valor |
+|---|---|
+| Série | Vendas |
+| Horizonte | 3 meses |
+| Primeiro corte de treino | 2026-05 |
+| Último corte de treino | 2026-07 |
+| Janela da Média Móvel | 3 |
+| Máximo de meses ETS | 24 |
+
+Os cortes são maio, junho e julho. Cada um prevê os três meses seguintes;
+existem realizados no histórico até outubro de 2026. São esperadas **900 células**:
+100 produtos × 3 cortes × 3 horizontes. Confirmar no resultado os estados dos motores,
+a cobertura, as exclusões de zeros no MAPE e os indicadores por produto/horizonte.
+Não assumir antecipadamente que ETS vence a Média Móvel em todos os produtos.
+
+Pesquisar `DEMO100` na tabela de células deve encontrar **9 linhas** através de
+todas as páginas. Pesquisar um código inexistente deve apresentar zero resultados;
+limpar recupera as 900 células. Estas contagens pressupõem o snapshot gerado sem
+alterações. Este ensaio funcional não é uma medição formal de desempenho nem uma
+sessão independente de usabilidade.
+
+## Ensaio guiado de previsão e cenários com 100 produtos
+
+A simulação retrospetiva compara os métodos. Para obter uma previsão que possa
+servir de base a cenários, abrir **Previsões → Gerar previsão** e escolher
+`historico_atual.csv`, série Vendas, horizonte de 3 meses e último mês de treino
+`2026-10`. Manter o corte de disponibilidade no momento do envio. Escolher ETS
+com tendência aditiva, máximo de 24 meses de treino e sem método de recurso.
+Esperam-se **100 produtos previstos e 300 quantidades base** de novembro de
+2026 a janeiro de 2027.
+
+A partir dessa execução, criar dois cenários de demonstração, **Otimista** com
+fator `1,10` e **Conservador** com fator `0,90`. Comparar os dois e pesquisar
+`DEMO100` nos resultados. Devem aparecer os três meses desse produto, com as
+quantidades base e as duas alternativas lado a lado. As quantidades calculadas
+devem corresponder aos fatores aplicados à base, com arredondamento a quatro
+casas decimais. Nesta etapa basta conservar os cenários em rascunho.

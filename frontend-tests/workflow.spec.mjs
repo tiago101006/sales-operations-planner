@@ -57,9 +57,14 @@ test('percurso completo com APIs reais, auditoria, aprovação independente e mo
     const created = postResponse(page, '/utilizadores');
     await modal(page).getByRole('button', { name: 'Criar conta', exact: true }).click();
     const value = await (await created).json();
-    await page.getByLabel('Identificador', { exact: true }).fill(value.id);
-    await page.locator('#user-lookup').getByRole('button', { name: 'Consultar', exact: true }).click();
-    await expect(page.locator('#user-result').getByText('planner@ui.test', { exact: true })).toBeVisible();
+    const consult = page.getByRole('row').filter({ hasText: 'planner@ui.test' }).getByRole('button', { name: 'Consultar', exact: true });
+    await expect(modal(page)).toBeHidden();
+    await consult.click();
+    await expect(modal(page).getByRole('heading', { name: 'Planeador de ensaio' })).toBeVisible();
+    await expect(modal(page).getByText('planner@ui.test', { exact: true })).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(modal(page)).toBeHidden();
+    await expect(consult).toBeFocused();
     const teamSearch = page.locator('[data-search-key="team"]');
     await teamSearch.getByLabel('Pesquisar nesta tabela').fill('planner@ui.test');
     await teamSearch.getByRole('button', { name: 'Pesquisar', exact: true }).click();

@@ -218,3 +218,7 @@ Na Equipa, o ADMIN pode procurar membros pelo nome, email ou perfil.
 | Métrica indisponível | Consultar cobertura, motivos de exclusão, meses e corte |
 
 Para manutenção, cópias e recuperação, seguir [backup e restauro](backup-restauro.md).
+
+Na área Equipa, a pesquisa encontra membros na lista. O botão **Consultar** de
+cada linha abre os detalhes da pessoa selecionada numa janela; não é necessário introduzir
+o ID noutra pesquisa. As responsabilidades estão disponíveis em **Responsabilidades por perfil**.
