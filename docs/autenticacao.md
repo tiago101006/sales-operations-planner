@@ -53,7 +53,11 @@ Não existe registo público de contas. As restantes contas são criadas por ADM
 |---|---|---|
 | `GET /api/v1/auth/csrf` | Público | Header e token CSRF da sessão |
 | `POST /api/v1/auth/login` | Público + CSRF | Autentica e guarda a sessão |
-| `GET /api/v1/auth/me` | Autenticado | ID, nome, email e papéis |
+| `GET /api/v1/auth/me` | Autenticado | ID, nome, email, papéis e indicador `temFoto` |
+| `GET /api/v1/auth/foto` | Autenticado | JPEG da própria conta ou HTTP 404 |
+| `PUT /api/v1/auth/foto` | Autenticado + CSRF | HTTP 204, adiciona ou substitui a foto com o campo multipart `foto` |
+| `DELETE /api/v1/auth/foto` | Autenticado + CSRF | HTTP 204, remove a foto |
+| `PATCH /api/v1/auth/password` | Autenticado + CSRF | HTTP 204, atualiza a palavra-passe e revoga as sessões |
 | `POST /api/v1/auth/logout` | CSRF | HTTP 204, invalida sessão |
 | `POST /api/v1/utilizadores` | ADMIN + CSRF | HTTP 201, conta por ativar e convite |
 | `POST /api/v1/utilizadores/{id}/convites` | ADMIN + CSRF | Novo convite para uma conta por ativar. Exige `versaoEsperada` |
@@ -70,8 +74,8 @@ CSRF devolve, por exemplo:
 {"headerName":"X-CSRF-TOKEN","token":"token-da-sessao"}
 ```
 
-Enviar `Content-Type: application/json`, o cookie de sessão e o header indicado nas
-operações de escrita. Login:
+Nos pedidos JSON de escrita, enviar `Content-Type: application/json`, o cookie
+de sessão e o cabeçalho CSRF indicado. Pedido de login:
 
 ```json
 {"email":"tiago@example.test","password":"password-definida-localmente"}
@@ -80,7 +84,7 @@ operações de escrita. Login:
 Resposta de login e `/me`:
 
 ```json
-{"id":"1","nome":"Administrador","email":"tiago@example.test","papeis":["ADMIN"]}
+{"id":"1","nome":"Administrador","email":"tiago@example.test","papeis":["ADMIN"],"ativo":true,"versao":0,"passwordDefinida":true,"temFoto":false}
 ```
 
 Criação de uma conta por ADMIN:
@@ -116,6 +120,17 @@ Erros: 401 para ausência de sessão ou credenciais inválidas; 403 para papel i
 ou CSRF ausente/inválido; 422 para validação; 409 para email duplicado; 400 para JSON
 malformado ou papel desconhecido. Credenciais erradas, conta desconhecida e conta
 desativada ou por ativar produzem a mesma mensagem de login. Erros não incluem valores de passwords.
+
+## Gestão da própria conta
+
+Os endpoints de foto e palavra-passe usam a conta da sessão. A foto aceita JPEG
+ou PNG até 2 MiB e 4096 × 4096 píxeis. O servidor guarda a imagem como JPEG,
+com no máximo 256 × 256 píxeis.
+
+A alteração da palavra-passe exige `passwordAtual`, `novaPassword` e `confirmacao`.
+Após verificar a palavra-passe atual, o servidor guarda o hash da nova e
+revoga as sessões anteriores, incluindo a sessão que fez o pedido. O utilizador
+volta a autenticar-se com a nova palavra-passe. [OWASP: alteração da palavra-passe](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html#change-password-feature).
 
 ## Experimentar sem gerir cookies manualmente
 

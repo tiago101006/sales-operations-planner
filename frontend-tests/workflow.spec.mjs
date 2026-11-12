@@ -3,9 +3,9 @@ import { readFile, mkdir } from 'node:fs/promises';
 import { month as displayMonth, quantity as displayQuantity } from '../backend/src/main/resources/static/assets/ui.mjs';
 
 const password = process.env.SOP_UI_PASSWORD;
-const login = async (page, email) => {
+const login = async (page, email, credential = password) => {
   await page.getByLabel('Email', { exact: true }).fill(email);
-  await page.getByLabel('Password', { exact: true }).fill(password);
+  await page.getByLabel('Password', { exact: true }).fill(credential);
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
   await expect(page.locator('.shell')).toBeVisible();
   await expect(page).toHaveURL(/#\/visao$/);
@@ -679,6 +679,70 @@ test('percurso completo com APIs reais, auditoria, aprovação independente e mo
     expect(await page.locator('.shell').count()).toBe(0);
   });
   expect(errors).toEqual([]);
+});
+
+test('um consumidor consulta a conta, gere a foto e altera a palavra-passe', async ({ page, context }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await login(page, 'consumer@ui.test');
+  const account = page.getByRole('link', { name: 'A minha conta', exact: true });
+  await account.click();
+  await expect(page.getByRole('heading', { name: 'A minha conta', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Dados da conta', exact: true })).toBeVisible();
+  await expect(page.getByText('consumer@ui.test', { exact: true })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+  await expect(page.getByRole('heading', { name: 'Foto de perfil', exact: true })).toBeVisible();
+  await expect(account.locator('img')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Remover foto', exact: true })).toHaveCount(0);
+
+  const savePhoto = async (colour) => {
+    const image = await page.evaluate(fill => {
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = 32;
+      const drawing = canvas.getContext('2d');
+      drawing.fillStyle = fill;
+      drawing.fillRect(0, 0, canvas.width, canvas.height);
+      return canvas.toDataURL('image/png').split(',')[1];
+    }, colour);
+    await page.getByLabel('Fotografia', { exact: true }).setInputFiles({
+      name: 'perfil.png',
+      mimeType: 'image/png',
+      buffer: Buffer.from(image, 'base64'),
+    });
+    const uploaded = page.waitForResponse(response =>
+      response.request().method() === 'PUT' && new URL(response.url()).pathname === '/api/v1/auth/foto');
+    await page.getByRole('button', { name: 'Guardar foto', exact: true }).click();
+    expect((await uploaded).status()).toBe(204);
+    await expect(account.locator('img')).toBeVisible();
+    await expect.poll(() => account.locator('img').evaluate(image => image.naturalWidth)).toBeGreaterThan(0);
+    await expect(page.getByRole('button', { name: 'Remover foto', exact: true })).toBeVisible();
+    const response = await context.request.get('/api/v1/auth/foto');
+    expect(response.ok()).toBe(true);
+    return response.body();
+  };
+
+  const originalPhoto = await savePhoto('#1e473d');
+  const replacementPhoto = await savePhoto('#be7c53');
+  expect(replacementPhoto.equals(originalPhoto)).toBe(false);
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'A minha conta', exact: true })).toBeVisible();
+  await expect(account.locator('img')).toBeVisible();
+  const savedPhoto = await context.request.get('/api/v1/auth/foto');
+  expect((await savedPhoto.body()).equals(replacementPhoto)).toBe(true);
+
+  await page.getByRole('button', { name: 'Remover foto', exact: true }).click();
+  await modal(page).getByRole('button', { name: 'Confirmar remoção', exact: true }).click();
+  await expect(account.locator('img')).toHaveCount(0);
+  expect((await context.request.get('/api/v1/auth/foto')).status()).toBe(404);
+
+  const newPassword = password + '-perfil';
+  await page.getByLabel('Palavra-passe atual', { exact: true }).fill(password);
+  await page.getByLabel('Nova palavra-passe', { exact: true }).fill(newPassword);
+  await page.getByLabel('Confirmar nova palavra-passe', { exact: true }).fill(newPassword);
+  await page.getByRole('button', { name: 'Alterar palavra-passe', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Entrar na aplicação' })).toBeVisible();
+  await login(page, 'consumer@ui.test', newPassword);
+  await expect(page.getByRole('heading', { name: 'Planos e resultados', exact: true })).toBeVisible();
 });
 
 test('login móvel e navegação por teclado sem deslocação horizontal', async ({ page }) => {

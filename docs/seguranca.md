@@ -142,8 +142,8 @@ nomes e versões de dependências públicas.
 2. Substituir as passwords que ficaram visíveis nas capturas de ecrã.
    A rotação exige atualizar o MySQL e os serviços que usam essas credenciais.
    A edição de .env, por si só, não altera passwords de um volume MySQL existente.
-3. Definir um canal privado para entregar os convites de ativação. Preparar
-   a alteração de password pelo próprio colaborador e MFA para contas com privilégios.
+3. Definir um canal privado para entregar os convites de ativação e preparar MFA
+   para contas com privilégios.
 4. Definir o acesso de rede, o limite de tráfego no proxy, registos de segurança,
    alertas e resposta a incidentes.
 5. Executar uma análise de vulnerabilidades das imagens de sistema operativo,

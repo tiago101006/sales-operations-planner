@@ -33,12 +33,16 @@ public class IdentityService {
 
     public static String normalizeEmail(String email) { return email.strip().toLowerCase(Locale.ROOT); }
 
-    @Transactional
-    public UtilizadorDto create(String nome, String email, String password, Set<Papel> papeis) {
-        String normalized = normalizeEmail(email);
+    static void validatePassword(String password) {
         if (password.length() < 12 || password.getBytes(StandardCharsets.UTF_8).length > 72) {
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "A password exige pelo menos 12 caracteres e no máximo 72 bytes UTF-8.");
         }
+    }
+
+    @Transactional
+    public UtilizadorDto create(String nome, String email, String password, Set<Papel> papeis) {
+        String normalized = normalizeEmail(email);
+        validatePassword(password);
         if (repository.existsByEmail(normalized)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "O email já está registado.");
         }

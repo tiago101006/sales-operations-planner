@@ -45,7 +45,12 @@ final class RequestLimitsFilter extends OncePerRequestFilter {
             }
             bounded = new JsonRequest(request, body);
         }
-        if (!request.getMethod().equals("POST") || !EXPENSIVE_POSTS.contains(request.getServletPath())) {
+        String path = request.getServletPath();
+        String method = request.getMethod();
+        boolean expensive = ("POST".equals(method) && EXPENSIVE_POSTS.contains(path))
+                || ("PUT".equals(method) && "/api/v1/auth/foto".equals(path))
+                || ("PATCH".equals(method) && "/api/v1/auth/password".equals(path));
+        if (!expensive) {
             chain.doFilter(bounded, response);
             return;
         }

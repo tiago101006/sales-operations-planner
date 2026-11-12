@@ -71,9 +71,7 @@ public class InvitationService {
     @Transactional
     public void activate(String token, String password, String confirmation) {
         if (!password.equals(confirmation)) throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "As passwords não coincidem.");
-        if (password.length() < 12 || password.getBytes(StandardCharsets.UTF_8).length > 72) {
-            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "A password exige pelo menos 12 caracteres e no máximo 72 bytes UTF-8.");
-        }
+        IdentityService.validatePassword(password);
         if (token == null || !token.matches("[A-Za-z0-9_-]{43}")) throw invalid();
         String digest = hash(token);
         var ids = jdbc.queryForList("SELECT utilizador_id FROM convite_utilizador WHERE token_hash=?", Long.class, digest);

@@ -4,6 +4,7 @@ import jakarta.servlet.http.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import java.nio.charset.StandardCharsets;
+import java.util.Set;
 import pt.tiagodias.sop.identity.*;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
@@ -24,14 +25,17 @@ public class AuthController {
     private final SessionAuthenticationStrategy sessions;
     private final UtilizadorRepository users;
     private final LoginThrottle throttle;
+    private final AccountProfileService profile;
 
     public AuthController(AuthenticationManager manager, SecurityContextRepository contexts,
-                          SessionAuthenticationStrategy sessions, UtilizadorRepository users, LoginThrottle throttle) {
+                          SessionAuthenticationStrategy sessions, UtilizadorRepository users, LoginThrottle throttle,
+                          AccountProfileService profile) {
         this.manager = manager;
         this.contexts = contexts;
         this.sessions = sessions;
         this.users = users;
         this.throttle = throttle;
+        this.profile = profile;
     }
 
     @GetMapping("/csrf")
@@ -40,7 +44,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public IdentityService.UtilizadorDto login(@Valid @RequestBody LoginRequest login,
+    public ContaDto login(@Valid @RequestBody LoginRequest login,
                                               HttpServletRequest request, HttpServletResponse response) {
         String email = IdentityService.normalizeEmail(login.email());
         // Use the stored identity so database collation aliases share the same limit.
@@ -76,12 +80,17 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public IdentityService.UtilizadorDto me(Authentication authentication) { return currentUser(authentication); }
+    public ContaDto me(Authentication authentication) { return currentUser(authentication); }
 
-    private IdentityService.UtilizadorDto currentUser(Authentication auth) {
-        return users.findByEmail(auth.getName()).map(IdentityService::dto)
+    private ContaDto currentUser(Authentication auth) {
+        var user = users.findByEmail(auth.getName())
                 .orElseThrow(() -> new BadCredentialsException("Credenciais inválidas."));
+        return new ContaDto(user.getId().toString(), user.getNome(), user.getEmail(), user.getPapeis(),
+                user.isAtivo(), user.getVersao(), user.isPasswordDefinida(), profile.hasPhoto(user.getId()));
     }
+
+    public record ContaDto(String id, String nome, String email, Set<Papel> papeis, boolean ativo,
+                           long versao, boolean passwordDefinida, boolean temFoto) {}
 
     public record LoginRequest(@NotBlank @Email @Size(max = 254) String email,
                                @NotBlank @Size(max = 200) String password) {}

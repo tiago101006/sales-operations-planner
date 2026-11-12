@@ -41,6 +41,7 @@ public class Utilizador {
     public String getNome() { return nome; }
     public String getEmail() { return email; }
     public String getPasswordHash() { return passwordHash; }
+    void alterarPassword(String hash) { passwordHash = hash; }
     public boolean isPasswordDefinida() { return passwordDefinida; }
     void pendenteAtivacao() { passwordDefinida = false; }
     public long getVersao() { return versao; }

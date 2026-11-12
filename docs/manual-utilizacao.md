@@ -27,6 +27,21 @@ Uma conta pode ter vários papéis. Ser administrador, por si só, não permite 
 O aprovador não pode decidir uma revisão criada por si nem uma que conserve ajustes
 seus. O backend verifica estas condições mesmo que o endereço seja aberto diretamente.
 
+## A minha conta
+
+Selecionar o nome ou avatar no topo da aplicação para abrir **A minha conta**.
+A página mostra o nome, o email e os papéis atribuídos. A gestão de papéis está
+na área **Equipa**.
+
+Em **Foto de perfil**, escolher uma fotografia JPEG ou PNG até 2 MiB e selecionar
+**Guardar foto**. Para substituir a imagem, guardar outra. **Remover foto** volta
+a mostrar as iniciais do nome.
+
+Em **Alterar palavra-passe**, introduzir a palavra-passe atual, a nova e a
+confirmação. A nova palavra-passe precisa de pelo menos 12 caracteres e pode
+ter até 72 bytes UTF-8. Após guardar, iniciar sessão com a nova palavra-passe.
+As sessões anteriores são terminadas.
+
 ## 1. Preparar os produtos
 
 Em **Dados → Produtos**, procurar pelo código ou nome antes de criar um produto.

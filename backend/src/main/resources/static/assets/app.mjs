@@ -1,10 +1,12 @@
 import { Api, ApiError } from './api.mjs';
 import { esc, date, month, quantity as q, factorValue, revisionCaption, label, badge, icon, button as b, field, input, select, role, lastMonth, independent } from './ui.mjs';
 import { createViews } from './views.mjs';
+import { accountAvatar, accountPage } from './profile.mjs';
 
 const api = new Api();
 const root = document.querySelector('#app');
 const modal = document.querySelector('#modal');
+let photoRevision = 0;
 const state = { user: null, pages: {}, compareIds: [], comparison: null };
 const writer = () => role(state.user, 'ADMIN', 'PLANEADOR');
 const internal = () => role(state.user, 'ADMIN', 'PLANEADOR', 'COMERCIAL', 'APROVADOR');
@@ -64,6 +66,7 @@ const routes = [
   ['backtests', 'Comparar modelos', 'chart', internal], ['cenarios', 'Cenários', 'layers', internal],
   ['planos', 'Planos publicados', 'check', () => true], ['monitorizacao', 'Monitorização', 'chart', () => true],
   ['equipa', 'Equipa', 'people', () => role(state.user, 'ADMIN')],
+  ['conta', 'A minha conta', 'people', () => true],
 ];
 const aliases = { lote: 'importacoes', previsao: 'previsoes', backtest: 'backtests', cenario: 'cenarios', revisao: 'cenarios', plano: 'planos', avaliacao: 'monitorizacao' };
 const route = () => {
@@ -187,8 +190,22 @@ function shell() {
     return `<a class="nav-link" href="#/${entry[0]}" data-nav="${entry[0]}">${icon(entry[2], 16)}<span>${entry[1]}</span></a>`;
   };
   const groups = [['01', 'Dados', ['produtos', 'importacoes']], ['02', 'Previsão', ['previsoes', 'backtests']], ['03', 'Decisão', ['cenarios', 'planos']], ['04', 'Resultados', ['monitorizacao']]];
-  root.innerHTML = `<div class="shell"><header class="app-header"><div class="topbar"><a class="brand" href="#/visao"><img src="/assets/brand.svg" width="42" height="42" alt=""><div><strong>NexoPlan<span class="brand-period">.</span></strong><small>PROCURA → DECISÃO</small></div></a><span class="workspace-label">PLANEAMENTO DE VENDAS & OPERAÇÕES</span><div class="account"><span class="avatar">${esc(state.user.nome.trim().slice(0, 1).toUpperCase())}</span><div class="account-name">${esc(state.user.nome)}<small>${state.user.papeis.map(p => esc(label(p))).join(' · ')}</small></div>${b(icon('logout', 18), 'logout', 'aria-label="Terminar sessão" title="Terminar sessão"', 'icon-button')}${b('<span></span><span></span>', 'toggle-nav', 'aria-label="Abrir navegação" aria-controls="main-navigation" aria-expanded="false"', 'nav-toggle')}</div></div><div class="sidebar"><nav id="main-navigation" aria-label="Navegação principal"><div class="nav-home">${navLink('visao')}</div>${groups.map(([number, title, keys]) => { const links = keys.map(navLink).join(''); return links ? `<div class="nav-group" aria-label="${title}"><span class="nav-stage"><span>${number}</span>${title}</span><div class="nav-options">${links}</div></div>` : ''; }).join('')}${role(state.user, 'ADMIN') ? `<div class="nav-admin">${navLink('equipa')}</div>` : ''}</nav></div></header><div class="workspace"><div class="location-bar"><span class="location-mark"></span><span>NexoPlan</span><span>/</span><strong id="breadcrumb">Visão geral</strong><span class="location-note">${state.user.papeis.map(p => esc(label(p))).join(' · ')}</span></div><main id="conteudo" class="content" tabindex="-1"></main><footer class="app-footer"><span>NexoPlan<span class="brand-period">.</span></span><span>Dados · Previsões · Decisões</span></footer></div></div>`;
+  root.innerHTML = `<div class="shell"><header class="app-header"><div class="topbar"><a class="brand" href="#/visao"><img src="/assets/brand.svg" width="42" height="42" alt=""><div><strong>NexoPlan<span class="brand-period">.</span></strong><small>PROCURA → DECISÃO</small></div></a><span class="workspace-label">PLANEAMENTO DE VENDAS & OPERAÇÕES</span><div class="account"><a class="account-link" href="#/conta" data-nav="conta" aria-label="A minha conta" title="A minha conta">${accountAvatar(state.user, photoRevision)}<span class="account-name">${esc(state.user.nome)}<small>${state.user.papeis.map(p => esc(label(p))).join(' · ')}</small></span></a>${b(icon('logout', 18), 'logout', 'aria-label="Terminar sessão" title="Terminar sessão"', 'icon-button')}${b('<span></span><span></span>', 'toggle-nav', 'aria-label="Abrir navegação" aria-controls="main-navigation" aria-expanded="false"', 'nav-toggle')}</div></div><div class="sidebar"><nav id="main-navigation" aria-label="Navegação principal"><div class="nav-home">${navLink('visao')}</div>${groups.map(([number, title, keys]) => { const links = keys.map(navLink).join(''); return links ? `<div class="nav-group" aria-label="${title}"><span class="nav-stage"><span>${number}</span>${title}</span><div class="nav-options">${links}</div></div>` : ''; }).join('')}${role(state.user, 'ADMIN') ? `<div class="nav-admin">${navLink('equipa')}</div>` : ''}</nav></div></header><div class="workspace"><div class="location-bar"><span class="location-mark"></span><span>NexoPlan</span><span>/</span><strong id="breadcrumb">Visão geral</strong><span class="location-note">${state.user.papeis.map(p => esc(label(p))).join(' · ')}</span></div><main id="conteudo" class="content" tabindex="-1"></main><footer class="app-footer"><span>NexoPlan<span class="brand-period">.</span></span><span>Dados · Previsões · Decisões</span></footer></div></div>`;
 }
+function updateAccountPhoto(hasPhoto) {
+  state.user.temFoto = hasPhoto;
+  photoRevision++;
+  document.querySelectorAll('[data-account-avatar]').forEach(avatar => {
+    avatar.outerHTML = accountAvatar(state.user, photoRevision, avatar.classList.contains('profile-avatar'));
+  });
+  const remove = document.querySelector('[data-action=remove-account-photo]');
+  if (remove) remove.hidden = !hasPhoto;
+}
+document.addEventListener('error', event => {
+  if (event.target instanceof HTMLImageElement && event.target.hasAttribute('data-profile-photo')) {
+    event.target.remove();
+  }
+}, true);
 function setNavigation(open) {
   document.querySelector('.sidebar')?.classList.toggle('open', open);
   const toggle = document.querySelector('[data-action=toggle-nav]');
@@ -211,9 +228,11 @@ async function render({ pagination } = {}) {
   document.title = `${permission?.[1] || 'Página'} — NexoPlan`;
   if (!pagination) main.innerHTML = '<div class="loading" role="status"><span class="spinner"></span>A carregar os dados…</div>';
   try {
-    if (!permission || !views[current.name]) throw new Error('Esta página não existe. Escolhe uma opção do menu.');
+    if (!permission || (active !== 'conta' && !views[current.name])) throw new Error('Esta página não existe. Escolhe uma opção do menu.');
     if (!permission[3]()) throw new Error('O teu perfil não tem acesso a esta área. Consulta os planos publicados e a monitorização.');
-    const html = await views[current.name](current.name === 'cenarios' ? current.params : current.id, current.params);
+    const html = active === 'conta'
+      ? accountPage(state.user, photoRevision)
+      : await views[current.name](current.name === 'cenarios' ? current.params : current.id, current.params);
     if (version !== epoch || !state.user) return;
     const scrollTop = window.scrollY;
     const restoreFocus = pagination && document.activeElement === pagination.trigger;
@@ -468,6 +487,10 @@ async function command(form, context) {
     case 'assessment': {
       const value = await api.send('/avaliacoes', { planoId: text('planoId'), loteRealizadosId: text('loteRealizadosId'), ...(text('loteOperacionalId') ? { loteOperacionalId: text('loteOperacionalId') } : {}), periodoInicio: text('periodoInicio'), periodoFim: text('periodoFim'), corteRealizados: instant('corteRealizados') });return { message: 'Avaliação criada com cobertura e exclusões.', route: 'avaliacao/' + value.id };
     }
+    case 'account-photo-remove': {
+      await api.send('/auth/foto', undefined, 'DELETE');
+      return { message: 'Foto de perfil removida.', photoRemoved: true };
+    }
     case 'user-status': {
       const member = context.member;
       await api.send(`/utilizadores/${encodeURIComponent(member.id)}/estado`, { ativo: !member.ativo, versaoEsperada: member.versao }, 'PATCH');
@@ -507,6 +530,8 @@ document.addEventListener('submit', async event => {
   // Build the request before disabling controls; disabled fields are omitted from FormData.
   const submission = form.id === 'login-form' ? new FormData(form) : null;
   const submit = form.querySelector('button[type=submit]');if (submit) submit.disabled = true;
+  const removePhoto = form.querySelector('[data-action=remove-account-photo]');
+  if (removePhoto) removePhoto.disabled = true;
   try {
     if (form.id === 'activation-form') {
       const values = new FormData(form), password = String(values.get('password') || ''), confirmation = String(values.get('confirmacao') || '');
@@ -520,10 +545,36 @@ document.addEventListener('submit', async event => {
       form.reset();state.user = user;
       history.replaceState(null, '', '#/visao');
       shell();await render();
+    } else if (form.id === 'account-photo-form') {
+      const user = state.user;
+      const photo = new FormData(form);
+      if (photo.get('foto').size > 2 * 1024 * 1024) throw new Error('A fotografia deve ter até 2 MB.');
+      await api.send('/auth/foto', photo, 'PUT');
+      if (state.user !== user) return;
+      updateAccountPhoto(true);
+      form.reset();
+      form.querySelector('.form-error').textContent = '';
+      notify('Foto de perfil guardada.');
+    } else if (form.id === 'account-password-form') {
+      const user = state.user;
+      const values = new FormData(form);
+      const passwordAtual = values.get('passwordAtual');
+      const novaPassword = values.get('novaPassword');
+      const confirmacao = values.get('confirmacao');
+      if (novaPassword !== confirmacao) throw new Error('As palavras-passe não coincidem.');
+      if (new TextEncoder().encode(novaPassword).length > 72) throw new Error('A nova palavra-passe não pode exceder 72 bytes UTF-8.');
+      await api.send('/auth/password', { passwordAtual, novaPassword, confirmacao }, 'PATCH');
+      form.reset();
+      if (state.user !== user) return;
+      history.replaceState(null, '', '#/visao');
+      logoutView();
+      notify('Palavra-passe alterada. Volta a entrar com a nova palavra-passe.');
     } else if (form.id === 'command-form') {
       const result = await command(form, context);
       closeDialog();notify(result.message);
-      if (result.route) navigate(result.route);else await render();
+      if (result.photoRemoved) updateAccountPhoto(false);
+      else if (result.route) navigate(result.route);
+      else await render();
       if (result.invite) showInvitation(result.invite);
     }
   } catch (error) {
@@ -535,6 +586,7 @@ document.addEventListener('submit', async event => {
     }
   } finally {
     delete form.dataset.busy;form.removeAttribute('aria-busy');if (submit) submit.disabled = false;
+    if (removePhoto) removePhoto.disabled = false;
     if (form.id === 'login-form') form.querySelector('[name=password]').value = '';
   }
 });
@@ -573,6 +625,9 @@ document.addEventListener('click', async event => {
         for (const field of ['busca', 'desde', 'ate']) current.params.delete(`f_${key}_${field}`);
         state.pages[key] = 0;navigate(current.name + (current.id ? '/' + current.id : '') + (current.params.toString() ? '?' + current.params : ''));break;
       }
+      case 'remove-account-photo':
+        formHtml('account-photo-remove', 'Remover foto', '<p class="info form-span">As tuas iniciais voltam a aparecer no avatar.</p>', 'Confirmar remoção', {}, 'danger');
+        break;
       case 'copy-invitation': {
         const input = modal.querySelector('[name=invitationLink]');
         try { await navigator.clipboard.writeText(input.value);notify('Link copiado.'); }

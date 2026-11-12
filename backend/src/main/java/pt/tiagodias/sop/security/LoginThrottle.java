@@ -20,6 +20,8 @@ public class LoginThrottle {
     public synchronized long reserveAddress(String address) { return reserve("ip:" + address, 60); }
     public synchronized long reserveAccount(String email) { return reserve("account:" + email, 5); }
     public synchronized void succeeded(String email) { attempts.remove("account:" + email); }
+    synchronized long reservePasswordChange(String email) { return reserve("password:" + email, 5); }
+    synchronized void passwordChanged(String email) { attempts.remove("password:" + email); }
 
     private long reserve(String key, int limit) {
         long now = clock.millis();

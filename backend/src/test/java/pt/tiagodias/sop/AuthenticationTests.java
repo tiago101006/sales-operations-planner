@@ -1,9 +1,14 @@
 package pt.tiagodias.sop;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.net.*;
 import java.net.http.*;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Set;
+import javax.imageio.ImageIO;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -43,6 +48,24 @@ class AuthenticationTests {
             if (csrf) { builder.header("X-CSRF-TOKEN", token); }
             if (body == null) { builder.method(method, HttpRequest.BodyPublishers.noBody()); }
             else { builder.header("Content-Type", "application/json").method(method, HttpRequest.BodyPublishers.ofString(json.writeValueAsString(body))); }
+            return client.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+        }
+
+        HttpResponse<byte[]> photo(String path) throws Exception {
+            var request = HttpRequest.newBuilder(URI.create("http://localhost:" + port + path)).GET().build();
+            return client.send(request, HttpResponse.BodyHandlers.ofByteArray());
+        }
+
+        HttpResponse<String> uploadPhoto(String contentType, byte[] bytes, boolean csrf) throws Exception {
+            String boundary = "profile-photo-test-boundary";
+            byte[] opening = ("--" + boundary + "\r\n"
+                    + "Content-Disposition: form-data; name=\"foto\"; filename=\"upload.png\"\r\n"
+                    + "Content-Type: " + contentType + "\r\n\r\n").getBytes(StandardCharsets.US_ASCII);
+            byte[] closing = ("\r\n--" + boundary + "--\r\n").getBytes(StandardCharsets.US_ASCII);
+            var builder = HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/api/v1/auth/foto"))
+                    .header("Content-Type", "multipart/form-data; boundary=" + boundary)
+                    .PUT(HttpRequest.BodyPublishers.ofByteArrays(java.util.List.of(opening, bytes, closing)));
+            if (csrf) builder.header("X-CSRF-TOKEN", token);
             return client.send(builder.build(), HttpResponse.BodyHandlers.ofString());
         }
 
@@ -287,6 +310,105 @@ class AuthenticationTests {
         assertThat(blocked.headers().firstValue("Retry-After")).isPresent();
         for (int i = 0; i < 5; i++) { assertThat(new Browser().login("unknown-rate@example.test", PASSWORD).statusCode()).isEqualTo(401); }
         assertThat(new Browser().login("unknown-rate@example.test", PASSWORD).statusCode()).isEqualTo(429);
+    }
+
+    @Test
+    void passwordChangeRequiresCurrentPasswordAndRevokesEveryExistingSession() throws Exception {
+        String email = "profile-password@example.test";
+        String newPassword = "Nova-password-de-ensaio-456";
+        String path = "/api/v1/auth/password";
+        var account = users.create("Comercial de ensaio", email, PASSWORD, Set.of(Papel.COMERCIAL));
+        var current = new Browser();
+        var otherSession = new Browser();
+        var anonymous = new Browser();
+        assertThat(current.login(email, PASSWORD).statusCode()).isEqualTo(200);
+        assertThat(otherSession.login(email, PASSWORD).statusCode()).isEqualTo(200);
+        current.csrf();
+        anonymous.csrf();
+
+        var change = Map.of("passwordAtual", PASSWORD, "novaPassword", newPassword, "confirmacao", newPassword);
+        assertThat(anonymous.request("PATCH", path, change, true).statusCode()).isEqualTo(401);
+        assertThat(current.request("PATCH", path, change, false).statusCode()).isEqualTo(403);
+        var wrongPassword = Map.of("passwordAtual", "Palavra-passe-incorreta", "novaPassword", newPassword, "confirmacao", newPassword);
+        var refusal = current.request("PATCH", path, wrongPassword, true);
+        assertThat(refusal.statusCode()).isEqualTo(422);
+        assertThat(refusal.body()).doesNotContain(newPassword, wrongPassword.get("passwordAtual"));
+        var differentConfirmation = Map.of("passwordAtual", PASSWORD, "novaPassword", newPassword, "confirmacao", PASSWORD);
+        assertThat(current.request("PATCH", path, differentConfirmation, true).statusCode()).isEqualTo(422);
+        String longPassword = "á".repeat(40);
+        var oversized = Map.of("passwordAtual", PASSWORD, "novaPassword", longPassword, "confirmacao", longPassword);
+        assertThat(current.request("PATCH", path, oversized, true).statusCode()).isEqualTo(422);
+        assertThat(otherSession.request("GET", "/api/v1/auth/me", null, false).statusCode()).isEqualTo(200);
+
+        assertThat(current.request("PATCH", path, change, true).statusCode()).isEqualTo(204);
+        assertThat(current.request("GET", "/api/v1/auth/me", null, false).statusCode()).isEqualTo(401);
+        assertThat(otherSession.request("GET", "/api/v1/auth/me", null, false).statusCode()).isEqualTo(401);
+        assertThat(current.login(email, PASSWORD).statusCode()).isEqualTo(401);
+        assertThat(current.login(email, newPassword).statusCode()).isEqualTo(200);
+        var ownAccount = json.readTree(current.request("GET", "/api/v1/auth/me", null, false).body());
+        assertThat(ownAccount.get("id").asText()).isEqualTo(account.id());
+        assertThat(ownAccount.get("nome").asText()).isEqualTo(account.nome());
+        assertThat(ownAccount.get("email").asText()).isEqualTo(email);
+        assertThat(ownAccount.get("papeis").get(0).asText()).isEqualTo("COMERCIAL");
+    }
+
+    @Test
+    void profilePhotoCanBeAddedReplacedAndRemovedOnlyByItsOwner() throws Exception {
+        String path = "/api/v1/auth/foto";
+        var account = users.create("Consumidor com foto", "photo-owner@example.test", PASSWORD, Set.of(Papel.CONSUMIDOR));
+        var owner = new Browser();
+        var other = new Browser();
+        var anonymous = new Browser();
+        assertThat(owner.login(account.email(), PASSWORD).statusCode()).isEqualTo(200);
+        assertThat(other.login("planner@example.test", PASSWORD).statusCode()).isEqualTo(200);
+        owner.csrf();
+        other.csrf();
+        anonymous.csrf();
+
+        byte[] first = samplePhoto(0x336622, "png");
+        assertThat(anonymous.photo(path).statusCode()).isEqualTo(401);
+        assertThat(anonymous.uploadPhoto("image/png", first, true).statusCode()).isEqualTo(401);
+        assertThat(owner.photo(path).statusCode()).isEqualTo(404);
+        assertThat(owner.uploadPhoto("image/png", first, false).statusCode()).isEqualTo(403);
+        assertThat(owner.uploadPhoto("image/png", "not a PNG".getBytes(StandardCharsets.US_ASCII), true).statusCode()).isEqualTo(422);
+        assertThat(owner.uploadPhoto("image/png", new byte[2 * 1024 * 1024 + 1], true).statusCode()).isEqualTo(413);
+        assertThat(owner.photo(path).statusCode()).isEqualTo(404);
+
+        assertThat(owner.uploadPhoto("image/png", first, true).statusCode()).isEqualTo(204);
+        assertThat(json.readTree(owner.request("GET", "/api/v1/auth/me", null, false).body()).get("temFoto").asBoolean()).isTrue();
+        var photo = owner.photo(path);
+        assertThat(photo.statusCode()).isEqualTo(200);
+        assertThat(photo.headers().firstValue("Content-Type")).hasValue("image/jpeg");
+        assertThat(photo.headers().firstValue("Cache-Control").orElse("")).contains("no-store");
+        var normalized = ImageIO.read(new ByteArrayInputStream(photo.body()));
+        assertThat(normalized).isNotNull();
+        assertThat(Math.max(normalized.getWidth(), normalized.getHeight())).isLessThanOrEqualTo(256);
+        assertThat(other.photo(path + "?utilizadorId=" + account.id()).statusCode()).isEqualTo(404);
+
+        assertThat(owner.uploadPhoto("image/jpeg", samplePhoto(0x993377, "jpeg"), true).statusCode()).isEqualTo(204);
+        var replacement = owner.photo(path);
+        assertThat(replacement.statusCode()).isEqualTo(200);
+        assertThat(replacement.body()).isNotEqualTo(photo.body());
+        assertThat(other.request("DELETE", path + "?utilizadorId=" + account.id(), null, true).statusCode()).isEqualTo(204);
+        assertThat(owner.photo(path).body()).isEqualTo(replacement.body());
+        assertThat(owner.request("DELETE", path, null, false).statusCode()).isEqualTo(403);
+        assertThat(owner.request("DELETE", path, null, true).statusCode()).isEqualTo(204);
+        assertThat(owner.photo(path).statusCode()).isEqualTo(404);
+        assertThat(json.readTree(owner.request("GET", "/api/v1/auth/me", null, false).body()).get("temFoto").asBoolean()).isFalse();
+    }
+
+    private static byte[] samplePhoto(int color, String format) throws Exception {
+        var image = new BufferedImage(320, 200, BufferedImage.TYPE_INT_RGB);
+        var graphics = image.createGraphics();
+        try {
+            graphics.setColor(new java.awt.Color(color));
+            graphics.fillRect(0, 0, image.getWidth(), image.getHeight());
+        } finally {
+            graphics.dispose();
+        }
+        var output = new ByteArrayOutputStream();
+        ImageIO.write(image, format, output);
+        return output.toByteArray();
     }
 
     @Test
