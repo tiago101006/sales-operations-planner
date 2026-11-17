@@ -1,0 +1,175 @@
+#!/usr/bin/env python3
+"""Comandos locais da NexoPlan. Não apaga dados nem cria contas."""
+import argparse
+import fcntl
+import json
+import os
+from pathlib import Path
+import re
+import shutil
+import subprocess
+import sys
+import urllib.error
+import urllib.request
+
+ROOT = Path(__file__).resolve().parent
+
+
+def compose(*arguments, capture=False):
+    result = subprocess.run(
+        ['docker', 'compose', '--project-directory', str(ROOT), *arguments],
+        cwd=ROOT, text=True, check=True,
+        stdout=subprocess.PIPE if capture else None,
+    )
+    return result.stdout.strip() if capture else None
+
+
+def require_docker():
+    if not shutil.which('docker'):
+        raise RuntimeError('Instala o Docker com o plugin Docker Compose e repete o comando.')
+    if subprocess.run(['docker', 'info'], stdout=subprocess.DEVNULL,
+                      stderr=subprocess.DEVNULL).returncode:
+        raise RuntimeError('O Docker não está disponível. Inicia o Docker e repete o comando.')
+    subprocess.run(['docker', 'compose', 'version'], check=True, stdout=subprocess.DEVNULL)
+
+
+def site_url():
+    address = compose('port', 'backend', '8080', capture=True)
+    match = re.search(r':(\d+)\s*$', address)
+    if not match:
+        raise RuntimeError('Não foi encontrada a porta do site. Executa ./nexoplan estado.')
+    return f'http://127.0.0.1:{match.group(1)}'
+
+
+def validate_local_setup():
+    marker = ROOT / '.nexoplan-local.json'
+    if not marker.is_file():
+        return
+    try:
+        expected = json.loads(marker.read_text())
+        if not (ROOT / 'compose.override.yaml').is_file():
+            raise ValueError('configuração privada em falta')
+        model = json.loads(compose('config', '--format', 'json', capture=True))
+        if model.get('name') != expected['project']:
+            raise ValueError('projeto diferente')
+        for key, name in expected['volumes'].items():
+            volume = model.get('volumes', {}).get(key, {})
+            if volume.get('name') != name or not volume.get('external'):
+                raise ValueError('volume diferente')
+        for service, source, target in [('db', 'sop_mysql', '/var/lib/mysql'),
+                                        ('backend', 'sop_imports', '/app/imports')]:
+            mounts = model.get('services', {}).get(service, {}).get('volumes', [])
+            if not any(m.get('type') == 'volume' and m.get('source') == source
+                       and m.get('target') == target for m in mounts):
+                raise ValueError('montagem diferente')
+    except (OSError, ValueError, KeyError):
+        raise RuntimeError(
+            'A configuração dos dados locais mudou ou está incompleta. Recupera '
+            'compose.override.yaml e .nexoplan-local.json da cópia de segurança '
+            'antes de iniciar. O arranque foi interrompido para evitar abrir outra base.'
+        ) from None
+
+
+def open_browser(url):
+    opener = shutil.which('xdg-open')
+    if not opener or not (os.environ.get('DISPLAY') or os.environ.get('WAYLAND_DISPLAY')):
+        print(f'Abre este endereço no navegador: {url}', flush=True)
+        return
+    try:
+        subprocess.Popen([opener, url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                         start_new_session=True)
+    except OSError:
+        print(f'Abre este endereço no navegador: {url}', flush=True)
+
+
+def operation_lock():
+    (ROOT / 'tmp').mkdir(exist_ok=True)
+    lock = (ROOT / 'tmp/.nexoplan-start.lock').open('a')
+    try:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        lock.close()
+        raise RuntimeError('Já existe um arranque ou paragem em curso. Aguarda que termine.') from None
+    return lock
+
+
+def start(open_site=True):
+    if not (ROOT / '.env').is_file():
+        raise RuntimeError(
+            'Falta o ficheiro .env. Copia .env.example para .env e define as duas passwords '
+            'MySQL, conforme o README. Depois repete ./nexoplan.'
+        )
+    with operation_lock():
+        print('A iniciar a NexoPlan. Na primeira utilização a compilação pode demorar.', flush=True)
+        compose('up', '-d', '--build', '--wait', '--wait-timeout', '180', 'db', 'backend')
+        url = site_url()
+        try:
+            with urllib.request.urlopen(url + '/actuator/health', timeout=10) as response:
+                if json.load(response).get('status') != 'UP':
+                    raise RuntimeError('O site ainda não está pronto. Executa ./nexoplan logs.')
+        except (urllib.error.URLError, TimeoutError, ValueError) as error:
+            raise RuntimeError('Não foi possível confirmar o arranque. Executa ./nexoplan logs.') from error
+    print(f'\nNexoPlan pronta: {url}\nPara parar: ./nexoplan parar', flush=True)
+    if open_site:
+        open_browser(url)
+
+
+def desktop_quote(value):
+    # Desktop Entry Exec não usa uma shell. O % deve ser escapado como %%.
+    return '"' + str(value).replace('\\', '\\\\').replace('"', '\\"').replace('`', '\\`').replace('$', '\\$').replace('%', '%%') + '"'
+
+
+def install_shortcut():
+    if not shutil.which('xdg-open'):
+        raise RuntimeError('O atalho requer um ambiente Linux com xdg-open.')
+    applications = Path(os.environ.get('XDG_DATA_HOME', str(Path.home() / '.local/share'))) / 'applications'
+    applications.mkdir(parents=True, exist_ok=True)
+    shortcut = applications / 'pt.nexoplan.local.desktop'
+    icon = ROOT / 'backend/src/main/resources/static/assets/brand.svg'
+    shortcut.write_text(
+        '[Desktop Entry]\nVersion=1.0\nType=Application\nName=NexoPlan\n'
+        'Comment=Iniciar e abrir o planeamento de vendas e operações\n'
+        f'Exec={desktop_quote(ROOT / "nexoplan")}\n'
+        f'Path={ROOT}\nIcon={icon}\nTerminal=true\n'
+        'Categories=Office;ProjectManagement;\nStartupNotify=false\n', encoding='utf-8'
+    )
+    shortcut.chmod(0o755)
+    updater = shutil.which('update-desktop-database')
+    if updater:
+        subprocess.run([updater, str(applications)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    print('Atalho instalado. Abre o menu de aplicações do Linux e pesquisa NexoPlan.')
+
+
+def main():
+    parser = argparse.ArgumentParser(description='Inicia e abre a NexoPlan com os dados locais existentes.')
+    parser.add_argument('comando', nargs='?', default='iniciar',
+                        choices=['iniciar', 'abrir', 'parar', 'estado', 'logs', 'instalar-atalho'])
+    parser.add_argument('--sem-navegador', action='store_true', help='iniciar sem abrir o navegador')
+    args = parser.parse_args()
+    if args.comando == 'instalar-atalho':
+        install_shortcut()
+        return
+    require_docker()
+    validate_local_setup()
+    if args.comando in ('iniciar', 'abrir'):
+        start(not args.sem_navegador)
+    elif args.comando == 'parar':
+        with operation_lock():
+            compose('stop', 'backend', 'db')
+        print('NexoPlan parada. Os dados foram conservados.')
+    elif args.comando == 'estado':
+        compose('ps', '-a')
+    elif args.comando == 'logs':
+        compose('logs', '--tail=100', '-f', 'backend', 'db')
+
+
+if __name__ == '__main__':
+    try:
+        main()
+    except KeyboardInterrupt:
+        print('\nComando interrompido. Consulta ./nexoplan estado para ver os serviços.', file=sys.stderr)
+        sys.exit(130)
+    except (RuntimeError, OSError, subprocess.CalledProcessError) as error:
+        print(f'\nNão foi possível concluir: {error}', file=sys.stderr)
+        print('Ajuda: ./nexoplan --help | Diagnóstico: ./nexoplan estado / ./nexoplan logs', file=sys.stderr)
+        sys.exit(1)

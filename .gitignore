@@ -2,6 +2,8 @@
 .env
 .env.*
 !.env.example
+compose.override.yaml
+.nexoplan-local.json
 tmp/
 backups/
 *.sql.gz

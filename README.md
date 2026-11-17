@@ -6,17 +6,49 @@ O Spring Boot serve a interface e a API REST. O MySQL guarda os dados de planeam
 
 ## Iniciar localmente
 
-Na raiz do repositório, com Docker e Docker Compose disponíveis:
+Requer Docker com Docker Compose e Python 3. Na pasta do projeto, executa:
+
+```bash
+./nexoplan
+```
+
+O comando compila as alterações, inicia o MySQL e o backend, espera que estejam
+prontos e abre o site no navegador. Podes repeti-lo mesmo com os serviços iniciados.
+A primeira compilação pode demorar mais. Não precisas de abrir o VS Code para usar o site.
+
+Para teres uma entrada no menu de aplicações do Linux, instala o atalho uma vez:
+
+```bash
+./nexoplan instalar-atalho
+```
+
+Depois, pesquisa **NexoPlan** no menu de aplicações. O atalho inicia os serviços e
+abre o site. Se mudares a pasta do projeto, volta a instalar o atalho.
+
+Outros comandos:
+
+```bash
+./nexoplan parar             # Para os serviços e conserva os dados
+./nexoplan estado            # Mostra o estado dos serviços
+./nexoplan logs              # Acompanha as mensagens de diagnóstico (Ctrl+C para sair)
+./nexoplan --sem-navegador    # Inicia sem abrir o navegador
+```
+
+O endereço habitual é [http://127.0.0.1:8080](http://127.0.0.1:8080). O lançador
+deteta a porta configurada e mostra o endereço correto no terminal.
+
+### Primeira instalação
+
+Numa máquina nova, prepara primeiro a configuração local:
 
 ```bash
 cp -n .env.example .env
 ```
 
-Define `MYSQL_PASSWORD` e `MYSQL_ROOT_PASSWORD` em `.env` e inicia os serviços:
+Define `MYSQL_PASSWORD` e `MYSQL_ROOT_PASSWORD` em `.env` e inicia:
 
 ```bash
-docker compose up -d --build --wait
-curl --fail http://localhost:8080/actuator/health
+./nexoplan
 ```
 
 Numa instalação nova, cria a primeira conta de administrador:
@@ -25,14 +57,14 @@ Numa instalação nova, cria a primeira conta de administrador:
 bash scripts/criar_admin.sh
 ```
 
-Abre [http://localhost:8080](http://localhost:8080) e entra com essa conta. As portas locais podem ser configuradas com `BACKEND_PORT` e `MYSQL_PORT` em `.env`.
-
-```bash
-docker compose logs --tail=100 backend
-docker compose stop
-```
-
-O comando `stop` conserva os dados nos volumes Docker.
+Entra no site com essa conta. As portas locais podem ser configuradas com
+`BACKEND_PORT` e `MYSQL_PORT` em `.env`. Uma instalação com volumes ou credenciais
+locais próprios pode usar `compose.override.yaml`, que o Compose carrega
+automaticamente e que fica fora do Git. Conserva esse ficheiro juntamente com a
+configuração privada da máquina. O arranque não cria contas nem importa dados.
+Se existir `.nexoplan-local.json`, conserva-o com o override: o lançador usa-o para
+confirmar que está a abrir os volumes corretos e recusa o arranque se a configuração
+esperada desaparecer.
 
 ## Desenvolver e testar
 
@@ -72,5 +104,5 @@ As [migrações SQL](backend/src/main/resources/db/migration/) são a fonte do e
 - [Arquitetura e modelo relacional](docs/arquitetura.md), [autenticação](docs/autenticacao.md) e [catálogo](docs/catalogo.md).
 - [Importação CSV](docs/importacao-historicos.md), [Média Móvel](docs/previsao-media-movel.md), [ETS](docs/previsao-ets.md) e [comparação de modelos](docs/backtesting.md).
 - [Cenários e ajustes](docs/cenarios-ajustes.md), [aprovação e publicação](docs/aprovacao-publicacao.md) e [monitorização](docs/monitorizacao.md).
-- [Dados de demonstração](docs/dados-demonstracao.md), [backup e restauro](docs/backup-restauro.md) e [plano de adoção](docs/plano-adocao.md).
+- [Dados de demonstração](docs/dados-demonstracao.md), [simulação de uma empresa NexoPlan](docs/simulacao-empresa.md), [backup e restauro](docs/backup-restauro.md) e [plano de adoção](docs/plano-adocao.md).
 - [Validação funcional](docs/validacao-piloto.md), [desempenho](docs/desempenho.md) e [protocolo de usabilidade](docs/usabilidade.md).
