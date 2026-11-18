@@ -1,0 +1,122 @@
+[
+  {
+    "codigo": "NX-001",
+    "nome": "Arroz agulha 1 kg",
+    "unidade": "un"
+  },
+  {
+    "codigo": "NX-002",
+    "nome": "Massa esparguete 500 g",
+    "unidade": "un"
+  },
+  {
+    "codigo": "NX-003",
+    "nome": "Água mineral 1,5 L",
+    "unidade": "un"
+  },
+  {
+    "codigo": "NX-004",
+    "nome": "Erva-cidreira 20 saquetas",
+    "unidade": "un"
+  },
+  {
+    "codigo": "NX-005",
+    "nome": "Bolachas de aveia 200 g",
+    "unidade": "un"
+  },
+  {
+    "codigo": "NX-006",
+    "nome": "Leite meio-gordo 1 L",
+    "unidade": "un"
+  },
+  {
+    "codigo": "NX-007",
+    "nome": "Atum ao natural 120 g",
+    "unidade": "un"
+  },
+  {
+    "codigo": "NX-008",
+    "nome": "Sumo de laranja 1 L",
+    "unidade": "un"
+  },
+  {
+    "codigo": "NX-009",
+    "nome": "Guardanapos festivos 50 folhas",
+    "unidade": "un"
+  },
+  {
+    "codigo": "NX-010",
+    "nome": "Detergente da loiça 750 ml",
+    "unidade": "un"
+  },
+  {
+    "codigo": "NX-011",
+    "nome": "Feijão encarnado 540 g",
+    "unidade": "un"
+  },
+  {
+    "codigo": "NX-012",
+    "nome": "Café moído 250 g",
+    "unidade": "un"
+  },
+  {
+    "codigo": "NX-013",
+    "nome": "Papel de cozinha 2 rolos",
+    "unidade": "un"
+  },
+  {
+    "codigo": "NX-014",
+    "nome": "Cobertura de chocolate a granel",
+    "unidade": "kg"
+  },
+  {
+    "codigo": "NX-015",
+    "nome": "Azeite virgem extra 750 ml",
+    "unidade": "un"
+  },
+  {
+    "codigo": "NX-016",
+    "nome": "Açúcar branco a granel",
+    "unidade": "kg"
+  },
+  {
+    "codigo": "NX-017",
+    "nome": "Farinha de trigo a granel",
+    "unidade": "kg"
+  },
+  {
+    "codigo": "NX-018",
+    "nome": "Detergente multiusos a granel",
+    "unidade": "L"
+  },
+  {
+    "codigo": "NX-019",
+    "nome": "Ambientador recarga 250 ml",
+    "unidade": "un"
+  },
+  {
+    "codigo": "NX-020",
+    "nome": "Cereais de pequeno-almoço 375 g",
+    "unidade": "un"
+  },
+  {
+    "codigo": "NX-021",
+    "nome": "Sabonete líquido recarga 500 ml",
+    "unidade": "un"
+  },
+  {
+    "codigo": "NX-022",
+    "nome": "Óleo alimentar a granel",
+    "unidade": "L"
+  },
+  {
+    "codigo": "NX-023",
+    "nome": "Água com gás 1 L",
+    "unidade": "un"
+  },
+  {
+    "codigo": "NX-024",
+    "nome": "Chá de menta 20 saquetas",
+    "unidade": "un"
+  }
+]

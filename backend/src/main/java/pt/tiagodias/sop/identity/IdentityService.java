@@ -1,34 +1,58 @@
 package pt.tiagodias.sop.identity;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import pt.tiagodias.sop.scenarios.ScenarioDtos.Pagina;
+import pt.tiagodias.sop.shared.SearchPage;
 
 @Service
 public class IdentityService {
     private final UtilizadorRepository repository;
     private final PasswordEncoder encoder;
-    private final org.springframework.jdbc.core.JdbcTemplate jdbc;
+    private final JdbcTemplate jdbc;
+    private final AccountProfileService profile;
 
-    public IdentityService(UtilizadorRepository repository, PasswordEncoder encoder, org.springframework.jdbc.core.JdbcTemplate jdbc) {
+    public IdentityService(UtilizadorRepository repository, PasswordEncoder encoder,
+                           JdbcTemplate jdbc, AccountProfileService profile) {
         this.repository = repository;
-        this.encoder = encoder;this.jdbc=jdbc;
+        this.encoder = encoder;
+        this.jdbc = jdbc;
+        this.profile = profile;
     }
 
-    @Transactional(readOnly=true)
-    public pt.tiagodias.sop.scenarios.ScenarioDtos.Pagina<UtilizadorDto> list(int page,int size) {
-        var result=pt.tiagodias.sop.shared.SearchPage.page(jdbc,
-                "SELECT u.id,u.nome,u.email,u.ativo,u.versao_acesso,u.password_definida,(SELECT GROUP_CONCAT(papel ORDER BY papel) FROM utilizador_papel WHERE utilizador_id=u.id) papeis FROM utilizador u",
-                "nome,id",(rs,n)->new UtilizadorDto(rs.getString("id"),rs.getString("nome"),rs.getString("email"),
-                    java.util.Arrays.stream(rs.getString("papeis").split(",")).map(Papel::valueOf).collect(java.util.stream.Collectors.toSet()),rs.getBoolean("ativo"),rs.getLong("versao_acesso"),rs.getBoolean("password_definida")),
-                page,size,"id,nome,email,papeis,REPLACE(papeis,'ADMIN','Administrador'),IF(NOT ativo,'Inativo',IF(password_definida,'Ativo','Por ativar'))",null);
-        return new pt.tiagodias.sop.scenarios.ScenarioDtos.Pagina<>(result.items(),page,size,result.total(),result.pages());
+    @Transactional(readOnly = true)
+    public Pagina<UtilizadorDto> list(int page, int size) {
+        var result = SearchPage.page(jdbc,
+                """
+                SELECT u.id,u.nome,u.email,u.ativo,u.versao_acesso,u.password_definida,
+                       (SELECT GROUP_CONCAT(papel ORDER BY papel) FROM utilizador_papel WHERE utilizador_id=u.id) papeis,
+                       EXISTS (SELECT 1 FROM foto_perfil WHERE utilizador_id=u.id) tem_foto
+                FROM utilizador u
+                """,
+                "nome,id", (rs, row) -> new UtilizadorDto(
+                        rs.getString("id"), rs.getString("nome"), rs.getString("email"),
+                        Arrays.stream(rs.getString("papeis").split(",")).map(Papel::valueOf).collect(Collectors.toSet()),
+                        rs.getBoolean("ativo"), rs.getLong("versao_acesso"), rs.getBoolean("password_definida"),
+                        rs.getBoolean("tem_foto")),
+                page, size, "id,nome,email,papeis,REPLACE(papeis,'ADMIN','Administrador'),"
+                        + "IF(NOT ativo,'Inativo',IF(password_definida,'Ativo','Por ativar'))", null);
+        return new Pagina<>(result.items(), page, size, result.total(), result.pages());
+    }
+
+    @Transactional(readOnly = true)
+    public UtilizadorDto get(long id) {
+        return repository.findById(id).map(user -> dto(user, profile.hasPhoto(id)))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Utilizador não encontrado."));
     }
 
     public static String normalizeEmail(String email) { return email.strip().toLowerCase(Locale.ROOT); }
@@ -47,7 +71,7 @@ public class IdentityService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "O email já está registado.");
         }
         var user = repository.saveAndFlush(new Utilizador(nome.strip(), normalized, encoder.encode(password), papeis));
-        return dto(user);
+        return dto(user, false);
     }
 
     @Transactional
@@ -61,7 +85,7 @@ public class IdentityService {
         var user = new Utilizador(nome.strip(), normalized,
                 encoder.encode(java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(random)), papeis);
         user.pendenteAtivacao();
-        return dto(repository.saveAndFlush(user));
+        return dto(repository.saveAndFlush(user), false);
     }
 
     @Transactional(isolation = Isolation.SERIALIZABLE)
@@ -90,19 +114,21 @@ public class IdentityService {
         if (user.getVersao() != versaoEsperada) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "A conta foi alterada. Fecha esta janela e consulta novamente o utilizador.");
         }
-        if (user.isAtivo() == ativo) return dto(user);
+        if (user.isAtivo() == ativo) return dto(user, profile.hasPhoto(id));
         boolean anterior = user.isAtivo();
         user.setAtivo(ativo);
         repository.flush();
         if (!ativo) jdbc.update("UPDATE convite_utilizador SET revogado_em=UTC_TIMESTAMP(6) WHERE utilizador_id=? AND usado_em IS NULL AND revogado_em IS NULL", id);
         jdbc.update("INSERT INTO evento_estado_utilizador(utilizador_id,alterado_por,ativo_anterior,ativo_novo) VALUES (?,?,?,?)",
                 id, actor.getId(), anterior, ativo);
-        return dto(user);
+        return dto(user, profile.hasPhoto(id));
     }
 
-    public static UtilizadorDto dto(Utilizador user) {
-        return new UtilizadorDto(user.getId().toString(), user.getNome(), user.getEmail(), user.getPapeis(), user.isAtivo(), user.getVersao(), user.isPasswordDefinida());
+    private static UtilizadorDto dto(Utilizador user, boolean temFoto) {
+        return new UtilizadorDto(user.getId().toString(), user.getNome(), user.getEmail(), user.getPapeis(),
+                user.isAtivo(), user.getVersao(), user.isPasswordDefinida(), temFoto);
     }
 
-    public record UtilizadorDto(String id, String nome, String email, Set<Papel> papeis, boolean ativo, long versao, boolean passwordDefinida) {}
+    public record UtilizadorDto(String id, String nome, String email, Set<Papel> papeis, boolean ativo,
+                                long versao, boolean passwordDefinida, boolean temFoto) {}
 }

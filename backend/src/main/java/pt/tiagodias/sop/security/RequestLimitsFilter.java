@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
+import java.util.regex.Pattern;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import org.springframework.http.MediaType;
@@ -15,7 +16,10 @@ import org.springframework.web.filter.OncePerRequestFilter;
 final class RequestLimitsFilter extends OncePerRequestFilter {
     static final int MAX_JSON_BYTES = 64 * 1024;
     private static final Set<String> EXPENSIVE_POSTS = Set.of(
-            "/api/v1/lotes", "/api/v1/backtests", "/api/v1/execucoes-previsao", "/api/v1/avaliacoes");
+            "/api/v1/lotes", "/api/v1/backtests", "/api/v1/execucoes-previsao", "/api/v1/avaliacoes",
+            "/api/v1/cenarios", "/api/v1/utilizadores");
+    private static final Pattern EXPENSIVE_TRANSITIONS = Pattern.compile(
+            "/api/v1/(?:cenarios/[0-9]+/revisoes|revisoes/[0-9]+/aprovacao)");
     private final Semaphore operations = new Semaphore(2);
     private final Set<String> activeAccounts = ConcurrentHashMap.newKeySet();
 
@@ -24,16 +28,15 @@ final class RequestLimitsFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         HttpServletRequest bounded = request;
         String contentType = request.getContentType();
-        boolean json;
+        MediaType media;
         try {
-            MediaType media = contentType == null ? null : MediaType.parseMediaType(contentType);
-            json = media != null && media.getType().equalsIgnoreCase("application")
-                    && (media.getSubtype().equalsIgnoreCase("json") || media.getSubtype().toLowerCase(java.util.Locale.ROOT).endsWith("+json"));
+            media = contentType == null ? null : MediaType.parseMediaType(contentType);
         } catch (org.springframework.http.InvalidMediaTypeException invalid) {
             SecurityErrors.write(response, 415, "INVALID_CONTENT_TYPE", "Tipo de conteúdo inválido.");
             return;
         }
-        if (json) {
+        if (media != null && media.getType().equalsIgnoreCase("application")
+                && (media.getSubtype().equalsIgnoreCase("json") || media.getSubtype().toLowerCase(java.util.Locale.ROOT).endsWith("+json"))) {
             if (request.getContentLengthLong() > MAX_JSON_BYTES) {
                 tooLarge(response);
                 return;
@@ -47,9 +50,17 @@ final class RequestLimitsFilter extends OncePerRequestFilter {
         }
         String path = request.getServletPath();
         String method = request.getMethod();
-        boolean expensive = ("POST".equals(method) && EXPENSIVE_POSTS.contains(path))
+        boolean catalogUpload = media != null && MediaType.MULTIPART_FORM_DATA.includes(media)
+                && (("POST".equals(method) && "/api/v1/produtos".equals(path))
+                || ("PATCH".equals(method) && path.startsWith("/api/v1/produtos/")));
+        if (catalogUpload && request.getContentLengthLong() > PhotoUpload.MAX_BYTES + 2 * MAX_JSON_BYTES) {
+            SecurityErrors.write(response, 413, "UPLOAD_TOO_LARGE", "A foto aceita até 2 MiB.");
+            return;
+        }
+        boolean expensive = ("POST".equals(method) && (EXPENSIVE_POSTS.contains(path)
+                || EXPENSIVE_TRANSITIONS.matcher(path).matches()))
                 || ("PUT".equals(method) && "/api/v1/auth/foto".equals(path))
-                || ("PATCH".equals(method) && "/api/v1/auth/password".equals(path));
+                || ("PATCH".equals(method) && "/api/v1/auth/password".equals(path)) || catalogUpload;
         if (!expensive) {
             chain.doFilter(bounded, response);
             return;

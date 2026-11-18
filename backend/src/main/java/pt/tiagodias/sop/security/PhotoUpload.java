@@ -15,15 +15,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
-final class ProfilePhoto {
-    private static final long MAX_BYTES = 2 * 1024 * 1024;
+public final class PhotoUpload {
+    static final long MAX_BYTES = 2 * 1024 * 1024;
     private static final int MAX_INPUT_SIDE = 4096;
     private static final int OUTPUT_SIDE = 256;
     private static final Set<String> FORMATS = Set.of("jpeg", "png");
 
-    private ProfilePhoto() {}
+    private PhotoUpload() {}
 
-    static byte[] normalize(MultipartFile file) {
+    public static byte[] normalize(MultipartFile file) {
         if (file.isEmpty()) {
             throw invalid("Escolhe uma imagem JPEG ou PNG.");
         }

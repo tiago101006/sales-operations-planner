@@ -17,6 +17,8 @@ public class Produto {
     private boolean ativo = true;
     @Version @Column(name = "versao_lock", nullable = false)
     private Long versao;
+    @Column(name = "revisao_foto", nullable = false)
+    private long revisaoFoto;
 
     protected Produto() {}
 
@@ -32,6 +34,11 @@ public class Produto {
     public String getUnidade() { return unidade; }
     public boolean isAtivo() { return ativo; }
     public Long getVersao() { return versao; }
+    public boolean temFoto() { return revisaoFoto > 0; }
+
+    // Dirty tracking advances the product version on photo-only edits too.
+    void marcarNovaFoto() { revisaoFoto++; }
+    void limparFoto() { revisaoFoto = 0; }
 
     void update(String codigo, String nome, String unidade, Boolean ativo) {
         if (codigo != null) { this.codigo = codigo; }

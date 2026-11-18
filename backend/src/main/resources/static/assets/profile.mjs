@@ -1,15 +1,11 @@
-import { esc, field, input, label, button } from './ui.mjs';
+import { esc, field, input, label, button, initials } from './ui.mjs';
 
 export function accountAvatar(user, revision, large = false) {
-  const words = user.nome.trim().split(/\s+/);
-  const first = [...words[0]][0] || '';
-  const last = words.length > 1 ? [...words.at(-1)][0] : '';
-  const initials = (first + last).toLocaleUpperCase('pt-PT');
   const photo = user.temFoto
     ? `<img src="/api/v1/auth/foto?v=${esc(revision)}" alt="${large ? 'Foto de perfil' : ''}" data-profile-photo>`
     : '';
   return `<span class="avatar${large ? ' profile-avatar' : ''}" data-account-avatar>
-    <span aria-hidden="true">${esc(initials)}</span>${photo}
+    <span aria-hidden="true">${esc(initials(user.nome))}</span>${photo}
   </span>`;
 }
 
@@ -36,7 +32,7 @@ export function accountPage(user, revision) {
       <section class="panel profile-card" aria-labelledby="account-photo-title">
         <div class="panel-head"><h2 id="account-photo-title">Foto de perfil</h2></div>
         <form id="account-photo-form" class="profile-form">
-          <p class="profile-help">A fotografia aparece junto ao teu nome no cabeçalho.</p>
+          <p class="profile-help">A fotografia aparece no cabeçalho e na lista da Equipa, consultada por administradores.</p>
           <div class="profile-photo-fields">
             ${field('Fotografia', '<input name="foto" type="file" accept="image/jpeg,image/png" required>', 'JPEG ou PNG, até 2 MB e 4096 × 4096 px.')}
           </div>

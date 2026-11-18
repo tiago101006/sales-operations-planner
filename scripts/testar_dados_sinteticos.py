@@ -59,7 +59,17 @@ def prepare(request):
         else: raise AssertionError('Intervalo inválido aceite')
     team = request('GET', '/api/v1/utilizadores?busca=admin')
     assert team['totalElements'] == 1
-    assert set(team['items'][0]) == {'id', 'nome', 'email', 'papeis'}
+    user = team['items'][0]
+    # Contrato público: apenas metadados; hashes, tokens e bytes da fotografia
+    # não podem surgir na listagem nem na consulta individual da equipa.
+    public_user_fields = {'id', 'nome', 'email', 'papeis', 'ativo', 'versao', 'passwordDefinida', 'temFoto'}
+    assert set(user) == public_user_fields, 'Campos inesperados no contrato público do utilizador'
+    assert all(isinstance(user[key], str) and user[key].strip() for key in ['id', 'nome', 'email'])
+    assert user['id'].isdigit() and int(user['id']) > 0
+    assert user['papeis'] == ['ADMIN']
+    assert all(type(user[key]) is bool for key in ['ativo', 'passwordDefinida', 'temFoto'])
+    assert type(user['versao']) is int and user['versao'] >= 0
+    assert request('GET', '/api/v1/utilizadores/' + user['id']) == user
     now = datetime.now(timezone.utc).isoformat()
     executions = {}
     for method, params in [('MEDIA_MOVEL', {'janela': 3, 'multiplosPassos': 'RECURSIVO'}), ('ETS', {'variante': 'AAN', 'historicoMeses': 24, 'recurso': 'SEM_RECURSO'})]:

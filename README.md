@@ -84,6 +84,18 @@ python3 scripts/testar_interface.py
 
 O ensaio Playwright usa uma instância isolada da aplicação e uma base de dados temporária. Consulta o [guia de testes da interface](docs/interface-web.md) para usar o Chrome local ou configurar outro executável.
 
+O [workflow de CI](.github/workflows/ci.yml) repete os testes do backend e da
+interface, as salvaguardas de backup e a validação dos dados sintéticos em pushes
+e pull requests para `main`. Os ensaios usam bases temporárias e não requerem
+credenciais da instalação local.
+
+A [validação técnica de 18 de novembro](docs/validacao-tecnica-2026-11-18.md)
+regista o âmbito, resultados e limitações da revisão. O
+[notebook de validação numérica](output/jupyter-notebook/README.md) compara os
+motores Java com referências independentes; o
+[modelo de ameaças](docs/security/sales-operations-planner-threat-model.md)
+distingue o uso local da eventual publicação na Internet.
+
 ## Estrutura
 
 | Pasta | Conteúdo |

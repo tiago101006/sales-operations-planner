@@ -96,6 +96,7 @@ public class SecurityConfiguration {
                             .hasAnyRole("ADMIN", "PLANEADOR", "COMERCIAL", "APROVADOR", "CONSUMIDOR")
                         .requestMatchers(HttpMethod.POST, "/api/v1/produtos").hasAnyRole("ADMIN", "PLANEADOR")
                         .requestMatchers(HttpMethod.PATCH, "/api/v1/produtos/*").hasAnyRole("ADMIN", "PLANEADOR")
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/produtos/*").hasRole("ADMIN")
                         .requestMatchers("/api/v1/produtos", "/api/v1/produtos/**").denyAll()
                         .anyRequest().denyAll())
                 .exceptionHandling(errors -> errors

@@ -62,8 +62,9 @@ Não existe registo público de contas. As restantes contas são criadas por ADM
 | `POST /api/v1/utilizadores` | ADMIN + CSRF | HTTP 201, conta por ativar e convite |
 | `POST /api/v1/utilizadores/{id}/convites` | ADMIN + CSRF | Novo convite para uma conta por ativar. Exige `versaoEsperada` |
 | `POST /api/v1/auth/ativacao` | Convite + CSRF | HTTP 204, password definida |
-| `GET /api/v1/utilizadores?busca=texto&page=0&size=50` | ADMIN | Lista paginada de ID, nome, email e perfis; sem credenciais |
-| `GET /api/v1/utilizadores/{id}` | ADMIN | DTO com estado e versão da conta ou 404 |
+| `GET /api/v1/utilizadores?busca=texto&page=0&size=50` | ADMIN | Lista paginada com ID, nome, email, perfis e indicador `temFoto` |
+| `GET /api/v1/utilizadores/{id}` | ADMIN | DTO com estado, versão da conta e `temFoto` ou 404 |
+| `GET /api/v1/utilizadores/{id}/foto` | ADMIN | JPEG da foto de perfil do membro ou 404. Resposta sem cache |
 | `PATCH /api/v1/utilizadores/{id}/estado` | ADMIN + CSRF | Desativa/reativa; exige `ativo` e `versaoEsperada` |
 
 Os endpoints de estado e saúde são públicos. As rotas de gestão de utilizadores exigem ADMIN.
@@ -123,9 +124,13 @@ desativada ou por ativar produzem a mesma mensagem de login. Erros não incluem 
 
 ## Gestão da própria conta
 
-Os endpoints de foto e palavra-passe usam a conta da sessão. A foto aceita JPEG
+Os endpoints em `/api/v1/auth` para foto e palavra-passe usam a conta da sessão. A foto aceita JPEG
 ou PNG até 2 MiB e 4096 × 4096 píxeis. O servidor guarda a imagem como JPEG,
 com no máximo 256 × 256 píxeis.
+
+Na Equipa, o administrador vê essa mesma foto junto ao nome. Quando não há foto,
+a tabela mostra as iniciais. Cada pessoa adiciona, troca ou remove a sua foto na
+página «A minha conta».
 
 A alteração da palavra-passe exige `passwordAtual`, `novaPassword` e `confirmacao`.
 Após verificar a palavra-passe atual, o servidor guarda o hash da nova e

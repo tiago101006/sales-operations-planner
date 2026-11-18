@@ -397,6 +397,41 @@ class AuthenticationTests {
         assertThat(json.readTree(owner.request("GET", "/api/v1/auth/me", null, false).body()).get("temFoto").asBoolean()).isFalse();
     }
 
+    @Test
+    void administratorCanReadTeamAvatarsButOtherAccountsCannot() throws Exception {
+        var account = users.create("Membro com avatar", "team-photo@example.test", PASSWORD, Set.of(Papel.PLANEADOR));
+        var owner = new Browser();
+        var admin = new Browser();
+        assertThat(owner.login(account.email(), PASSWORD).statusCode()).isEqualTo(200);
+        assertThat(admin.login("admin@example.test", PASSWORD).statusCode()).isEqualTo(200);
+        owner.csrf();
+        String userPath = "/api/v1/utilizadores/" + account.id();
+        String avatarPath = userPath + "/foto";
+        String listPath = "/api/v1/utilizadores?busca=%23" + account.id();
+        assertThat(admin.photo(avatarPath).statusCode()).isEqualTo(404);
+        assertThat(admin.request("GET", userPath, null, false).body()).contains("\"temFoto\":false");
+
+        assertThat(owner.uploadPhoto("image/png", samplePhoto(0x336622, "png"), true).statusCode()).isEqualTo(204);
+        var list = admin.request("GET", listPath, null, false);
+        assertThat(list.statusCode()).isEqualTo(200);
+        var member = json.readTree(list.body()).get("items").get(0);
+        assertThat(member.get("id").asText()).isEqualTo(account.id());
+        assertThat(member.get("temFoto").asBoolean()).isTrue();
+        assertThat(list.body()).doesNotContain("\"imagem\":", "\"passwordHash\":");
+        assertThat(admin.request("GET", userPath, null, false).body()).contains("\"temFoto\":true");
+        var avatar = admin.photo(avatarPath);
+        assertThat(avatar.statusCode()).isEqualTo(200);
+        assertThat(avatar.body()).isEqualTo(owner.photo("/api/v1/auth/foto").body());
+        assertThat(avatar.headers().firstValue("Content-Type")).hasValue("image/jpeg");
+        assertThat(avatar.headers().firstValue("Cache-Control").orElse("")).contains("no-store");
+        assertThat(new Browser().photo(avatarPath).statusCode()).isEqualTo(401);
+        assertThat(owner.photo(avatarPath).statusCode()).isEqualTo(403);
+
+        assertThat(owner.request("DELETE", "/api/v1/auth/foto", null, true).statusCode()).isEqualTo(204);
+        assertThat(admin.photo(avatarPath).statusCode()).isEqualTo(404);
+        assertThat(admin.request("GET", listPath, null, false).body()).contains("\"temFoto\":false");
+    }
+
     private static byte[] samplePhoto(int color, String format) throws Exception {
         var image = new BufferedImage(320, 200, BufferedImage.TYPE_INT_RGB);
         var graphics = image.createGraphics();

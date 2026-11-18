@@ -57,7 +57,7 @@ public class OwnAccountController {
     public ResponseEntity<Void> savePhoto(@RequestPart("foto") MultipartFile file, Authentication auth,
                                            HttpServletRequest request) {
         long sessionVersion = version(request);
-        profile.savePhoto(auth.getName(), sessionVersion, ProfilePhoto.normalize(file));
+        profile.savePhoto(auth.getName(), sessionVersion, PhotoUpload.normalize(file));
         return ResponseEntity.noContent().build();
     }
 

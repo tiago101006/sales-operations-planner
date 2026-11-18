@@ -1,0 +1,78 @@
+name: NexoPlan CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Backend e interface
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      TZ: UTC
+    steps:
+      - name: Obter código
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Preparar Java 17
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+          cache-dependency-path: backend/pom.xml
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend-tests/package-lock.json
+
+      - name: Preparar Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.12'
+
+      - name: Verificar Docker para as bases temporárias
+        run: docker info > /dev/null
+
+      - name: Compilar e testar o backend com MySQL temporário
+        working-directory: backend
+        run: ./mvnw -B -Dspring.test.context.cache.maxSize=2 verify
+
+      - name: Instalar dependências dos testes da interface
+        working-directory: frontend-tests
+        run: npm ci
+
+      - name: Executar testes unitários da interface
+        working-directory: frontend-tests
+        run: npm test
+
+      - name: Verificar salvaguardas de backup e restauro
+        run: python3 -m unittest discover -s scripts -p test_backup.py
+
+      - name: Validar dados sintéticos e previsões na API isolada
+        run: python3 scripts/testar_dados_sinteticos.py
+
+      - name: Instalar Chromium e dependências do sistema
+        working-directory: frontend-tests
+        run: npx playwright install --with-deps chromium
+
+      - name: Testar os fluxos no navegador com aplicação e MySQL temporários
+        run: |
+          chromium_path="$(node -p "require('./frontend-tests/node_modules/playwright').chromium.executablePath()")"
+          SOP_UI_CHROME_PATH="$chromium_path" python3 scripts/testar_interface.py

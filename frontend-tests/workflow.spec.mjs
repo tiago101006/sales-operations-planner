@@ -352,8 +352,8 @@ test('percurso completo com APIs reais, auditoria, aprovação independente e mo
     await modal(page).getByRole('button', { name: 'Criar cenário', exact: true }).click();
     const created = await (await response).json();scenarioId = created.cenario.id;revisionId = created.revisao.id;
     await expect(page).toHaveURL(new RegExp('#/revisao/' + revisionId + '$'));
-    await expect(page.locator('.page-heading .eyebrow')).toHaveText('Revisão #' + revisionId);
-    await expect(page.locator('.page-heading p')).toContainText('1.ª versão deste cenário');
+    await expect(page.locator('.page-heading .heading-reference')).toHaveText('Revisão #' + revisionId);
+    await expect(page.locator('.page-heading .heading-context')).toContainText('1.ª versão deste cenário');
     await expect(page.locator('.detail-meta')).toContainText('1,10');
     await expect(scenarioHelp).toHaveCount(0);
     await page.getByRole('button', { name: 'Novo cenário', exact: true }).click();
@@ -391,8 +391,8 @@ test('percurso completo com APIs reais, auditoria, aprovação independente e mo
     revisionId = (await (await response).json()).id;
     await expect(page).toHaveURL(new RegExp('#/revisao/' + revisionId + '$'));
     await expect(page.getByRole('link', { name: /Herdado/ })).toBeVisible();
-    await expect(page.locator('.page-heading .eyebrow')).toHaveText('Revisão #' + revisionId);
-    await expect(page.locator('.page-heading p')).toContainText('2.ª versão deste cenário');
+    await expect(page.locator('.page-heading .heading-reference')).toHaveText('Revisão #' + revisionId);
+    await expect(page.locator('.page-heading .heading-context')).toContainText('2.ª versão deste cenário');
     await page.getByRole('link', { name: 'Histórico de revisões deste cenário', exact: true }).click();
     await expect(page).toHaveURL(new RegExp('#/cenario/' + scenarioId + '\\?revisaoId=' + revisionId + '$'));
     await expect(page.getByRole('heading', { name: 'Histórico de revisões', exact: true })).toBeVisible();
@@ -773,4 +773,312 @@ test('login móvel e navegação por teclado sem deslocação horizontal', async
   await page.getByRole('button', { name: 'Novo produto', exact: true }).click();
   await expect(page.getByRole('dialog')).toBeVisible();await page.keyboard.press('Escape');await expect(page.getByRole('dialog')).not.toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+});
+
+test('fotos opcionais no catálogo e avatares de perfil na equipa', async ({ page, context }) => {
+  const photo = async (name, color, product = false) => {
+    const buffer = await page.evaluate(({ color, product }) => {
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = 96;
+      const image = canvas.getContext('2d');
+      image.fillStyle = '#ede9dc';
+      image.fillRect(0, 0, 96, 96);
+      image.fillStyle = color;
+      if (product) {
+        image.fillRect(39, 13, 18, 11);
+        image.beginPath();
+        image.roundRect(29, 24, 38, 57, 7);
+        image.fill();
+        image.fillStyle = '#faf7eb';
+        image.fillRect(29, 46, 38, 17);
+      } else {
+        image.beginPath();
+        image.arc(48, 33, 15, 0, 2 * Math.PI);
+        image.ellipse(48, 72, 26, 22, 0, 0, 2 * Math.PI);
+        image.fill();
+      }
+      return canvas.toDataURL('image/png').split(',')[1];
+    }, { color, product });
+    return { name, mimeType: 'image/png', buffer: Buffer.from(buffer, 'base64') };
+  };
+  const loaded = async image => {
+    await expect(image).toBeVisible();
+    await expect.poll(() => image.evaluate(el => el.naturalWidth)).toBeGreaterThan(0);
+  };
+
+  await page.goto('/');
+  await login(page, 'admin@ui.test');
+  await test.step('criação e edição de produtos com e sem foto', async () => {
+    await page.getByRole('link', { name: 'Produtos', exact: true }).click();
+    const search = page.locator('#product-search');
+    const filterExamples = async () => {
+      await search.getByLabel('Procurar no catálogo', { exact: true }).fill('UI_FOTO');
+      await search.getByRole('button', { name: 'Pesquisar', exact: true }).click();
+    };
+    await filterExamples();
+    const productForm = modal(page);
+    const save = productForm.getByRole('button', { name: 'Guardar produto', exact: true });
+    const photoField = productForm.getByLabel('Foto do produto', { exact: true });
+    const row = code => page.getByRole('row').filter({ has: page.getByText(code, { exact: true }) });
+    const create = async (code, name, file) => {
+      await page.getByRole('button', { name: 'Novo produto', exact: true }).click();
+      await productForm.getByLabel('Código', { exact: true }).fill(code);
+      await productForm.getByLabel('Nome do produto', { exact: true }).fill(name);
+      if (file) await photoField.setInputFiles(file);
+      const created = postResponse(page, '/produtos');
+      await save.click();
+      const response = await created;
+      expect(response.ok()).toBe(true);
+      await expect(productForm).toBeHidden();
+      await expect(row(code)).toBeVisible();
+      return response.json();
+    };
+    const withoutPhoto = await create('UI_FOTO_ACESSORIO', 'Tampa de substituição');
+    expect(withoutPhoto.temFoto).toBe(false);
+    await expect(row(withoutPhoto.codigo).locator('.product-thumbnail svg')).toBeVisible();
+    await expect(row(withoutPhoto.codigo).locator('.product-thumbnail img')).toHaveCount(0);
+
+    const first = await photo('garrafa-verde.png', '#285a46', true);
+    const replacement = await photo('garrafa-terracota.png', '#a6533d', true);
+    const product = await create('UI_FOTO_GARRAFA', 'Garrafa térmica 500 ml', first);
+    expect(product.temFoto).toBe(true);
+    const picturePath = '/api/v1/produtos/' + product.id + '/foto';
+    const productImage = row(product.codigo).locator('.product-thumbnail img');
+    await expect(productImage).toHaveAttribute('src', new RegExp('^' + picturePath + '(?:[?]|$)'));
+    await loaded(productImage);
+    const original = await (await context.request.get(picturePath)).body();
+
+    const edit = row(product.codigo).getByRole('button', { name: 'Editar', exact: true });
+    await edit.click();
+    await loaded(productForm.locator('img[src^="' + picturePath + '"]'));
+    await photoField.setInputFiles(replacement);
+    await save.click();
+    await expect(productForm).toBeHidden();
+    const updated = await context.request.get(picturePath);
+    expect(updated.ok()).toBe(true);
+    expect((await updated.body()).equals(original)).toBe(false);
+    await page.reload();
+    await filterExamples();
+    await loaded(productImage);
+    await page.screenshot({ path: '../tmp/ui-preview/produtos-fotos.png', fullPage: true });
+
+    await edit.click();
+    await productForm.getByLabel('Remover foto ao guardar', { exact: true }).check();
+    await save.click();
+    await expect(productForm).toBeHidden();
+    await expect(productImage).toHaveCount(0);
+    await expect(row(product.codigo).locator('.product-thumbnail svg')).toBeVisible();
+    expect((await context.request.get(picturePath)).status()).toBe(404);
+  });
+
+  await test.step('o administrador vê a foto de outro membro e as iniciais dos restantes', async () => {
+    await logout(page);
+    await login(page, 'approver@ui.test');
+    await page.getByRole('link', { name: 'A minha conta', exact: true }).click();
+    await page.getByLabel('Fotografia', { exact: true }).setInputFiles(await photo('perfil.png', '#285a46'));
+    const uploaded = page.waitForResponse(response =>
+      response.request().method() === 'PUT' && new URL(response.url()).pathname === '/api/v1/auth/foto');
+    await page.getByRole('button', { name: 'Guardar foto', exact: true }).click();
+    expect((await uploaded).status()).toBe(204);
+    const profile = await (await context.request.get('/api/v1/auth/me')).json();
+    const stored = await (await context.request.get('/api/v1/auth/foto')).body();
+    const picturePath = '/api/v1/utilizadores/' + profile.id + '/foto';
+    expect((await context.request.get(picturePath)).status()).toBe(403);
+
+    await logout(page);
+    await login(page, 'admin@ui.test');
+    await page.getByRole('link', { name: 'Equipa', exact: true }).click();
+    const members = email => page.getByRole('row').filter({ hasText: email }).locator('.member-avatar');
+    const profileImage = members('approver@ui.test').locator('img');
+    await expect(profileImage).toHaveAttribute('src', new RegExp('^' + picturePath + '(?:[?]|$)'));
+    await loaded(profileImage);
+    const adminResponse = await context.request.get(picturePath);
+    expect(adminResponse.ok()).toBe(true);
+    expect((await adminResponse.body()).equals(stored)).toBe(true);
+    const initials = members('commercial@ui.test');
+    await expect(initials).toBeVisible();
+    await expect(initials).toHaveText('C');
+    await expect(initials.locator('img')).toHaveCount(0);
+    await page.screenshot({ path: '../tmp/ui-preview/equipa-avatares.png', fullPage: true });
+  });
+});
+
+test('catálogo alterna entre lista e galeria mantendo a pesquisa', async ({ page, context }) => {
+  await page.goto('/');
+  await login(page, 'admin@ui.test');
+  const csrf = await (await context.request.get('/api/v1/auth/csrf')).json();
+  const photo = await page.evaluate(() => {
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = 180;
+    const drawing = canvas.getContext('2d');
+    drawing.fillStyle = '#f6f1e5';
+    drawing.fillRect(0, 0, 180, 180);
+    drawing.fillStyle = '#2a6049';
+    drawing.beginPath();
+    drawing.roundRect(61, 46, 58, 102, 12);
+    drawing.fill();
+    drawing.fillRect(73, 29, 34, 19);
+    drawing.fillStyle = '#e2d6b1';
+    drawing.fillRect(61, 84, 58, 34);
+    return canvas.toDataURL('image/png').split(',')[1];
+  });
+  for (let i = 1; i <= 14; i++) {
+    const codigo = 'UI_VISTA_' + String(i).padStart(2, '0');
+    const product = { codigo, nome: i === 1 ? 'Garrafa térmica 500 ml' : 'Artigo de ensaio ' + i, unidade: 'un' };
+    const headers = { [csrf.headerName]: csrf.token };
+    const response = i === 1
+      ? await context.request.post('/api/v1/produtos', { headers, multipart: {
+          produto: { name: 'produto.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(product)) },
+          foto: { name: 'garrafa.png', mimeType: 'image/png', buffer: Buffer.from(photo, 'base64') }
+        } })
+      : await context.request.post('/api/v1/produtos', { headers, data: product });
+    expect(response.status()).toBe(201);
+  }
+
+  await page.getByRole('link', { name: 'Produtos', exact: true }).click();
+  const toolbar = page.locator('#product-search');
+  const input = toolbar.getByRole('searchbox');
+  const search = toolbar.getByRole('button', { name: 'Pesquisar', exact: true });
+  const view = toolbar.getByRole('group', { name: 'Vista do catálogo' });
+  const list = view.getByRole('button', { name: 'Lista', exact: true });
+  const gallery = view.getByRole('button', { name: 'Galeria', exact: true });
+  const cards = page.locator('.product-gallery > li');
+  await expect(list).toHaveAttribute('aria-pressed', 'true');
+  await input.fill('UI_VISTA');
+  await gallery.press('Space');
+  await expect(gallery).toHaveAttribute('aria-pressed', 'true');
+  await expect(gallery).toBeFocused();
+  await expect(input).toHaveValue('UI_VISTA');
+  await expect(cards).toHaveCount(8);
+  await expect(page.locator('.pagination')).toContainText('14 registos · Página 1 de 2');
+  const bottle = cards.filter({ has: page.getByRole('heading', { name: 'Garrafa térmica 500 ml' }) });
+  await expect.poll(() => bottle.locator('img').evaluate(img => img.naturalWidth)).toBeGreaterThan(0);
+  await expect(cards.nth(1).getByText('Sem foto')).toBeVisible();
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await expect(cards.first()).toBeInViewport({ ratio: 1 });
+  await expect(cards.last()).toBeInViewport({ ratio: 1 });
+  await expect(page.locator('.pagination')).toBeInViewport({ ratio: 1 });
+  await expect.poll(() => cards.evaluateAll(items =>
+    new Set(items.map(item => item.getBoundingClientRect().top)).size
+  )).toBe(2);
+  await page.screenshot({ path: '../tmp/ui-preview/produtos-galeria.png' });
+
+  await page.getByRole('button', { name: 'Seguinte', exact: true }).click();
+  await expect(cards).toHaveCount(6);
+  await expect(page.locator('.pagination')).toContainText('Página 2 de 2');
+  await expect(cards.first()).toContainText('UI_VISTA_09');
+  expect(await page.evaluate(() => window.scrollY)).toBe(0);
+  await list.click();
+  await expect(list).toHaveAttribute('aria-pressed', 'true');
+  await expect(input).toHaveValue('UI_VISTA');
+  await expect(page.locator('tbody tr')).toHaveCount(10);
+  await expect(page.locator('.pagination')).toContainText('Página 1 de 2');
+  await gallery.click();
+  await bottle.getByRole('button', { name: 'Editar', exact: true }).click();
+  await expect(modal(page).getByLabel('Código', { exact: true })).toHaveValue('UI_VISTA_01');
+  await modal(page).getByRole('button', { name: 'Cancelar', exact: true }).click();
+  await input.fill('UI_VISTA_SEM_RESULTADO');
+  await search.click();
+  await expect(page.getByRole('heading', { name: 'Nenhum produto encontrado' })).toBeVisible();
+
+  await page.reload();
+  await expect(gallery).toHaveAttribute('aria-pressed', 'true');
+  await input.fill('UI_VISTA');
+  await search.click();
+  await expect(cards).toHaveCount(8);
+  for (const [width, columns] of [[1440, 4], [1024, 3], [680, 2], [390, 1]]) {
+    await page.setViewportSize({ width, height: 900 });
+    await expect.poll(() => page.locator('.product-gallery').evaluate(el =>
+      getComputedStyle(el).gridTemplateColumns.split(' ').length
+    )).toBe(columns);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+  }
+  await page.screenshot({ path: '../tmp/ui-preview/produtos-galeria-mobile.png' });
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await logout(page);
+  await login(page, 'commercial@ui.test');
+  await page.getByRole('link', { name: 'Produtos', exact: true }).click();
+  await expect(gallery).toHaveAttribute('aria-pressed', 'true');
+  await expect(cards).toHaveCount(8);
+  await expect(cards.getByRole('button', { name: 'Editar' })).toHaveCount(0);
+});
+
+test('administrador elimina produtos sem histórico e arquiva os que já foram usados', async ({ page, context }) => {
+  await page.goto('/');
+  await login(page, 'admin@ui.test');
+  const csrf = await (await context.request.get('/api/v1/auth/csrf')).json();
+  const headers = { [csrf.headerName]: csrf.token };
+  const created = await context.request.post('/api/v1/produtos', {
+    headers,
+    data: { codigo: 'UI_DELETE_ONLY', nome: 'Produto temporário para eliminar', unidade: 'un' }
+  });
+  expect(created.status()).toBe(201);
+  const unused = await created.json();
+  const history = await context.request.post('/api/v1/lotes', {
+    headers,
+    multipart: {
+      tipo: 'HISTORICO',
+      origem: 'Ensaio de preservação do catálogo',
+      ficheiro: {
+        name: 'catalogo-historico.csv', mimeType: 'text/csv',
+        buffer: Buffer.from('produto;periodo;tipo;quantidade;unidade;disponivel_em\nSKU_UI_ONE;2025-01;VENDAS;10;un;2025-02-01T00:00:00Z\n')
+      }
+    }
+  });
+  expect(history.status()).toBe(201);
+
+  await page.getByRole('link', { name: 'Produtos', exact: true }).click();
+  const toolbar = page.locator('#product-search');
+  const query = toolbar.getByRole('searchbox');
+  const search = toolbar.getByRole('button', { name: 'Pesquisar', exact: true });
+  const status = toolbar.getByLabel('Estado', { exact: true });
+  await expect(status).toHaveValue('ativo');
+  await query.fill('UI_DELETE_ONLY');
+  await search.click();
+  await page.getByRole('row').filter({ hasText: 'UI_DELETE_ONLY' }).getByRole('button', { name: 'Editar', exact: true }).click();
+  await modal(page).getByRole('button', { name: 'Eliminar produto', exact: true }).click();
+  await expect(modal(page).getByRole('heading', { name: 'Eliminar produto', exact: true })).toBeVisible();
+  await expect(modal(page)).toContainText(unused.nome);
+  const deletion = page.waitForResponse(response => response.request().method() === 'DELETE' && new URL(response.url()).pathname === '/api/v1/produtos/' + unused.id);
+  await modal(page).getByRole('button', { name: 'Eliminar definitivamente', exact: true }).click();
+  expect((await deletion).status()).toBe(204);
+  await expect(modal(page)).not.toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Nenhum produto encontrado', exact: true })).toBeVisible();
+  expect((await context.request.get('/api/v1/produtos/' + unused.id)).status()).toBe(404);
+
+  await query.fill('SKU_UI_ONE');
+  await search.click();
+  await page.getByRole('row').filter({ hasText: 'SKU_UI_ONE' }).getByRole('button', { name: 'Editar', exact: true }).click();
+  await modal(page).getByRole('button', { name: 'Eliminar produto', exact: true }).click();
+  const refusal = page.waitForResponse(response => response.request().method() === 'DELETE');
+  await modal(page).getByRole('button', { name: 'Eliminar definitivamente', exact: true }).click();
+  expect((await refusal).status()).toBe(409);
+  await expect(modal(page).locator('.form-error')).toContainText('histórico');
+  await modal(page).getByRole('button', { name: 'Arquivar produto', exact: true }).click();
+  await expect(modal(page).getByRole('heading', { name: 'Arquivar produto', exact: true })).toBeVisible();
+  const archived = page.waitForResponse(response => response.request().method() === 'PATCH' && new URL(response.url()).pathname.startsWith('/api/v1/produtos/'));
+  await modal(page).getByRole('button', { name: 'Arquivar produto', exact: true }).click();
+  expect((await archived).status()).toBe(200);
+  await expect(modal(page)).not.toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Nenhum produto encontrado', exact: true })).toBeVisible();
+  await status.selectOption('inativo');
+  await expect(page.getByRole('row').filter({ hasText: 'SKU_UI_ONE' })).toBeVisible();
+  const listHeader = await page.locator('.catalogue-controls').boundingBox();
+  await toolbar.getByRole('button', { name: 'Galeria', exact: true }).click();
+  await expect(status).toHaveValue('inativo');
+  const card = page.locator('.product-gallery > li').filter({ hasText: 'SKU_UI_ONE' });
+  await expect(card).toBeVisible();
+  const galleryHeader = await page.locator('.catalogue-controls').boundingBox();
+  expect(galleryHeader.y).toBe(listHeader.y);
+  expect(galleryHeader.height).toBe(listHeader.height);
+  await expect(page.locator('.catalogue-controls .pagination')).toBeVisible();
+
+  await card.getByRole('button', { name: 'Editar', exact: true }).click();
+  await expect(modal(page).getByLabel('Produto ativo', { exact: true })).not.toBeChecked();
+  await modal(page).getByLabel('Produto ativo', { exact: true }).check();
+  await modal(page).getByRole('button', { name: 'Guardar produto', exact: true }).click();
+  await expect(modal(page)).not.toBeVisible();
+  await status.selectOption('ativo');
+  await expect(card).toBeVisible();
 });

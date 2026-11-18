@@ -1,0 +1,240 @@
+{
+  "versao": 1,
+  "empresa": "NexoPlan Distribuição Alimentar e Higiene",
+  "sintetico": true,
+  "semente": 20261112,
+  "referencia": "2026-11-12",
+  "produtos": 24,
+  "padroes": {
+    "ESTAVEL": 5,
+    "TENDENCIA": 5,
+    "SAZONAL": 5,
+    "INTERMITENTE": 5,
+    "CAMPANHA": 4
+  },
+  "unidades": {
+    "un": 19,
+    "kg": 3,
+    "L": 2
+  },
+  "catalogo": [
+    {
+      "codigo": "NX-001",
+      "nome": "Arroz agulha 1 kg",
+      "unidade": "un",
+      "padrao": "ESTAVEL"
+    },
+    {
+      "codigo": "NX-002",
+      "nome": "Massa esparguete 500 g",
+      "unidade": "un",
+      "padrao": "TENDENCIA"
+    },
+    {
+      "codigo": "NX-003",
+      "nome": "Água mineral 1,5 L",
+      "unidade": "un",
+      "padrao": "SAZONAL"
+    },
+    {
+      "codigo": "NX-004",
+      "nome": "Erva-cidreira 20 saquetas",
+      "unidade": "un",
+      "padrao": "INTERMITENTE"
+    },
+    {
+      "codigo": "NX-005",
+      "nome": "Bolachas de aveia 200 g",
+      "unidade": "un",
+      "padrao": "CAMPANHA"
+    },
+    {
+      "codigo": "NX-006",
+      "nome": "Leite meio-gordo 1 L",
+      "unidade": "un",
+      "padrao": "ESTAVEL"
+    },
+    {
+      "codigo": "NX-007",
+      "nome": "Atum ao natural 120 g",
+      "unidade": "un",
+      "padrao": "TENDENCIA"
+    },
+    {
+      "codigo": "NX-008",
+      "nome": "Sumo de laranja 1 L",
+      "unidade": "un",
+      "padrao": "SAZONAL"
+    },
+    {
+      "codigo": "NX-009",
+      "nome": "Guardanapos festivos 50 folhas",
+      "unidade": "un",
+      "padrao": "INTERMITENTE"
+    },
+    {
+      "codigo": "NX-010",
+      "nome": "Detergente da loiça 750 ml",
+      "unidade": "un",
+      "padrao": "CAMPANHA"
+    },
+    {
+      "codigo": "NX-011",
+      "nome": "Feijão encarnado 540 g",
+      "unidade": "un",
+      "padrao": "ESTAVEL"
+    },
+    {
+      "codigo": "NX-012",
+      "nome": "Café moído 250 g",
+      "unidade": "un",
+      "padrao": "TENDENCIA"
+    },
+    {
+      "codigo": "NX-013",
+      "nome": "Papel de cozinha 2 rolos",
+      "unidade": "un",
+      "padrao": "SAZONAL"
+    },
+    {
+      "codigo": "NX-014",
+      "nome": "Cobertura de chocolate a granel",
+      "unidade": "kg",
+      "padrao": "INTERMITENTE"
+    },
+    {
+      "codigo": "NX-015",
+      "nome": "Azeite virgem extra 750 ml",
+      "unidade": "un",
+      "padrao": "CAMPANHA"
+    },
+    {
+      "codigo": "NX-016",
+      "nome": "Açúcar branco a granel",
+      "unidade": "kg",
+      "padrao": "ESTAVEL"
+    },
+    {
+      "codigo": "NX-017",
+      "nome": "Farinha de trigo a granel",
+      "unidade": "kg",
+      "padrao": "TENDENCIA"
+    },
+    {
+      "codigo": "NX-018",
+      "nome": "Detergente multiusos a granel",
+      "unidade": "L",
+      "padrao": "SAZONAL"
+    },
+    {
+      "codigo": "NX-019",
+      "nome": "Ambientador recarga 250 ml",
+      "unidade": "un",
+      "padrao": "INTERMITENTE"
+    },
+    {
+      "codigo": "NX-020",
+      "nome": "Cereais de pequeno-almoço 375 g",
+      "unidade": "un",
+      "padrao": "CAMPANHA"
+    },
+    {
+      "codigo": "NX-021",
+      "nome": "Sabonete líquido recarga 500 ml",
+      "unidade": "un",
+      "padrao": "ESTAVEL"
+    },
+    {
+      "codigo": "NX-022",
+      "nome": "Óleo alimentar a granel",
+      "unidade": "L",
+      "padrao": "TENDENCIA"
+    },
+    {
+      "codigo": "NX-023",
+      "nome": "Água com gás 1 L",
+      "unidade": "un",
+      "padrao": "SAZONAL"
+    },
+    {
+      "codigo": "NX-024",
+      "nome": "Chá de menta 20 saquetas",
+      "unidade": "un",
+      "padrao": "INTERMITENTE"
+    }
+  ],
+  "treino": {
+    "inicio": "2024-07",
+    "fim": "2026-06",
+    "meses": 24,
+    "vendas": 576,
+    "consumo": 96,
+    "linhas": 672,
+    "consumo_inicio": "2025-07",
+    "consumo_meses": 12
+  },
+  "atual": {
+    "inicio": "2024-11",
+    "fim": "2026-10",
+    "meses": 24,
+    "vendas": 576,
+    "consumo": 96,
+    "linhas": 672,
+    "consumo_inicio": "2025-11",
+    "consumo_meses": 12
+  },
+  "produtos_consumo": [
+    "NX-001",
+    "NX-006",
+    "NX-010",
+    "NX-012",
+    "NX-013",
+    "NX-016",
+    "NX-018",
+    "NX-022"
+  ],
+  "avaliacao_retrospetiva": {
+    "inicio": "2026-07",
+    "fim": "2026-10",
+    "meses": 4,
+    "celulas_esperadas": 96,
+    "realizados": 95,
+    "operacionais": 96
+  },
+  "disponibilidade": {
+    "historico": "Último dia do mês às 17:00:00 UTC, após fecho da atividade mensal fictícia.",
+    "realizados_operacionais": "Primeiro dia do mês seguinte às 00:00:00 UTC.",
+    "nota": "O fecho do histórico às 17h permite publicar uma previsão antes do mês seguinte. Resultados mensais só ficam disponíveis após o fim do mês."
+  },
+  "faltas_intencionais": [
+    "NX-005: realizado de 2026-10 ausente; 95 observações para 96 células esperadas.",
+    "NX-006: stock_fecho de 2026-10 vazio; restantes campos operacionais preenchidos."
+  ],
+  "semantica": [
+    "Empresa, produtos e quantidades inteiramente fictícios; não incluem dados pessoais nem credenciais.",
+    "VENDAS é a procura observada nesta demonstração e coincide exatamente com REALIZADOS nos meses comuns.",
+    "unidades_solicitadas coincide com essa procura; unidades_satisfeitas_no_prazo mede apenas o serviço no prazo.",
+    "CONSUMO representa utilização interna de oito referências em cabazes, amostras e manutenção.",
+    "Quantidades zero de referências intermitentes são observadas, não lacunas; o MAPE deve excluir denominadores zero.",
+    "Campanhas, tendências e sazonalidade são padrões gerados, não calendários ou promoções reais.",
+    "Os CSV usam ponto decimal, separador ponto e vírgula e UTF-8; produtos.json serve a API de produtos.",
+    "As datas de publicação de planos só podem ser contextualizadas pelo procedimento explícito da simulação isolada."
+  ],
+  "contagens": {
+    "produtos.csv": 24,
+    "historico_treino.csv": 672,
+    "historico_atual.csv": 672,
+    "realizados.csv": 95,
+    "operacionais.csv": 96
+  },
+  "sha256": {
+    "historico_atual.csv": "ae441cfbd3f68f12cfe934bb167b0a33b8038a140e7b6dc348f5da3864daf32b",
+    "historico_treino.csv": "0f98bbe17b74f2efa64bb34a2b29a53a1507bd6e8f4f96e3986c81266ecf966e",
+    "invalidos/duplicados.csv": "4cd359b5ac59f0938a7a6c0d84102476d5c42df0dbb37a151d1c44815bb02355",
+    "invalidos/unidade_incompativel.csv": "1381a1c2dfa8b202a0605069c06782d3ff501dc7d0355e2a52764a1c1fa9052d",
+    "operacionais.csv": "af1d58f80e9067b89e0732e556382c3b0abc06f72b3e6f8aa1de463d41f6db6a",
+    "produtos.csv": "2fc1b543f71151c17f8963d2e1a41076e28c0cb85ff6429b9b67e560391f414a",
+    "produtos.json": "5d9c48a498150a32b9e50d85d6765fc611391f4dbb270b16eda14fc580c8f476",
+    "realizados.csv": "702cbbab77aa0d8dbbc70ebdf85dc082af1194c4e6faaee7ceebd3df712247eb"
+  }
+}

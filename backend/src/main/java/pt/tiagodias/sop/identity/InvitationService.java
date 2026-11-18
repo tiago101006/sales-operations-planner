@@ -62,7 +62,7 @@ public class InvitationService {
         var user = jdbc.queryForObject("SELECT id,nome,email,ativo,versao_acesso,password_definida FROM utilizador WHERE id=?",
                 (rs,n) -> new IdentityService.UtilizadorDto(rs.getString("id"), rs.getString("nome"), rs.getString("email"),
                     Set.copyOf(jdbc.queryForList("SELECT papel FROM utilizador_papel WHERE utilizador_id=?", String.class, id).stream().map(Papel::valueOf).toList()),
-                    rs.getBoolean("ativo"),rs.getLong("versao_acesso"),rs.getBoolean("password_definida")), id);
+                    rs.getBoolean("ativo"),rs.getLong("versao_acesso"),rs.getBoolean("password_definida"),false), id);
         Instant expires = jdbc.queryForObject("SELECT expira_em FROM convite_utilizador WHERE token_hash=?",
                 (rs,n) -> rs.getTimestamp(1).toInstant(), hash(token));
         return new ConviteDto(user, token, expires);

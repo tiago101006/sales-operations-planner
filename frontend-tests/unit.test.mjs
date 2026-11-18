@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { esc, quantity, percent, factorValue, independent, role, lineChart, chartScale, lastMonth } from '../backend/src/main/resources/static/assets/ui.mjs';
+import { esc, quantity, percent, factorValue, independent, role, lineChart, chartScale, lastMonth, panel, pager, table } from '../backend/src/main/resources/static/assets/ui.mjs';
 import { Api, ApiError } from '../backend/src/main/resources/static/assets/api.mjs';
+import { createViews } from '../backend/src/main/resources/static/assets/views.mjs';
 import { summarize } from './performance-stats.mjs';
 
 test('escapes text and attributes without interpreting user HTML', () => {
@@ -84,4 +85,82 @@ test('chart scale fits all series with padding and handles constant, zero and ne
     assert.ok(r.max > r.min && r.min <= Math.min(...values) && r.max >= Math.max(...values));
     assert.ok(r.ticks.every(Number.isFinite));
   }
+});
+
+const chartModel = html => JSON.parse(html.match(/data-chart-model="([^"]+)"/)[1].replaceAll('&quot;', '"').replaceAll('&amp;', '&'));
+function planningFixture(rows = Array.from({ length: 17 }, (_, product) => Array.from({ length: 12 }, (_, period) => ({
+  produtoId: String(product + 1), produto: `Produto ${product + 1}`, unidade: 'un',
+  periodo: `2026-${String(period + 1).padStart(2, '0')}`, horizonte: period + 1,
+  quantidadeBase: `${product * 100 + period + 1}.1234`, quantidadeCalculada: `${product * 100 + period + 2}.5678`,
+  quantidadeFinal: `${product * 100 + period + 3}.9012`, desvioPercentual: '1.0000',
+}))).flat()) {
+  const calls = [];
+  const state = { pages: {}, tableFilters: {}, chartProducts: { 'forecast-9': '17', 'revision-11': '17' } };
+  const revision = { id: '11', cenarioId: '7', execucaoId: '9', criadoPor: '1', numero: 1, versao: 1, estado: 'RASCUNHO', fator: '1.100000', pressupostos: { descricao: 'Hipótese preservada.' } };
+  const api = new Api(async path => {
+    const url = new URL(path, 'http://planning.test');calls.push(url);
+    const resource = url.pathname.replace('/api/v1', '');
+    if (resource === '/execucoes-previsao/9') return Response.json({ metodo: 'ETS', horizonteMeses: 12, estado: 'CONCLUIDA', loteHistoricoId: '1', tipoSerie: 'VENDAS', corteTemporal: '2026-01-01T00:00:00Z', ultimoPeriodoTreino: '2025-12', criadoEm: '2026-01-01T00:00:00Z' });
+    if (resource === '/revisoes/11') return Response.json(revision);
+    if (resource === '/cenarios/7') return Response.json({ id: '7', nome: 'Hipótese da equipa', tipo: 'OTIMISTA' });
+    const page = Number(url.searchParams.get('page') || 0), size = Number(url.searchParams.get('size') || 10);
+    const from = url.searchParams.get('desde'), to = url.searchParams.get('ate');
+    const all = resource.endsWith('/linhas') ? rows.filter(row => (!from || row.periodo >= from) && (!to || row.periodo <= to)) : [];
+    return Response.json({ items: all.slice(page * size, (page + 1) * size), page, totalElements: all.length, totalPages: Math.ceil(all.length / size) });
+  });
+  return { state, calls, rows, views: createViews({ api, state, writer: () => false, approver: () => false }) };
+}
+
+test('forecast chart keeps the selected product full horizon across table pages and month filters', async () => {
+  const { state, calls, views } = planningFixture();
+  const first = await views.previsao('9'), model = chartModel(first);
+  assert.equal(model.periods.length, 12);
+  assert.deepEqual([model.periods[0], model.periods.at(-1)], ['2026-01', '2026-12']);
+  assert.deepEqual([model.series[0].values[0], model.series[0].values.at(-1)], ['1601.1234', '1612.1234']);
+  assert.match(first, /<option value="17" selected>Produto 17 · un<\/option>/);
+  assert.ok(calls.some(url => url.searchParams.get('size') === '200' && url.searchParams.get('page') === '1'));
+  state.pages.forecastLines = 1;
+  assert.deepEqual(chartModel(await views.previsao('9')), model);
+  state.pages.forecastLines = 0;state.tableFilters.forecastLines = { desde: '2026-06', ate: '2026-07' };
+  assert.deepEqual(chartModel(await views.previsao('9')), model);
+});
+
+test('revision chart stays complete while adjustment context follows the current table page', async () => {
+  const { state, views } = planningFixture();
+  const initial = await views.revisao('11'), model = chartModel(initial.html);
+  assert.equal(model.periods.length, 12);assert.equal(model.series.length, 3);
+  assert.equal(initial.context.revisionCells[0].produtoId, '1');
+  state.pages.revisionLines = 20;
+  const last = await views.revisao('11');
+  assert.deepEqual(chartModel(last.html), model);
+  assert.equal(last.context.revisionCells.length, 4);
+  assert.equal(last.context.revisionCells[0].periodo, '2026-09');
+  assert.equal(last.context.revisionCells[0].produtoId, '17');
+  state.chartProducts['revision-11'] = 'missing';
+  const fallback = chartModel((await views.revisao('11')).html);
+  assert.equal(fallback.series[0].values[0], '1.1234');assert.equal(fallback.periods.length, 12);
+});
+
+test('empty forecast rows provide an empty state without an unusable product selector', async () => {
+  const html = await planningFixture([]).views.previsao('9');
+  assert.match(html, /Sem previsões disponíveis/);
+  assert.ok(!html.includes('data-chart-selection'));
+  assert.ok(!html.includes('data-chart-model'));
+});
+
+test('panel keeps source context before filters and existing header actions in place', () => {
+  const filters = pager({ page: 0, totalPages: 1, totalElements: 1, search: { key: 'scenarios', values: {}, months: true } }, 'scenarios');
+  const html = panel('Cenários', '', table(['Cenário'], [['Base']]) + filters, '<button>Atualizar</button>', '<div class="scenario-source">Previsão #9</div>');
+  assert.ok(html.indexOf('<button>Atualizar</button>') < html.indexOf('scenario-source'));
+  assert.ok(html.indexOf('scenario-source') < html.indexOf('class="table-search"'));
+  assert.ok(html.indexOf('class="table-search"') < html.indexOf('class="table-wrap"'));
+  assert.equal((html.match(/class="table-search"/g) || []).length, 1);
+});
+
+test('numeric table columns retain exact precision and preserve text column semantics', () => {
+  const precise = quantity('99999999999999.9999');
+  const html = table(['Produto', 'Base', 'Final', 'Estado'], [['Produto 1', precise, '<strong class="num">0,0000</strong>', 'Indisponível']]);
+  assert.match(html, /<th scope="col">Produto<\/th><th scope="col" class="numeric">Base<\/th>/);
+  assert.ok(html.includes(`<td class="numeric">${precise}</td>`));
+  assert.match(html, /<td class="numeric"><strong class="num">0,0000<\/strong><\/td><td>Indisponível<\/td>/);
 });

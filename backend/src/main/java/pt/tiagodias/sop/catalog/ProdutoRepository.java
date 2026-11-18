@@ -24,7 +24,8 @@ public interface ProdutoRepository extends JpaRepository<Produto, Long>, JpaSpec
             SELECT (EXISTS(SELECT 1 FROM observacao WHERE produto_id=:id)
                  OR EXISTS(SELECT 1 FROM promocao WHERE produto_id=:id)
                  OR EXISTS(SELECT 1 FROM execucao_produto WHERE produto_id=:id)
-                 OR EXISTS(SELECT 1 FROM resultado_operacional WHERE produto_id=:id))
+                 OR EXISTS(SELECT 1 FROM resultado_operacional WHERE produto_id=:id)
+                 OR EXISTS(SELECT 1 FROM backtest_celula WHERE produto_id=:id))
             """, nativeQuery = true)
     int usage(@Param("id") Long id);
 }

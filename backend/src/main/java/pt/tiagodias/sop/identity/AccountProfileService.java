@@ -55,6 +55,12 @@ public class AccountProfileService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "A conta ainda não tem foto."));
     }
 
+    public byte[] teamPhoto(long id) {
+        return jdbc.query("SELECT imagem FROM foto_perfil WHERE utilizador_id=?",
+                (rs, row) -> rs.getBytes("imagem"), id).stream().findFirst()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "A conta ainda não tem foto."));
+    }
+
     @Transactional
     public void savePhoto(String email, long version, byte[] image) {
         long id = lockAccount(email, version);

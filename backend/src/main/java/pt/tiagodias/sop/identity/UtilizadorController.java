@@ -4,21 +4,21 @@ import java.net.URI;
 import java.util.Set;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
+import org.springframework.http.CacheControl;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/utilizadores")
 public class UtilizadorController {
     private final IdentityService service;
-    private final UtilizadorRepository repository;
+    private final AccountProfileService profile;
     private final InvitationService invitations;
 
-    public UtilizadorController(IdentityService service, UtilizadorRepository repository, InvitationService invitations) {
+    public UtilizadorController(IdentityService service, AccountProfileService profile, InvitationService invitations) {
         this.service = service;
-        this.repository = repository;
+        this.profile = profile;
         this.invitations = invitations;
     }
 
@@ -30,8 +30,15 @@ public class UtilizadorController {
 
     @GetMapping("/{id}")
     public IdentityService.UtilizadorDto get(@PathVariable Long id) {
-        return repository.findById(id).map(IdentityService::dto)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Utilizador não encontrado."));
+        return service.get(id);
+    }
+
+    @GetMapping(value = "/{id}/foto", produces = MediaType.IMAGE_JPEG_VALUE)
+    public ResponseEntity<byte[]> photo(@PathVariable Long id) {
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .contentType(MediaType.IMAGE_JPEG)
+                .body(profile.teamPhoto(id));
     }
 
     @PostMapping

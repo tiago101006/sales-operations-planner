@@ -1,9 +1,14 @@
 package pt.tiagodias.sop;
 
+import java.awt.Color;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.net.*;
 import java.net.http.*;
 import java.util.*;
 import java.util.concurrent.Executors;
+import javax.imageio.ImageIO;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -50,6 +55,28 @@ class CatalogTests {
             return client.send(builder.build(), HttpResponse.BodyHandlers.ofString());
         }
 
+        HttpResponse<String> saveWithPhoto(String method, String path, Object product, byte[] image, boolean csrf) throws Exception {
+            String boundary = "foto-" + UUID.randomUUID();
+            var body = HttpRequest.BodyPublishers.concat(
+                    HttpRequest.BodyPublishers.ofString("--" + boundary + "\r\n"
+                            + "Content-Disposition: form-data; name=\"produto\"; filename=\"produto.json\"\r\n"
+                            + "Content-Type: application/json\r\n\r\n" + json.writeValueAsString(product)
+                            + "\r\n--" + boundary + "\r\n"
+                            + "Content-Disposition: form-data; name=\"foto\"; filename=\"produto.png\"\r\n"
+                            + "Content-Type: image/png\r\n\r\n"),
+                    HttpRequest.BodyPublishers.ofByteArray(image),
+                    HttpRequest.BodyPublishers.ofString("\r\n--" + boundary + "--\r\n"));
+            var builder = HttpRequest.newBuilder(URI.create("http://localhost:" + port + path))
+                    .header("Content-Type", "multipart/form-data; boundary=" + boundary).method(method, body);
+            if (csrf) builder.header("X-CSRF-TOKEN", token);
+            return client.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+        }
+
+        HttpResponse<byte[]> photo(String path) throws Exception {
+            return client.send(HttpRequest.newBuilder(URI.create("http://localhost:" + port + path + "/foto")).GET().build(),
+                    HttpResponse.BodyHandlers.ofByteArray());
+        }
+
         void csrf() throws Exception { token = json.readTree(request("GET", "/api/v1/auth/csrf", null, false).body()).get("token").asText(); }
     }
 
@@ -70,6 +97,68 @@ class CatalogTests {
 
     private String unique() { return "T-" + UUID.randomUUID(); }
 
+    private static byte[] png(int width, int height, Color color) throws Exception {
+        var image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        var graphics = image.createGraphics();
+        try {
+            graphics.setColor(color);
+            graphics.fillRect(0, 0, width, height);
+        } finally {
+            graphics.dispose();
+        }
+        var bytes = new ByteArrayOutputStream();
+        ImageIO.write(image, "png", bytes);
+        return bytes.toByteArray();
+    }
+
+    @Test
+    void productPhotosAreOptionalPrivateAndSavedWithTheProductVersion() throws Exception {
+        String catalog = "/api/v1/produtos";
+        var withoutPhoto = create(unique(), "Sem foto");
+        assertThat(withoutPhoto.get("temFoto").asBoolean()).isFalse();
+        assertThat(admin.photo(catalog + "/" + withoutPhoto.get("id").asText()).statusCode()).isEqualTo(404);
+
+        String code = unique();
+        var command = Map.of("codigo", code, "nome", "Com foto", "unidade", "un");
+        assertThat(admin.saveWithPhoto("POST", catalog, command, new byte[]{1, 2, 3}, true).statusCode()).isEqualTo(422);
+        var listing = admin.request("GET", catalog + "?q=" + code, null, false);
+        assertThat(json.readTree(listing.body()).get("totalElements").asInt()).isZero();
+        var image = png(480, 240, Color.RED);
+        assertThat(admin.saveWithPhoto("POST", catalog, command, image, false).statusCode()).isEqualTo(403);
+        var response = admin.saveWithPhoto("POST", catalog, command, image, true);
+        assertThat(response.statusCode()).isEqualTo(201);
+        var created = json.readTree(response.body());
+        assertThat(created.get("temFoto").asBoolean()).isTrue();
+        assertThat(created.get("versao").asLong()).isZero();
+
+        String path = response.headers().firstValue("Location").orElseThrow();
+        var consumer = login("consumidor@catalog.test");
+        assertThat(new Browser().photo(path).statusCode()).isEqualTo(401);
+        var thumbnail = consumer.photo(path);
+        assertThat(thumbnail.statusCode()).isEqualTo(200);
+        assertThat(thumbnail.headers().firstValue("Content-Type")).contains("image/jpeg");
+        assertThat(thumbnail.headers().firstValue("Cache-Control").orElseThrow()).contains("no-store");
+        assertThat(ImageIO.read(new ByteArrayInputStream(thumbnail.body())).getWidth()).isEqualTo(256);
+        assertThat(consumer.saveWithPhoto("PATCH", path, Map.of("versaoEsperada", 0), image, true).statusCode()).isEqualTo(403);
+
+        var replace = Map.of("nome", "Nome revisto", "versaoEsperada", 0);
+        assertThat(admin.saveWithPhoto("PATCH", path, replace, new byte[]{1, 2, 3}, true).statusCode()).isEqualTo(422);
+        assertThat(json.readTree(admin.request("GET", path, null, false).body())).isEqualTo(created);
+        assertThat(admin.photo(path).body()).isEqualTo(thumbnail.body());
+        assertThat(admin.saveWithPhoto("PATCH", path, replace, new byte[2 * 1024 * 1024 + 1], true).statusCode()).isEqualTo(413);
+
+        var replaced = admin.saveWithPhoto("PATCH", path, Map.of("versaoEsperada", 0), png(120, 240, Color.BLUE), true);
+        assertThat(replaced.statusCode()).isEqualTo(200);
+        assertThat(json.readTree(replaced.body()).get("versao").asLong()).isEqualTo(1);
+        assertThat(ImageIO.read(new ByteArrayInputStream(admin.photo(path).body())).getWidth()).isEqualTo(120);
+        assertThat(admin.request("PATCH", path, Map.of("removerFoto", true, "versaoEsperada", 0), true).statusCode()).isEqualTo(409);
+        var removed = admin.request("PATCH", path, Map.of("removerFoto", true, "versaoEsperada", 1), true);
+        assertThat(removed.statusCode()).isEqualTo(200);
+        assertThat(json.readTree(removed.body()).get("temFoto").asBoolean()).isFalse();
+        assertThat(json.readTree(removed.body()).get("versao").asLong()).isEqualTo(2);
+        assertThat(consumer.photo(path).statusCode()).isEqualTo(404);
+    }
+
     @Test
     void listsTeamOnlyForAdminWithoutAuthenticationSecrets() throws Exception {
         var response=admin.request("GET","/api/v1/utilizadores?busca=Administrador&size=1",null,false);
@@ -77,7 +166,8 @@ class CatalogTests {
         var data=json.readTree(response.body());
         assertThat(data.get("totalElements").asInt()).isEqualTo(1);
         assertThat(data.get("items").get(0).get("email").asText()).isEqualTo("admin@catalog.test");
-        assertThat(data.get("items").get(0).size()).isEqualTo(7);
+        assertThat(data.get("items").get(0).size()).isEqualTo(8);
+        assertThat(data.get("items").get(0).get("temFoto").asBoolean()).isFalse();
         assertThat(response.body()).doesNotContain("\"password\":", "password_hash", "$2");
         assertThat(new Browser().request("GET","/api/v1/utilizadores",null,false).statusCode()).isEqualTo(401);
         assertThat(login("planeador@catalog.test").request("GET","/api/v1/utilizadores",null,false).statusCode()).isEqualTo(403);
@@ -98,7 +188,39 @@ class CatalogTests {
         var planner = login("planeador@catalog.test");
         assertThat(planner.request("POST", "/api/v1/produtos", Map.of("codigo", unique(), "nome", "Permitido", "unidade", "kg"), true).statusCode()).isEqualTo(201);
         assertThat(admin.request("POST", "/api/v1/produtos", Map.of("codigo", unique(), "nome", "Sem CSRF", "unidade", "un"), false).statusCode()).isEqualTo(403);
-        assertThat(admin.request("DELETE", path, null, true).statusCode()).isEqualTo(403);
+        assertThat(admin.request("DELETE", path, null, true).statusCode()).isEqualTo(400);
+    }
+
+    @Test
+    void deletesUnusedProductAndPhotoOnlyForAdminWithTheCurrentVersion() throws Exception {
+        String code = unique();
+        var created = admin.saveWithPhoto("POST", "/api/v1/produtos",
+                Map.of("codigo", code, "nome", "Eliminar com foto", "unidade", "un"), png(100, 100, Color.GREEN), true);
+        assertThat(created.statusCode()).isEqualTo(201);
+        String path = created.headers().firstValue("Location").orElseThrow();
+        String delete = path + "?versaoEsperada=0";
+        var anonymous = new Browser();
+        anonymous.csrf();
+        assertThat(anonymous.request("DELETE", delete, null, true).statusCode()).isEqualTo(401);
+        for (String role : List.of("planeador", "comercial", "aprovador", "consumidor")) {
+            assertThat(login(role + "@catalog.test").request("DELETE", delete, null, true).statusCode()).isEqualTo(403);
+        }
+        assertThat(admin.request("DELETE", delete, null, false).statusCode()).isEqualTo(403);
+        assertThat(admin.request("DELETE", path + "?versaoEsperada=-1", null, true).statusCode()).isEqualTo(422);
+        assertThat(admin.request("PATCH", path, Map.of("nome", "Nome revisto", "versaoEsperada", 0), true).statusCode()).isEqualTo(200);
+        byte[] photo = admin.photo(path).body();
+        assertThat(admin.request("DELETE", delete, null, true).statusCode()).isEqualTo(409);
+        assertThat(admin.request("GET", path, null, false).statusCode()).isEqualTo(200);
+        assertThat(admin.photo(path).body()).isEqualTo(photo);
+        assertThat(admin.request("DELETE", path + "?versaoEsperada=1", null, true).statusCode()).isEqualTo(204);
+        assertThat(admin.request("GET", path, null, false).statusCode()).isEqualTo(404);
+        assertThat(admin.photo(path).statusCode()).isEqualTo(404);
+        assertThat(admin.request("DELETE", path + "?versaoEsperada=1", null, true).statusCode()).isEqualTo(404);
+        assertThat(json.readTree(admin.request("GET", "/api/v1/produtos?q=" + code, null, false).body()).get("totalElements").asInt()).isZero();
+
+        var withoutPhoto = create(unique(), "Eliminar sem foto");
+        String withoutPhotoPath = "/api/v1/produtos/" + withoutPhoto.get("id").asText();
+        assertThat(admin.request("DELETE", withoutPhotoPath + "?versaoEsperada=0", null, true).statusCode()).isEqualTo(204);
     }
 
     @Test
@@ -152,11 +274,11 @@ class CatalogTests {
 
     @Test
     void freezesIdentityForEveryDirectUsageButAllowsNameAndDeactivation() throws Exception {
-        for (String kind : List.of("HISTORICO", "PROMOCOES", "PREVISAO", "OPERACIONAL")) {
+        for (String kind : List.of("HISTORICO", "PROMOCOES", "PREVISAO", "OPERACIONAL", "BACKTEST")) {
             var product = create(unique(), "Uso " + kind);
             long productId = product.get("id").asLong();
             String marker = UUID.randomUUID().toString();
-            String lotType = kind.equals("PREVISAO") ? "HISTORICO" : kind;
+            String lotType = Set.of("PREVISAO", "BACKTEST").contains(kind) ? "HISTORICO" : kind;
             jdbc.update("INSERT INTO lote(tipo,estado,origem,nome_ficheiro,localizacao_ficheiro,sha256,versao_esquema,importado_por,disponivel_em) VALUES (?,'VALIDADO','teste',?,'fixture',REPEAT('a',64),'v1',?,NOW())", lotType, marker, Long.valueOf(adminId));
             Long lotId = jdbc.queryForObject("SELECT id FROM lote WHERE nome_ficheiro=?", Long.class, marker);
             switch (kind) {
@@ -168,13 +290,20 @@ class CatalogTests {
                     Long execution = jdbc.queryForObject("SELECT id FROM execucao_previsao WHERE versao_software=?", Long.class, marker);
                     jdbc.update("INSERT INTO execucao_produto(execucao_id,produto_id,parametros_aplicados,estado) VALUES (?,?,'{}','PREVISTO')", execution, productId);
                 }
+                case "BACKTEST" -> {
+                    jdbc.update("INSERT INTO backtest(lote_id,lote_sha256,tipo_serie,primeiro_corte,ultimo_corte,horizonte_meses,corte_realizados,parametros,versao_mm,versao_ets,versao_calculo,estado,criado_por) VALUES (?,REPEAT('a',64),'VENDAS','2026-10-01','2026-10-01',1,NOW(),'{}','teste','teste',?,'EM_EXECUCAO',?)", lotId, marker, Long.valueOf(adminId));
+                    Long backtest = jdbc.queryForObject("SELECT id FROM backtest WHERE versao_calculo=?", Long.class, marker);
+                    jdbc.update("INSERT INTO backtest_celula(backtest_id,lote_id,produto_id,corte,periodo,horizonte,estado_mm,estado_ets,parametros_mm,parametros_ets) VALUES (?,?,?,'2026-10-01','2026-11-01',1,'INSUFICIENTE','INSUFICIENTE','{}','{}')", backtest, lotId, productId);
+                }
             }
             String path = "/api/v1/produtos/" + productId;
             assertThat(admin.request("PATCH", path, Map.of("codigo", unique(), "versaoEsperada", 0), true).statusCode()).isEqualTo(409);
             assertThat(admin.request("PATCH", path, Map.of("unidade", "kg", "versaoEsperada", 0), true).statusCode()).isEqualTo(409);
+            assertThat(admin.request("DELETE", path + "?versaoEsperada=0", null, true).statusCode()).isEqualTo(409);
             var permitted = admin.request("PATCH", path, Map.of("nome", "Nome revisto", "ativo", false, "versaoEsperada", 0), true);
             assertThat(permitted.statusCode()).isEqualTo(200);
             assertThat(json.readTree(permitted.body()).get("codigo").asText()).isEqualTo(product.get("codigo").asText());
+            assertThat(admin.request("DELETE", path + "?versaoEsperada=1", null, true).statusCode()).isEqualTo(409);
         }
     }
 

@@ -46,8 +46,29 @@ const paths = {
   plus: '<path d="M12 4v16M4 12h16"/>',
   refresh: '<path d="M20 8a9 9 0 1 0 1 8M20 2v6h-6"/>',
   calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 11h18m-13 4h2m4 0h2"/>',
+  list: '<path d="M8 5h12M8 12h12M8 19h12M4 5h.01M4 12h.01M4 19h.01"/>',
+  grid: '<rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/>',
 };
 export const icon = (name, size = 20) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name] || paths.chart}</svg>`;
+export function initials(name) {
+  const words = name.trim().split(/\s+/);
+  const first = [...words[0]][0] || '';
+  const last = words.length > 1 ? [...words.at(-1)][0] : '';
+  return (first + last).toLocaleUpperCase('pt-PT');
+}
+
+export function memberAvatar(user) {
+  const photo = user.temFoto ? `<img src="/api/v1/utilizadores/${esc(encodeURIComponent(user.id))}/foto" alt="" width="32" height="32" loading="lazy">` : '';
+  return `<span class="inline-photo member-avatar" data-inline-photo aria-hidden="true"><span>${esc(initials(user.nome))}</span>${photo}</span>`;
+}
+
+export function productThumbnail(product, { current = false, gallery = false } = {}) {
+  const size = gallery ? 256 : 36;
+  const photo = product?.temFoto ? `<img src="/api/v1/produtos/${esc(encodeURIComponent(product.id))}/foto" alt="${current ? 'Foto atual do produto' : ''}" width="${size}" height="${size}" ${current ? '' : 'loading="lazy"'}>` : '';
+  const fallback = gallery ? `<span class="catalogue-photo-placeholder">${icon('box', 28)}<span>Sem foto</span></span>` : icon('box', 18);
+  return `<span class="inline-photo product-thumbnail" data-inline-photo ${current || gallery ? '' : 'aria-hidden="true"'}>${fallback}${photo}</span>`;
+}
+
 export const button = (text, action, data = '', style = '') => `<button type="button" class="btn ${style}" data-action="${action}" ${data}>${text}</button>`;
 let fieldId = 0;
 export const field = (text, input, help = '') => {
@@ -58,15 +79,16 @@ export const field = (text, input, help = '') => {
 export const input = (name, type = 'text', value = '', attrs = '') => `<input name="${name}" type="${type}" value="${esc(value)}" ${attrs}>`;
 export const select = (name, items, selected = '', required = true) => `<select name="${name}" ${required ? 'required' : ''}><option value="">${required ? 'Selecionar…' : 'Nenhum'}</option>${items.map(([id, text]) => `<option value="${esc(id)}" ${String(id) === String(selected) ? 'selected' : ''}>${esc(text)}</option>`).join('')}</select>`;
 export const empty = (title, detail = '') => `<div class="empty">${icon('layers', 30)}<h3>${esc(title)}</h3><p>${esc(detail)}</p></div>`;
-export const table = (headers, rows, title = 'Ainda não há registos', detail = 'Os registos aparecem aqui depois de serem criados.') => rows.length ? `<div class="table-wrap"><table><thead><tr>${headers.map(h => `<th scope="col">${h}</th>`).join('')}</tr></thead><tbody>${rows.map(row => `<tr>${row.map(cell => `<td>${cell ?? '—'}</td>`).join('')}</tr>`).join('')}</tbody></table></div>` : empty(title, detail);
-export const panel = (title, subtitle, content, actions = '') => {
+const numericHeaders = new Set(['Registos', 'Linhas', 'Células', 'Horizonte', 'Produtos previstos', 'Revisões guardadas', 'Ajustes locais', 'Fator', 'Quantidade', 'Quantidade aprovada', 'Previsão base', 'Base', 'Calculada', 'Final', 'Desvio', 'Pares / candidatos', 'Cobertura', 'MAE MM', 'MAE ETS', 'MAE base', 'MAE aprovado', 'MAPE base', 'MAPE aprovado', 'MAPE MM', 'MAPE ETS', 'Solicitadas / satisfeitas', 'Dias observados / sem stock', 'Stock / limite', 'Perdas', 'Realizado', 'Média Móvel', 'ETS', 'Base / aprovado', 'Serviço / rutura', 'Excesso / perdas']);
+export const table = (headers, rows, title = 'Ainda não há registos', detail = 'Os registos aparecem aqui depois de serem criados.') => rows.length ? `<div class="table-wrap"><table><thead><tr>${headers.map(h => `<th scope="col"${numericHeaders.has(h) ? ' class="numeric"' : ''}>${h}</th>`).join('')}</tr></thead><tbody>${rows.map(row => `<tr>${row.map((cell, i) => `<td${numericHeaders.has(headers[i]) ? ' class="numeric"' : ''}>${cell ?? '—'}</td>`).join('')}</tr>`).join('')}</tbody></table></div>` : empty(title, detail);
+export const panel = (title, subtitle, content, actions = '', beforeFilters = '') => {
   const context = subtitle && subtitle.length <= 80 && !/[.!?]$/.test(subtitle);
   const filters = [];
   content = content.replace(/<form class="table-search"[\s\S]*?<\/form>/g, form => { filters.push(form);return ''; });
   if (filters.some(form => /value="[^"<>]+"/.test(form)) && content.includes('class="empty"')) {
     content = content.replace(/<div class="empty">[\s\S]*?<\/div>/g, empty('Nenhum resultado para estes filtros', 'Altera a pesquisa ou usa Limpar filtros.'));
   }
-  return `<section class="panel"><div class="panel-head"><div><h2>${title}</h2>${context ? `<p class="panel-caption">${subtitle}</p>` : ''}</div><div class="actions">${subtitle && !context ? `<details class="panel-context"><summary aria-label="Sobre esta secção: ${esc(title)}" title="Sobre esta secção">${icon('info', 15)}<span>Sobre esta secção</span></summary><p>${subtitle}</p></details>` : ''}${actions}</div></div>${filters.join('')}${content}</section>`;
+  return `<section class="panel"><div class="panel-head"><div><h2>${title}</h2>${context ? `<p class="panel-caption">${subtitle}</p>` : ''}</div><div class="actions">${subtitle && !context ? `<details class="panel-context"><summary aria-label="Sobre esta secção: ${esc(title)}" title="Sobre esta secção">${icon('info', 16)}<span>Sobre esta secção</span></summary><p>${subtitle}</p></details>` : ''}${actions}</div></div>${beforeFilters}${filters.join('')}${content}</section>`;
 };
 export const metric = (name, value, note, tone = '') => `<article class="metric ${tone}"><p>${esc(name)}</p><strong>${esc(value)}</strong><small>${esc(note)}</small></article>`;
 const tableSearch = search => {

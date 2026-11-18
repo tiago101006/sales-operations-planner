@@ -25,6 +25,10 @@ __pycache__/
 hs_err_pid*
 replay_pid*
 
+# Capturas, sessões e relatórios temporários do navegador
+output/playwright/
+.ipynb_checkpoints/
+
 # Configuração local do editor
 .idea/
 *.iml

@@ -1,4 +1,4 @@
-import { esc, quantity as q, factorValue, revisionCaption, percent, date, month, label, badge, icon, button as b, field, select, input, table, panel, metric, pager, empty, lineChart, independent, role } from './ui.mjs';
+import { esc, quantity as q, factorValue, revisionCaption, percent, date, month, label, badge, icon, button as b, field, select, input, table, panel, metric, pager, empty, lineChart, independent, role, memberAvatar, productThumbnail } from './ui.mjs';
 
 const rowAction = (text, action, id) => b(text, action, `data-id="${esc(id)}"`, 'small');
 const meta = values => `<div class="detail-meta">${values.map(([name, value]) => `<div><small>${name}</small><p>${value}</p></div>`).join('')}</div>`;
@@ -15,8 +15,8 @@ export function createViews(ctx) {
   };
   const searchable = (data, key) => ({ ...data, search: key === 'products' ? null : { key, values: state.tableFilters?.[key] || {}, months: !noMonths.has(key) } });
   const pageSize = 10;
-  const page = async (key, path) => searchable(await api.get(`${path}${path.includes('?') ? '&' : '?'}size=${pageSize}&page=${state.pages[key] || 0}&${filterParams(key)}`), key);
-  const heading = (eyebrow, title, subtitle, actions = '', attributes = '') => `<div class="page-heading" ${attributes}><div><div class="eyebrow">${eyebrow}</div><h1>${title}</h1>${subtitle ? (/^(Cenário #|Origem:|Otimista ·|Conservador ·|Base ·|Personalizado ·)/.test(subtitle) ? `<p class="heading-context">${subtitle}</p>` : `<details class="page-context"><summary>Sobre esta área</summary><p>${subtitle}</p></details>`) : ''}</div><div class="actions">${actions}</div></div>`;
+  const page = async (key, path, size = pageSize) => searchable(await api.get(`${path}${path.includes('?') ? '&' : '?'}size=${size}&page=${state.pages[key] || 0}&${filterParams(key)}`), key);
+  const heading = (reference, title, subtitle, actions = '', attributes = '') => `<div class="page-heading" ${attributes}><div><h1>${title}</h1>${reference ? `<p class="heading-reference">${reference}</p>` : ''}${subtitle ? (/^(Cenário #|Origem:|Otimista ·|Conservador ·|Base ·|Personalizado ·)/.test(subtitle) ? `<p class="heading-context">${subtitle}</p>` : `<details class="page-context"><summary>Sobre esta área</summary><p>${subtitle}</p></details>`) : ''}</div><div class="actions">${actions}</div></div>`;
   const newButton = (text, kind, extra = '') => writer() ? b(icon('plus', 16) + text, 'dialog', `data-kind="${kind}" ${extra}`, 'primary') : '';
   const back = (route, text) => `<a class="back" href="#/${route}">← ${text}</a>`;
 
@@ -30,7 +30,15 @@ export function createViews(ctx) {
   const overviewDate = () => new Intl.DateTimeFormat('pt-PT', { day: 'numeric', month: 'long' }).format(new Date());
   const planningRoute = stages => `<nav class="planning-route" aria-label="Ciclo de planeamento">${stages.map(([route, name, count, unit], i) => `<a href="#/${route}"><span class="route-number">0${i + 1}</span><span class="route-label">${esc(name)}</span><span class="route-count"><strong>${esc(q(count))}</strong> ${esc(String(count) === '1' ? ({ lotes: 'lote', execuções: 'execução', hipóteses: 'hipótese', publicados: 'publicado' }[unit] || unit) : unit)}</span>${icon('arrow', 16)}</a>`).join('')}</nav>`;
   const workSummary = values => `<div class="work-summary">${values.map(([name, value, tone = '']) => `<div class="${tone}"><span>${esc(name)}</span><strong>${esc(q(value))}</strong></div>`).join('')}</div>`;
-  const hero = (kicker, title, description, action, signal, signalLabel, tone = '') => `<section class="planning-hero ${tone}" aria-label="Em foco"><div class="hero-copy"><span class="eyebrow">${esc(kicker)}</span><h2>${title}</h2><p>${description}</p><div class="actions">${action}</div></div><div class="hero-signal"><span class="hero-date">${icon('calendar', 15)} ${esc(overviewDate())}</span><strong>${esc(q(signal))}</strong><span>${esc(signalLabel)}</span><svg viewBox="0 0 180 42" aria-hidden="true" fill="none"><path d="M0 31H180M0 12H180" stroke="currentColor" opacity=".12"/><path d="M0 36H32L55 21H91L115 7H180" stroke="currentColor" stroke-width="2"/><circle cx="115" cy="7" r="4" fill="currentColor"/></svg></div></section>`;
+  const hero = (title, description, action, signal, signalLabel, tone = '') => `<section class="planning-hero ${tone}" aria-label="Em foco"><div class="hero-copy"><h2>${title}</h2><p>${description}</p><div class="actions">${action}</div></div><div class="hero-signal"><span class="hero-date">${icon('calendar', 15)} ${esc(overviewDate())}</span><strong>${esc(q(signal))}</strong><span>${esc(signalLabel)}</span></div></section>`;
+  const chartSelection = (rows, key) => {
+    const products = [...new Map(rows.map(row => [row.produtoId, row])).values()];
+    state.chartProducts ||= {};
+    const first = products.find(product => product.produtoId === state.chartProducts[key]) || products[0];
+    const points = rows.filter(row => row.produtoId === first?.produtoId);
+    const control = first ? `<div class="chart-toolbar">${field('Produto no gráfico', select('chartProduct', products.map(p => [p.produtoId, `${p.produto} · ${p.unidade}`]), first.produtoId).replace('<select ', `<select data-chart-selection="${esc(key)}" `))}<span class="chart-range">${esc(month(points[0].periodo))} — ${esc(month(points.at(-1).periodo))}</span></div>` : '';
+    return { first, points, control };
+  };
   const planRows = plans => plans.items.length ? `<div class="work-list">${plans.items.map(p => `<a class="work-item" href="#/plano/${esc(p.id)}"><span class="work-symbol">${icon('check', 21)}</span><span class="work-copy"><strong>Plano #${esc(p.id)}</strong><small>Revisão #${esc(p.revisaoId)} · ${esc(date(p.publicadoEm))}</small></span><span class="work-meta">${esc(p.totalLinhas)} quantidades</span><span class="work-open">${icon('arrow', 18)}</span></a>`).join('')}</div>` : empty('Ainda não há planos publicados');
   const revisionRows = (data, decision = false) => data.items.length ? `<div class="work-list">${data.items.map(item => {
     const r = item.revisao;
@@ -43,8 +51,8 @@ export function createViews(ctx) {
       page('pendingRevisions', '/revisoes?estado=EM_REVISAO'), api.get('/revisoes?estado=DEVOLVIDA&size=1'),
       api.get('/revisoes?estado=APROVADA&size=1'), api.get('/planos?size=5'),
     ]);
-    return `<div class="workbench">` + heading('Decidir', 'Centro de aprovações', '', b(icon('refresh', 15) + 'Atualizar fila', 'refresh')) +
-      hero('A decisão é tua', pending.totalElements ? 'Revisões<br>por decidir.' : 'A fila está em dia.', 'Analisa os pressupostos e os ajustes antes de publicar.', '<a class="btn" href="#/planos">Consultar planos ' + icon('arrow', 16) + '</a>', pending.totalElements, 'revisões na fila') +
+    return `<div class="workbench">` + heading('', 'Centro de aprovações', '', b(icon('refresh', 15) + 'Atualizar fila', 'refresh')) +
+      hero(pending.totalElements ? 'Revisões<br>por decidir.' : 'A fila está em dia.', 'Analisa os pressupostos e os ajustes antes de publicar.', '<a class="btn" href="#/planos">Consultar planos ' + icon('arrow', 16) + '</a>', pending.totalElements, 'revisões na fila') +
       workSummary([['A aguardar aprovação', pending.totalElements], ['Devolvidas', returned.totalElements, 'copper'], ['Aprovadas', approved.totalElements], ['Planos publicados', plans.totalElements]]) +
       `<div class="overview-columns"><div>${panel('Revisões à espera de decisão', 'Mais antigas primeiro · toda a equipa', revisionRows(pending, true) + pager(pending, 'pendingRevisions'))}</div><aside>${panel('Planos recentes', '', planRows(plans), '<a class="btn link" href="#/planos">Ver todos →</a>')}${overviewHelp('O que posso aprovar?', 'A decisão exige independência: não podes aprovar ou devolver uma revisão criada por ti ou que conserve ajustes teus.')}</aside></div></div>`;
   }
@@ -56,8 +64,8 @@ export function createViews(ctx) {
       api.get('/execucoes-previsao?size=1'), api.get('/cenarios?size=1'),
     ]);
     const hasDrafts = drafts.totalElements > 0;
-    return `<div class="workbench">` + heading('Planear', 'Espaço de planeamento', '', '<a class="btn" href="#/importacoes">Importar dados</a><a class="btn primary" href="#/previsoes">Gerar previsões</a>') +
-      hero('Em preparação', hasDrafts ? 'O planeamento<br>continua aqui.' : 'Prepara<br>a primeira previsão.', hasDrafts ? 'Retoma um rascunho ou explora outra hipótese.' : 'Começa com os dados. Constrói as tuas alternativas.', (hasDrafts ? '<a class="btn" href="#/cenarios">Explorar cenários ' : '<a class="btn" href="#/previsoes">Gerar previsões ') + icon('arrow', 16) + '</a>', drafts.totalElements, 'rascunhos da equipa') +
+    return `<div class="workbench">` + heading('', 'Espaço de planeamento', '', '<a class="btn" href="#/importacoes">Importar dados</a><a class="btn primary" href="#/previsoes">Gerar previsões</a>') +
+      hero(hasDrafts ? 'O planeamento<br>continua aqui.' : 'Prepara<br>a primeira previsão.', hasDrafts ? 'Retoma um rascunho ou explora outra hipótese.' : 'Começa com os dados. Constrói as tuas alternativas.', (hasDrafts ? '<a class="btn" href="#/cenarios">Explorar cenários ' : '<a class="btn" href="#/previsoes">Gerar previsões ') + icon('arrow', 16) + '</a>', drafts.totalElements, 'rascunhos da equipa') +
       planningRoute([['importacoes', 'Dados', lots.totalElements, 'lotes'], ['previsoes', 'Previsão', forecasts.totalElements, 'execuções'], ['cenarios', 'Cenários', cases.totalElements, 'hipóteses'], ['planos', 'Plano', plans.totalElements, 'publicados']]) +
       `<div class="overview-columns"><div>${panel('Revisões em preparação', 'Mais recentes primeiro · toda a equipa', revisionRows(drafts) + pager(drafts, 'draftRevisions'))}</div><aside>${panel('Revisões devolvidas', returned.totalElements ? 'A corrigir numa nova revisão' : '', revisionRows(returned) + pager(returned, 'returnedRevisions'))}${workSummary([['A aguardar aprovação', pending.totalElements], ['Planos publicados', plans.totalElements]])}${overviewHelp('Como continuo uma revisão devolvida?', 'Abre a revisão, consulta o motivo e cria uma nova revisão para corrigir. A anterior fica preservada.')}</aside></div></div>`;
   }
@@ -67,20 +75,20 @@ export function createViews(ctx) {
     const [plans, assessments, forecasts, cases, products] = await Promise.all([
       api.get('/planos?size=5'), api.get('/avaliacoes?size=5'),
       commercial ? api.get('/execucoes-previsao?size=5') : null,
-      commercial ? api.get('/cenarios?size=1') : null, commercial ? null : api.get('/produtos?size=1'),
+      commercial ? api.get('/cenarios?size=1') : null, commercial ? null : api.get('/produtos?size=1&ativo=true'),
     ]);
     const latestPlan = plans.items[0];
     const focus = commercial ? panel('Previsões recentes', '', forecasts.items.length ? `<div class="work-list">${forecasts.items.map(e => `<a class="work-item" href="#/previsao/${esc(e.id)}"><span class="work-symbol">${icon('trend', 21)}</span><span class="work-copy"><strong>${esc(label(e.metodo))} · #${esc(e.id)}</strong><small>${esc(e.horizonteMeses)} meses · ${esc(month(e.ultimoPeriodoTreino))}</small></span><span class="work-meta">${badge(e.estado)}</span><span class="work-open">${icon('arrow', 18)}</span></a>`).join('')}</div>` : empty('Ainda não há previsões'), '<a class="btn link" href="#/backtests">Comparar modelos →</a>')
       : panel('Avaliações recentes', '', assessments.items.length ? `<div class="work-list">${assessments.items.map(a => `<a class="work-item" href="#/avaliacao/${esc(a.id)}"><span class="work-symbol">${icon('chart', 21)}</span><span class="work-copy"><strong>Avaliação #${esc(a.id)} · Plano #${esc(a.planoId)}</strong><small>${esc(month(a.periodoInicio))} — ${esc(month(a.periodoFim))}</small></span><span class="work-open">${icon('arrow', 18)}</span></a>`).join('')}</div>` : empty('Ainda não há avaliações'), '<a class="btn link" href="#/monitorizacao">Monitorização →</a>');
-    return `<div class="workbench">` + heading(commercial ? 'Acompanhar' : 'Consultar', commercial ? 'Acompanhamento comercial' : 'Planos e resultados', '', commercial ? '<a class="btn primary" href="#/cenarios">Comparar cenários</a>' : '<a class="btn primary" href="#/planos">Consultar planos</a>') +
-      hero('Decisões publicadas', latestPlan ? 'Plano publicado.<br>Resultados a acompanhar.' : 'À espera<br>do primeiro plano.', latestPlan ? 'Quantidades aprovadas, disponíveis para consulta.' : 'As decisões da equipa vão aparecer aqui.', '<a class="btn" href="#/monitorizacao">Acompanhar resultados ' + icon('arrow', 16) + '</a>', latestPlan ? '#' + latestPlan.id : '—', 'plano mais recente') +
-      workSummary(commercial ? [['Previsões', forecasts.totalElements], ['Cenários', cases.totalElements], ['Planos publicados', plans.totalElements], ['Avaliações', assessments.totalElements]] : [['Produtos', products.totalElements], ['Planos publicados', plans.totalElements], ['Avaliações', assessments.totalElements]]) +
+    return `<div class="workbench">` + heading('', commercial ? 'Acompanhamento comercial' : 'Planos e resultados', '', commercial ? '<a class="btn primary" href="#/cenarios">Comparar cenários</a>' : '<a class="btn primary" href="#/planos">Consultar planos</a>') +
+      hero(latestPlan ? 'Plano publicado.<br>Resultados a acompanhar.' : 'À espera<br>do primeiro plano.', latestPlan ? 'Quantidades aprovadas, disponíveis para consulta.' : 'As decisões da equipa vão aparecer aqui.', '<a class="btn" href="#/monitorizacao">Acompanhar resultados ' + icon('arrow', 16) + '</a>', latestPlan ? '#' + latestPlan.id : '—', 'plano mais recente') +
+      workSummary(commercial ? [['Previsões', forecasts.totalElements], ['Cenários', cases.totalElements], ['Planos publicados', plans.totalElements], ['Avaliações', assessments.totalElements]] : [['Produtos ativos', products.totalElements], ['Planos publicados', plans.totalElements], ['Avaliações', assessments.totalElements]]) +
       `<div class="overview-columns"><div>${panel('Planos recentes', '', planRows(plans), '<a class="btn link" href="#/planos">Ver todos →</a>')}</div><aside>${focus}</aside></div></div>`;
   }
 
   async function adminOverview() {
     const [products, executions, cases, plans, lots] = await Promise.all([
-      api.get('/produtos?size=1'), api.get('/execucoes-previsao?size=5'),
+      api.get('/produtos?size=1&ativo=true'), api.get('/execucoes-previsao?size=5'),
       api.get('/cenarios?size=1'), api.get('/planos?size=5'), api.get('/lotes?size=4'),
     ]);
     const latestPlan = plans.items[0];
@@ -101,23 +109,67 @@ export function createViews(ctx) {
         chartFoot = `<div class="chart-context"><span>${icon('box', 15)} ${esc(first.produto)} · ${esc(first.unidade)}</span><span>${esc(month(points[0].periodo))} — ${esc(month(points.at(-1).periodo))}</span><span>Primeiro produto · ${points.length} meses</span></div>`;
       }
     }
-    return `<div class="workbench admin-dashboard">` + heading('Coordenar', 'Visão geral', '', newButton('Importar CSV', 'import')) +
-      hero('NexoPlan · S&OP', 'Da Procura<br>à Decisão.', 'Dados, alternativas e decisões no mesmo percurso.', '<a class="btn" href="#/cenarios">Explorar cenários ' + icon('arrow', 16) + '</a>', products.totalElements, 'produtos no catálogo') +
+    return `<div class="workbench admin-dashboard">` + heading('', 'Visão geral', '', newButton('Importar CSV', 'import')) +
+      hero('Da Procura<br>à Decisão.', 'Dados, alternativas e decisões no mesmo percurso.', '<a class="btn" href="#/cenarios">Explorar cenários ' + icon('arrow', 16) + '</a>', products.totalElements, 'produtos ativos no catálogo') +
       planningRoute([['importacoes', 'Dados', lots.totalElements, 'lotes'], ['previsoes', 'Previsão', executions.totalElements, 'execuções'], ['cenarios', 'Cenários', cases.totalElements, 'hipóteses'], ['planos', 'Plano', plans.totalElements, 'publicados']]) +
       `<div class="overview-columns"><div class="dashboard-chart">${panel('Da previsão ao plano', chartSubtitle, chart + chartFoot, chartAction)}</div><aside>${panel('Planos recentes', '', planRows(plans), '<a class="btn link" href="#/planos">Ver todos →</a>')}</aside></div>` +
       `<details class="overview-disclosure overview-imports"><summary>Últimas importações <span>${esc(lots.totalElements)} lotes</span></summary>${lots.items.length ? `<div class="work-list">${lots.items.map(l => `<a class="work-item" href="#/lote/${esc(l.id)}"><span class="work-symbol">${icon('upload', 20)}</span><span class="work-copy"><strong>${esc(l.nomeFicheiro)}</strong><small>${esc(label(l.tipo))} · ${esc(date(l.importadoEm))}</small></span><span class="work-meta">${badge(l.estado)}</span><span class="work-open">${icon('arrow', 18)}</span></a>`).join('')}</div>` : empty('Ainda não há importações')}</details></div>`;
   }
 
   async function products() {
-    const data = await page('products', '/produtos' + (state.search ? '?q=' + encodeURIComponent(state.search) : ''));
-    return heading('Dados de base', 'Catálogo de produtos', 'Códigos, unidades e estado dos produtos utilizados no planeamento.', newButton('Novo produto', 'product')) +
-      panel('Produtos', `${data.totalElements} produtos no resultado`, `<form id="product-search" class="toolbar">${field('Procurar no catálogo', input('q', 'search', state.search || '', 'placeholder="Código ou nome do produto" maxlength="160"'))}<button class="btn" type="submit">Pesquisar</button>${state.search ? b('Limpar', 'clear-search') : ''}</form>` +
-        table(['Código / produto', 'Unidade', 'Estado', ''], data.items.map(p => [`<strong>${esc(p.codigo)}</strong><small>${esc(p.nome)}</small>`, esc(p.unidade), badge(p.ativo ? 'ATIVO' : 'INATIVO'), writer() ? rowAction('Editar', 'edit-product', p.id) : 'Consulta'])) + pager(data, 'products'));
+    const gallery = state.productView === 'gallery';
+    const productStatus = state.productStatus || 'ativo';
+    const params = new URLSearchParams();
+    if (state.search) params.set('q', state.search);
+    if (productStatus !== 'todos') params.set('ativo', String(productStatus === 'ativo'));
+    const data = await page('products', '/produtos?' + params, gallery ? 8 : pageSize);
+    const canEdit = writer();
+    const status = product => badge(product.ativo ? 'ATIVO' : 'INATIVO');
+    const edit = product => rowAction('Editar', 'edit-product', product.id);
+    const toolbar = `<form id="product-search" class="toolbar catalogue-toolbar">
+      <div class="catalogue-search">
+        ${field('Procurar no catálogo', input('q', 'search', state.search || '', 'placeholder="Código ou nome do produto" maxlength="160"'))}
+        <button class="btn" type="submit">Pesquisar</button>${state.search ? b('Limpar', 'clear-search') : ''}
+      </div>
+      <div class="catalogue-status">${field('Estado', `<select name="productStatus">${[['ativo', 'Ativos'], ['inativo', 'Arquivados'], ['todos', 'Todos']].map(([value, text]) => `<option value="${value}" ${value === productStatus ? 'selected' : ''}>${text}</option>`).join('')}</select>`)}</div>
+      <div class="catalogue-view" role="group" aria-label="Vista do catálogo">
+        ${b(icon('list', 16) + 'Lista', 'product-view', `data-view="list" aria-pressed="${!gallery}"`)}
+        ${b(icon('grid', 16) + 'Galeria', 'product-view', `data-view="gallery" aria-pressed="${gallery}"`)}
+      </div>
+    </form>`;
+    let results;
+    if (!data.items.length) {
+      results = state.search || productStatus !== 'ativo' ? empty('Nenhum produto encontrado', 'Altera o estado ou limpa a pesquisa.')
+        : empty('Ainda não há produtos', canEdit ? 'Usa «Novo produto» para começar o catálogo.' : 'Os produtos aparecem aqui quando forem adicionados.');
+    } else if (gallery) {
+      results = `<ul class="product-gallery" role="list" aria-label="Produtos">${data.items.map(product => `
+        <li class="product-card">
+          <div class="product-card-image">${productThumbnail(product, { gallery: true })}</div>
+          <div class="product-card-content">
+            <h3>${esc(product.nome)}</h3>
+            <div class="product-card-footer">
+              <p class="product-card-code">${esc(product.codigo)} <span aria-hidden="true">·</span> ${esc(product.unidade)}</p>
+              <div class="product-card-actions">${status(product)}${canEdit ? edit(product) : ''}</div>
+            </div>
+          </div>
+        </li>`).join('')}</ul>`;
+    } else {
+      results = table(['Código / produto', 'Unidade', 'Estado', ''], data.items.map(product => [
+        `<div class="photo-cell">${productThumbnail(product)}<div class="photo-cell-text"><strong>${esc(product.codigo)}</strong><small>${esc(product.nome)}</small></div></div>`,
+        esc(product.unidade), status(product), canEdit ? edit(product) : 'Consulta'
+      ]));
+    }
+    const pagination = pager(data, 'products');
+    const catalogue = `<section class="panel" aria-label="Produtos">
+      <div class="catalogue-controls">${toolbar}${pagination}</div>
+      ${results}
+    </section>`;
+    return heading('', 'Catálogo de produtos', 'Códigos, unidades e estado dos produtos utilizados no planeamento.', newButton('Novo produto', 'product')) + catalogue;
   }
 
   async function imports() {
     const data = await page('lots', '/lotes');
-    return heading('Qualidade e proveniência', 'Importação de dados', 'Importa CSV e acompanha a validação antes de utilizar os registos.', newButton('Importar CSV', 'import')) +
+    return heading('', 'Importação de dados', 'Importa CSV e acompanha a validação antes de utilizar os registos.', newButton('Importar CSV', 'import')) +
       overviewHelp('Que dados posso importar?', 'Históricos alimentam as previsões. Realizados e operacionais permitem avaliar os planos publicados. Um lote com erros mantém os diagnósticos e não publica registos parciais.') +
       panel('Lotes recebidos', 'O original e o histórico de cada importação são conservados.', table(['Ficheiro / origem', 'Tipo', 'Registos', 'Estado', 'Recebido', ''], data.items.map(l => [`<strong>${esc(l.nomeFicheiro)}</strong><small>#${esc(l.id)} · ${esc(l.origem)}</small>`, esc(label(l.tipo)), esc(l.totalLinhas), badge(l.estado), esc(date(l.importadoEm)), `<a class="btn small" href="#/lote/${esc(l.id)}">Detalhes</a>`])) + pager(data, 'lots'));
   }
@@ -140,22 +192,22 @@ export function createViews(ctx) {
 
   async function forecasts() {
     const data = await page('forecasts', '/execucoes-previsao');
-    return heading('Antecipar a procura', 'Previsões', 'Gera uma base reproduzível a partir de um histórico validado.', newButton('Gerar previsão', 'forecast') + '<a class="btn" href="#/backtests">Comparar modelos</a>') +
+    return heading('', 'Previsões', 'Gera uma base reproduzível a partir de um histórico validado.', newButton('Gerar previsão', 'forecast') + '<a class="btn" href="#/backtests">Comparar modelos</a>') +
       panel('Execuções de previsão', 'Cada execução conserva o histórico, a configuração e os resultados.', table(['Execução', 'Método', 'Último mês de treino', 'Horizonte', 'Produtos previstos', 'Estado', ''], data.items.map(e => [`<strong>#${esc(e.id)}</strong><small>Lote #${esc(e.loteHistoricoId)} · ${esc(e.tipoSerie)}</small>`, esc(label(e.metodo)), esc(month(e.ultimoPeriodoTreino)), esc(e.horizonteMeses) + ' meses', esc(e.produtosPrevistos), badge(e.estado), `<a class="btn small" href="#/previsao/${esc(e.id)}">Consultar</a>`])) + pager(data, 'forecasts'));
   }
   async function forecast(id) {
     const [e, lines, diagnostics] = await Promise.all([api.get(`/execucoes-previsao/${id}`), page('forecastLines', `/execucoes-previsao/${id}/linhas`), page('diagnostics', `/execucoes-previsao/${id}/diagnosticos`)]);
-    const first = lines.items[0]; const points = lines.items.filter(l => l.produtoId === first?.produtoId);
+    const { first, points, control } = chartSelection(await api.all(`/execucoes-previsao/${id}/linhas`), 'forecast-' + id);
     return back('previsoes', 'Previsões') + heading('Previsão #' + esc(id), esc(label(e.metodo)) + ' · ' + e.horizonteMeses + ' meses', 'Histórico e parâmetros fixos para esta execução.', badge(e.estado) + `<a class="btn primary" href="#/cenarios?execucaoId=${esc(id)}">Explorar cenários ${icon('arrow', 16)}</a>`) +
       panel('Configuração da execução', '', meta([['Histórico', 'Lote #' + esc(e.loteHistoricoId)], ['Série', esc(e.tipoSerie)], ['Dados conhecidos até', esc(date(e.corteTemporal))], ['Último mês de treino', esc(month(e.ultimoPeriodoTreino))], ['Gerada', esc(date(e.criadoEm))]])) +
-      panel('Procura prevista' + (first ? ' · ' + esc(first.produto) : ''), first ? 'Primeiro produto da página · ' + esc(first.unidade) : '', first ? lineChart(points.map(p => p.periodo), [{ name: 'Previsão base', values: points.map(p => p.quantidadeBase) }]) : empty('Sem previsões disponíveis')) +
+      panel('Procura prevista' + (first ? ' · ' + esc(first.produto) : ''), '', control + (first ? lineChart(points.map(p => p.periodo), [{ name: 'Previsão base', values: points.map(p => p.quantidadeBase) }]) : empty('Sem previsões disponíveis'))) +
       panel('Quantidades base', 'Valores por produto e mês.', table(['Produto', 'Mês', 'Horizonte', 'Quantidade', 'Unidade'], lines.items.map(l => [esc(l.produto), esc(month(l.periodo)), esc(l.horizonte), q(l.quantidadeBase), esc(l.unidade)])) + pager(lines, 'forecastLines')) +
       panel('Qualidade do cálculo', 'Históricos insuficientes e métodos de recurso ficam identificados.', table(['Produto', 'Estado', 'Método aplicado', 'Diagnóstico'], diagnostics.items.map(d => [esc(d.produto), badge(d.estado), esc(d.metodoAplicado || '—'), esc(d.diagnostico || 'Sem restrições assinaladas')])) + pager(diagnostics, 'diagnostics'));
   }
 
   async function backtests() {
     const data = await page('backtests', '/backtests');
-    return heading('Avaliação temporal', 'Comparação de modelos', 'Média Móvel e ETS sobre os mesmos cortes históricos, sem confundir simulação com plano publicado.', newButton('Novo backtest', 'backtest')) +
+    return heading('', 'Comparação de modelos', 'Média Móvel e ETS sobre os mesmos cortes históricos, sem confundir simulação com plano publicado.', newButton('Novo backtest', 'backtest')) +
       panel('Simulações retrospetivas', 'Parâmetros estimados apenas com os dados anteriores a cada corte.', table(['Simulação', 'Histórico', 'Cortes', 'Horizonte', 'Células', 'Estado', ''], data.items.map(t => [`#${esc(t.id)}`, `Lote #${esc(t.loteHistoricoId)}`, `${esc(month(t.primeiroCorte))} → ${esc(month(t.ultimoCorte))}`, esc(t.horizonteMeses), esc(t.totalCelulas), badge(t.estado), `<a class="btn small" href="#/backtest/${esc(t.id)}">Comparar</a>`])) + pager(data, 'backtests'));
   }
   async function backtest(id) {
@@ -170,7 +222,7 @@ export function createViews(ctx) {
     const executions = (await api.all('/execucoes-previsao')).filter(e => e.estado === 'CONCLUIDA' && e.totalLinhas > 0);
     const id = params.get('execucaoId') || state.executionId || executions[0]?.id;
     if (state.executionId !== id) { state.compareIds = []; state.compareNames = {}; state.comparison = null; state.executionId = id; state.pages.scenarios = 0; }
-    if (!id) return heading('Explorar alternativas', 'Cenários', 'Uma previsão base, várias decisões possíveis.') + panel('Começar um cenário', '', empty('Ainda não há previsões elegíveis', 'Gera uma previsão concluída com linhas antes de criar cenários.') + '<div class="panel-body"><a class="btn primary" href="#/previsoes">Ir para previsões</a></div>');
+    if (!id) return heading('', 'Cenários', 'Uma previsão base, várias decisões possíveis.') + panel('Começar um cenário', '', empty('Ainda não há previsões elegíveis', 'Gera uma previsão concluída com linhas antes de criar cenários.') + '<div class="panel-body"><a class="btn primary" href="#/previsoes">Ir para previsões</a></div>');
     const data = await page('scenarios', `/cenarios?execucaoId=${encodeURIComponent(id)}`);
     state.compareNames ||= {};
     for (const c of data.items) state.compareNames[c.ultimaRevisaoId] = c.nome;
@@ -183,8 +235,9 @@ export function createViews(ctx) {
       result = panel('Comparação de cenários', 'Compara as quantidades finais das revisões selecionadas. Os desvios são calculados face à previsão base.', (first ? lineChart(first.periodos.map(p => p.periodo), [{ name: 'Previsão base · ' + first.produto, values: first.periodos.map(p => p.quantidadeBase) }, ...revisions.map((r, i) => ({ name: r.cenarioNome + ' · revisão #' + r.id, values: first.periodos.map(p => p.cenarios[i].quantidadeFinal) }))]) : '') +
         `<div class="comparison">${table(headers, comparison.produtos.items.flatMap(p => p.periodos.map(period => [`<strong>${esc(p.produto)}</strong><small>${esc(month(period.periodo))} · ${esc(p.unidade)}</small>`, q(period.quantidadeBase), ...period.cenarios.map(c => `<strong class="num">${q(c.quantidadeFinal)}</strong><small>Desvio ${percent(c.desvioPercentual)}</small>`)])))}</div>` + pager(searchable(comparison.produtos, 'comparison'), 'comparison'));
     }
-    return heading('Explorar alternativas', 'Cenários', 'Cria hipóteses de procura e compara-as com a previsão base.', newButton('Novo cenário', 'scenario', `data-execution="${esc(id)}"`)) +
-      panel('Cenários da previsão #' + esc(id), 'Seleciona de 2 a 5 cenários. A comparação usa a última revisão de cada um.', `<div class="scenario-source">${field('Previsão de origem', select('scenarioExecution', executions.map(e => [e.id, `#${e.id} · ${label(e.metodo)} · treino até ${e.ultimoPeriodoTreino}`]), id))}<a class="btn small" href="#/previsao/${esc(id)}">Ver previsão</a></div>` + table(['Comparar', 'Cenário', 'Tipo', 'Revisões guardadas', 'Criado', ''], data.items.map(c => [`<input aria-label="Comparar última revisão de ${esc(c.nome)}" type="checkbox" data-compare="${esc(c.ultimaRevisaoId)}" ${state.compareIds.includes(c.ultimaRevisaoId) ? 'checked' : ''}>`, `<strong>${esc(c.nome)}</strong><small>Cenário #${esc(c.id)}</small>`, esc(label(c.tipo)), esc(c.numeroRevisoes), esc(date(c.criadoEm)), `<a class="btn small" href="#/revisao/${esc(c.ultimaRevisaoId)}">Ver cenário</a>`])) + pager(data, 'scenarios') + `<div class="panel-body"><div class="actions">${state.compareIds.map(r => b(esc(state.compareNames[r] || 'Revisão #' + r) + ' ×', 'remove-compare', `data-id="${esc(r)}"`, 'small')).join('')}${b('Comparar selecionadas', 'compare', state.compareIds.length < 2 ? 'disabled' : '', 'primary')}</div></div>`) + result;
+    const source = `<div class="scenario-source">${field('Previsão de origem', select('scenarioExecution', executions.map(e => [e.id, `#${e.id} · ${label(e.metodo)} · treino até ${e.ultimoPeriodoTreino}`]), id))}<a class="btn small" href="#/previsao/${esc(id)}">Ver previsão</a></div>`;
+    return heading('', 'Cenários', 'Cria hipóteses de procura e compara-as com a previsão base.', newButton('Novo cenário', 'scenario', `data-execution="${esc(id)}"`)) +
+      panel('Cenários da previsão #' + esc(id), 'Seleciona de 2 a 5 cenários. A comparação usa a última revisão de cada um.', table(['Comparar', 'Cenário', 'Tipo', 'Revisões guardadas', 'Criado', ''], data.items.map(c => [`<label class="compare-control"><input aria-label="Comparar última revisão de ${esc(c.nome)}" type="checkbox" data-compare="${esc(c.ultimaRevisaoId)}" ${state.compareIds.includes(c.ultimaRevisaoId) ? 'checked' : ''}></label>`, `<strong>${esc(c.nome)}</strong><small>Cenário #${esc(c.id)}</small>`, esc(label(c.tipo)), esc(c.numeroRevisoes), esc(date(c.criadoEm)), `<a class="btn small" href="#/revisao/${esc(c.ultimaRevisaoId)}">Ver cenário</a>`])) + pager(data, 'scenarios') + `<div class="panel-body"><div class="actions">${state.compareIds.map(r => b(esc(state.compareNames[r] || 'Revisão #' + r) + ' ×', 'remove-compare', `data-id="${esc(r)}"`, 'small')).join('')}${b('Comparar selecionadas', 'compare', state.compareIds.length < 2 ? 'disabled' : '', 'primary')}</div></div>`, '', source) + result;
   }
   async function scenario(id, params) {
     const [c, revisions] = await Promise.all([api.get(`/cenarios/${id}`), page('revisions', `/cenarios/${id}/revisoes`)]);
@@ -207,12 +260,12 @@ export function createViews(ctx) {
     const canDecide = ctx.approver() && independent(state.user, r, adjustments);
     const actions = (writer() ? b('Novo cenário', 'dialog', `data-kind="scenario" data-execution="${esc(r.execucaoId)}"`) + b('Criar nova revisão', 'dialog', 'data-kind="copy" title="Guardar outra versão deste mesmo cenário"') : '') + (writer() && r.estado === 'RASCUNHO' ? b('Enviar para aprovação', 'dialog', 'data-kind="submit"', 'primary') : '') +
       (canDecide && r.estado === 'EM_REVISAO' ? b('Devolver', 'dialog', 'data-kind="return"', 'danger') + b('Aprovar e publicar', 'dialog', 'data-kind="approve"', 'primary') : '');
-    const first = lines.items[0], points = lines.items.filter(l => l.produtoId === first?.produtoId);
+    const { first, points, control } = chartSelection(await api.all(`/revisoes/${id}/linhas`), 'revision-' + id);
     let note = r.estado === 'RASCUNHO' ? info('Rascunho · Ajusta com justificação e envia para aprovação.') : info('Revisão congelada · Cria uma nova revisão para alterar quantidades.');
     if (ctx.approver() && !canDecide && r.estado === 'EM_REVISAO') note += info('A decisão exige outro aprovador: criaste esta revisão ou participaste nos ajustes que ela conserva.', true);
     return { context: { revision: r, adjustments, revisionCells: lines.items, currentScenario: c }, html: back(`cenarios?execucaoId=${r.execucaoId}`, 'Cenários da mesma previsão') + heading('Revisão #' + esc(r.id), esc(c.nome), `Cenário #${esc(c.id)} · ${r.numero}.ª versão deste cenário · ${esc(label(c.tipo))}`, actions, `data-revision-id="${esc(r.id)}" data-revision-version="${esc(r.versao)}"`) + note +
       panel('Pressupostos desta revisão', '', meta([['Estado', badge(r.estado)], ['Fator', q(factorValue(r.fator))], ['Previsão', '#' + esc(r.execucaoId)], ['Origem', r.revisaoOrigemId ? `<a href="#/revisao/${esc(r.revisaoOrigemId)}">Revisão #${esc(r.revisaoOrigemId)}</a>` : 'Previsão base'], ['Enviada para aprovação', esc(date(r.submetidoEm))]]) + `<p class="detail-description">${esc(r.pressupostos.descricao)}</p><div class="panel-body"><a class="btn small" href="#/cenario/${esc(c.id)}?revisaoId=${esc(r.id)}">Histórico de revisões deste cenário</a></div>`) +
-      panel('Evolução do cenário' + (first ? ' · ' + esc(first.produto) : ''), first ? 'Primeiro produto da página · ' + esc(first.unidade) : '', first ? lineChart(points.map(p => p.periodo), [{ name: 'Base', values: points.map(p => p.quantidadeBase) }, { name: 'Calculada', values: points.map(p => p.quantidadeCalculada) }, { name: 'Final', values: points.map(p => p.quantidadeFinal) }]) : empty('Sem linhas')) +
+      panel('Evolução do cenário' + (first ? ' · ' + esc(first.produto) : ''), '', control + (first ? lineChart(points.map(p => p.periodo), [{ name: 'Base', values: points.map(p => p.quantidadeBase) }, { name: 'Calculada', values: points.map(p => p.quantidadeCalculada) }, { name: 'Final', values: points.map(p => p.quantidadeFinal) }]) : empty('Sem linhas'))) +
       panel('Quantidades por mês', 'Ajustes disponíveis apenas em rascunho.', table(['Produto / mês', 'Base', 'Calculada', 'Final', 'Desvio', ''], lines.items.map((l, i) => [`<strong>${esc(l.produto)}</strong><small>${esc(month(l.periodo))} · ${esc(l.unidade)}</small>`, q(l.quantidadeBase), q(l.quantidadeCalculada), `<strong class="num">${q(l.quantidadeFinal)}</strong>`, percent(l.desvioPercentual), writer() && r.estado === 'RASCUNHO' ? b('Ajustar', 'adjust', `data-index="${i}"`, 'small') : '<span class="muted">Consulta</span>'])) + pager(lines, 'revisionLines')) +
       panel('Auditoria dos ajustes', 'Inclui os ajustes herdados que foram conservados no momento da cópia.', table(['Mês / produto', 'Anterior → novo', 'Justificação', 'Autor', 'Origem'], audit.items.map(a => [esc(month(a.periodo)) + '<small>Produto #' + esc(a.produtoId) + '</small>', `<span class="num">${q(a.valorAnterior)} → ${q(a.valorNovo)}</span>`, esc(a.justificacao), esc(a.autorNome) + '<small>' + esc(date(a.ocorridoEm)) + '</small>', a.herdado ? `<a href="#/revisao/${esc(a.revisaoId)}">Herdado · #${esc(a.revisaoId)}</a>` : 'Esta revisão'])) + pager(audit, 'audit'), '', ) +
       panel('Linha temporal', 'Eventos locais desta revisão.', (events.items.length ? `<div class="timeline">${events.items.map(e => `<div class="event"><i class="dot"></i><div><p><strong>${esc(label(e.tipo))}</strong> · ${esc(e.autorNome)}</p><small>${esc(e.motivo || '')}</small></div><time>${esc(date(e.ocorridoEm))}</time></div>`).join('')}</div>` : empty('Sem eventos')) + pager(events, 'events')) };
@@ -220,19 +273,19 @@ export function createViews(ctx) {
 
   async function plans() {
     const data = await page('plans', '/planos');
-    return heading('Decisões aprovadas', 'Planos publicados', 'Uma versão estável, com aprovação identificada e exportação para outras ferramentas.') +
+    return heading('', 'Planos publicados', 'Uma versão estável, com aprovação identificada e exportação para outras ferramentas.') +
       panel('Publicações', 'Rascunhos e revisões em preparação não aparecem nesta lista.', table(['Plano', 'Cenário / revisão', 'Publicação', 'Linhas', ''], data.items.map(p => [`<strong>Plano #${esc(p.id)}</strong>`, `Cenário #${esc(p.cenarioId)}<small>Revisão #${esc(p.revisaoId)}</small>`, esc(date(p.publicadoEm)), esc(p.totalLinhas), `<div class="actions"><a class="btn small" href="#/plano/${esc(p.id)}">Consultar</a>${rowAction('CSV', 'download', p.id)}</div>`])) + pager(data, 'plans'));
   }
   async function plan(id) {
     const [p, lines] = await Promise.all([api.get(`/planos/${id}`), page('planLines', `/planos/${id}/linhas`)]);
-    return back('planos', 'Planos publicados') + heading('Plano publicado', 'Plano aprovado #' + esc(id), 'Os valores publicados e a exportação usam a mesma cópia preservada.', b('Descarregar CSV', 'download', `data-id="${esc(id)}"`, 'primary') + (writer() ? b('Criar avaliação', 'dialog', `data-kind="assessment" data-plan="${esc(id)}"`) : '')) +
+    return back('planos', 'Planos publicados') + heading('', 'Plano aprovado #' + esc(id), 'Os valores publicados e a exportação usam a mesma cópia preservada.', b('Descarregar CSV', 'download', `data-id="${esc(id)}"`, 'primary') + (writer() ? b('Criar avaliação', 'dialog', `data-kind="assessment" data-plan="${esc(id)}"`) : '')) +
       panel('Informação de aprovação', '', meta([['Revisão', '#' + esc(p.revisaoId)], ['Cenário', '#' + esc(p.cenarioId)], ['Aprovado por', 'Utilizador #' + esc(p.aprovadoPor)], ['Aprovação', esc(date(p.aprovadoEm))], ['Publicação', esc(date(p.publicadoEm))]])) +
       panel('Células publicadas', 'A consulta é paginada; o CSV inclui todas as linhas.', table(['Produto', 'Mês', 'Unidade', 'Previsão base', 'Quantidade aprovada'], lines.items.map(l => [esc(l.produto), esc(month(l.periodo)), esc(l.unidade), q(l.quantidadeBase), `<strong class="num">${q(l.quantidade)}</strong>`])) + pager(lines, 'planLines'));
   }
 
   async function monitoring() {
     const data = await page('assessments', '/avaliacoes');
-    return heading('Fechar o ciclo', 'Monitorização', 'Avalia o plano com realizados conhecidos num corte explícito. Precisão e operação mantêm a sua cobertura.', newButton('Nova avaliação', 'assessment')) +
+    return heading('', 'Monitorização', 'Avalia o plano com realizados conhecidos num corte explícito. Precisão e operação mantêm a sua cobertura.', newButton('Nova avaliação', 'assessment')) +
       panel('Avaliações guardadas', 'Novos lotes ou cortes criam outra avaliação e preservam as anteriores.', table(['Avaliação', 'Plano', 'Janela', 'Corte dos resultados', 'Células', ''], data.items.map(a => [`<strong>#${esc(a.id)}</strong><small>Realizados #${esc(a.loteRealizadosId)}</small>`, `<a href="#/plano/${esc(a.planoId)}">Plano #${esc(a.planoId)}</a>`, `${esc(month(a.periodoInicio))} → ${esc(month(a.periodoFim))}`, esc(date(a.corteRealizados)), esc(a.totalCelulas), `<a class="btn small" href="#/avaliacao/${esc(a.id)}">Analisar</a>`])) + pager(data, 'assessments'));
   }
   async function assessment(id) {
@@ -255,8 +308,17 @@ export function createViews(ctx) {
 
   async function team() {
     const users = await page('team', '/utilizadores');
-    return heading('Acesso e responsabilidades', 'Equipa', 'Cria contas com os papéis necessários. A aprovação exige independência de quem preparou ou ajustou a revisão.', b(icon('plus', 16) + 'Criar utilizador', 'dialog', 'data-kind="user"', 'primary')) +
-      panel('Membros da equipa', 'Consulta reservada ao administrador.', table(['ID', 'Nome', 'Email', 'Perfis', 'Estado', ''], users.items.map(u => [`<strong>#${esc(u.id)}</strong>`, esc(u.nome), esc(u.email), esc(u.papeis.map(label).join(' · ')), badge(!u.ativo ? 'INATIVO' : u.passwordDefinida ? 'ATIVO' : 'POR_ATIVAR'), rowAction('Consultar', 'lookup-user', u.id)])) + pager(users, 'team')) +
+    const headers = ['ID', '<span class="member-name"><span class="member-name-text">Nome</span></span>', 'Email', 'Perfis', 'Estado', ''];
+    const rows = users.items.map(u => [
+      `<strong>#${esc(u.id)}</strong>`,
+      `<div class="member-name">${memberAvatar(u)}<span class="member-name-text">${esc(u.nome)}</span></div>`,
+      esc(u.email),
+      esc(u.papeis.map(label).join(' · ')),
+      badge(!u.ativo ? 'INATIVO' : u.passwordDefinida ? 'ATIVO' : 'POR_ATIVAR'),
+      rowAction('Consultar', 'lookup-user', u.id)
+    ]);
+    return heading('', 'Equipa', 'Cria contas com os papéis necessários. A aprovação exige independência de quem preparou ou ajustou a revisão.', b(icon('plus', 16) + 'Criar utilizador', 'dialog', 'data-kind="user"', 'primary')) +
+      panel('Membros da equipa', 'Consulta reservada ao administrador.', table(headers, rows) + pager(users, 'team')) +
       `<details class="secondary-details">
         <summary>Responsabilidades por perfil</summary>
         <dl class="team-roles">

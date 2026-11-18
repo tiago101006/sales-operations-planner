@@ -1,5 +1,5 @@
 import { Api, ApiError } from './api.mjs';
-import { esc, date, month, quantity as q, factorValue, revisionCaption, label, badge, icon, button as b, field, input, select, role, lastMonth, independent } from './ui.mjs';
+import { esc, date, month, quantity as q, factorValue, revisionCaption, label, badge, icon, button as b, field, input, select, role, lastMonth, independent, productThumbnail } from './ui.mjs';
 import { createViews } from './views.mjs';
 import { accountAvatar, accountPage } from './profile.mjs';
 
@@ -7,7 +7,11 @@ const api = new Api();
 const root = document.querySelector('#app');
 const modal = document.querySelector('#modal');
 let photoRevision = 0;
-const state = { user: null, pages: {}, compareIds: [], comparison: null };
+const productViewPreference = 'nexoplan.catalogue.view';
+const state = { user: null, pages: {}, compareIds: [], comparison: null, productView: 'list' };
+try {
+  if (localStorage.getItem(productViewPreference) === 'gallery') state.productView = 'gallery';
+} catch { /* The catalogue still works when browser storage is unavailable. */ }
 const writer = () => role(state.user, 'ADMIN', 'PLANEADOR');
 const internal = () => role(state.user, 'ADMIN', 'PLANEADOR', 'COMERCIAL', 'APROVADOR');
 const approver = () => role(state.user, 'APROVADOR');
@@ -104,7 +108,6 @@ function activationView(loggedIn = false) {
     return;
   }
   entry.innerHTML = `
-    <span class="login-eyebrow">BEM-VINDO À EQUIPA</span>
     <h1>Escolhe a tua password</h1>
     <p class="login-welcome">A tua password é pessoal. Não a partilhes com o administrador.</p>
     ${activationToken ? `<form id="activation-form">
@@ -133,7 +136,8 @@ function showInvitation(invite) {
 function logoutView(message = '', loggedIn = false) {
   hideChartTooltip();
   document.title = 'Entrar — NexoPlan';
-  epoch++;for (const key of Object.keys(state)) delete state[key];Object.assign(state, { user: null, pages: {}, compareIds: [], comparison: null });
+  const { productView } = state;
+  epoch++;for (const key of Object.keys(state)) delete state[key];Object.assign(state, { user: null, pages: {}, compareIds: [], comparison: null, productView });
   closeDialog();
   root.innerHTML = `<main id="conteudo" class="login" tabindex="-1">
     <section class="login-panel" aria-labelledby="login-title">
@@ -142,7 +146,6 @@ function logoutView(message = '', loggedIn = false) {
         <div><strong>NexoPlan<span class="brand-period">.</span></strong><small>PROCURA → DECISÃO</small></div>
       </a>
       <div class="login-entry">
-        <span class="login-eyebrow">O TEU ESPAÇO DE PLANEAMENTO</span>
         <h1 id="login-title">Entrar na aplicação</h1>
         <p class="login-welcome">Bom ter-te de volta.</p>
         <form id="login-form">
@@ -202,8 +205,9 @@ function updateAccountPhoto(hasPhoto) {
   if (remove) remove.hidden = !hasPhoto;
 }
 document.addEventListener('error', event => {
-  if (event.target instanceof HTMLImageElement && event.target.hasAttribute('data-profile-photo')) {
-    event.target.remove();
+  const image = event.target;
+  if (image instanceof HTMLImageElement && (image.hasAttribute('data-profile-photo') || image.closest('[data-inline-photo]'))) {
+    image.remove();
   }
 }, true);
 function setNavigation(open) {
@@ -211,7 +215,7 @@ function setNavigation(open) {
   const toggle = document.querySelector('[data-action=toggle-nav]');
   if (toggle) { toggle.setAttribute('aria-expanded', String(open));toggle.setAttribute('aria-label', open ? 'Fechar navegação' : 'Abrir navegação'); }
 }
-async function render({ pagination } = {}) {
+async function render({ pagination, preserveFocus } = {}) {
   if (!state.user) return;
   if (!document.querySelector('.shell')) shell();
   const current = route(), active = aliases[current.name] || current.name;
@@ -226,7 +230,7 @@ async function render({ pagination } = {}) {
   document.querySelectorAll('[data-nav]').forEach(el => { el.classList.toggle('active', el.dataset.nav === active); if (el.dataset.nav === active) el.setAttribute('aria-current', 'page'); else el.removeAttribute('aria-current'); });
   document.querySelector('#breadcrumb').textContent = permission?.[1] || 'Página';
   document.title = `${permission?.[1] || 'Página'} — NexoPlan`;
-  if (!pagination) main.innerHTML = '<div class="loading" role="status"><span class="spinner"></span>A carregar os dados…</div>';
+  if (!pagination && !preserveFocus) main.innerHTML = '<div class="loading" role="status"><span class="spinner"></span>A carregar os dados…</div>';
   try {
     if (!permission || (active !== 'conta' && !views[current.name])) throw new Error('Esta página não existe. Escolhe uma opção do menu.');
     if (!permission[3]()) throw new Error('O teu perfil não tem acesso a esta área. Consulta os planos publicados e a monitorização.');
@@ -235,16 +239,19 @@ async function render({ pagination } = {}) {
       : await views[current.name](current.name === 'cenarios' ? current.params : current.id, current.params);
     if (version !== epoch || !state.user) return;
     const scrollTop = window.scrollY;
-    const restoreFocus = pagination && document.activeElement === pagination.trigger;
+    const interaction = pagination || preserveFocus;
+    const restoreFocus = interaction && document.activeElement === interaction.trigger;
     if (typeof html === 'string') {
       main.innerHTML = html;
     } else {
       Object.assign(state, html.context);
       main.innerHTML = html.html;
     }
-    if (pagination) {
+    if (interaction) {
       window.scrollTo({ top: scrollTop, behavior: 'instant' });
-      if (restoreFocus) {
+      if (restoreFocus && preserveFocus) {
+        main.querySelector(preserveFocus.selector)?.focus({ preventScroll: true });
+      } else if (restoreFocus && pagination) {
         const controls = [...main.querySelectorAll(`[data-action="page"][data-key="${CSS.escape(pagination.key)}"]`)];
         const sameDirection = controls.find(button => Number(button.dataset.page) === pagination.nextTarget);
         const focusTarget = sameDirection?.disabled ? controls.find(button => !button.disabled) : sameDirection;
@@ -330,12 +337,33 @@ async function dialog(kind, data = {}) {
   if (!user) return;
   if (['approve', 'return'].includes(kind)) {
     if (!approver() || !independent(user, state.revision, state.adjustments)) throw new Error('A decisão exige um aprovador independente.');
-  } else if (['user', 'user-status', 'user-invite'].includes(kind) ? !role(user, 'ADMIN') : !writer()) throw new Error('O teu perfil não permite esta operação.');
+  } else if (['user', 'user-status', 'user-invite', 'delete-product', 'archive-product'].includes(kind) ? !role(user, 'ADMIN') : !writer()) throw new Error('O teu perfil não permite esta operação.');
   const r = state.revision;
   switch (kind) {
     case 'product': {
       const p = data.id ? await api.get('/produtos/' + encodeURIComponent(data.id)) : null;
-      formHtml(kind, p ? 'Editar produto' : 'Novo produto', field('Código', input('codigo', 'text', p?.codigo || '', 'required maxlength="64" pattern="[A-Za-z0-9._-]+"')) + field('Unidade', input('unidade', 'text', p?.unidade || 'un', 'required maxlength="20"'), 'Ex.: un, kg ou L. Fica fixa depois de haver dados.') + field('Nome do produto', input('nome', 'text', p?.nome || '', 'required maxlength="160"')) + (p ? `<label class="check-group"><input name="ativo" type="checkbox" ${p.ativo ? 'checked' : ''}>Produto ativo</label>` : ''), 'Guardar produto', { product: p });break;
+      const photoField = field('Foto do produto', '<input name="foto" type="file" accept="image/jpeg,image/png">', 'Opcional. JPEG ou PNG, até 2 MiB e 4096 × 4096 px.');
+      const photo = `<div class="product-photo-field form-span">
+        ${p?.temFoto ? productThumbnail(p, { current: true }) : ''}
+        <div class="product-photo-controls">
+          ${photoField}
+          ${p?.temFoto ? '<label class="product-photo-remove"><input name="removerFoto" type="checkbox">Remover foto ao guardar</label>' : ''}
+        </div>
+      </div>`;
+      formHtml(kind, p ? 'Editar produto' : 'Novo produto',
+        field('Código', input('codigo', 'text', p?.codigo || '', 'required maxlength="64" pattern="[A-Za-z0-9._-]+"')) +
+        field('Unidade', input('unidade', 'text', p?.unidade || 'un', 'required maxlength="20"'), 'Ex.: un, kg ou L. Fica fixa depois de haver dados.') +
+        field('Nome do produto', input('nome', 'text', p?.nome || '', 'required maxlength="160"')) +
+        (p ? `<label class="product-active"><input name="ativo" type="checkbox" ${p.ativo ? 'checked' : ''}>Produto ativo</label>` : '') +
+        photo + (p && role(user, 'ADMIN') ? `<div class="product-retire form-span">${b('Eliminar produto', 'delete-product', `data-id="${esc(p.id)}"`, 'danger')}</div>` : ''), 'Guardar produto', { product: p });
+      break;
+    }
+    case 'delete-product': case 'archive-product': {
+      const product = await api.get('/produtos/' + encodeURIComponent(data.id));
+      const archive = kind === 'archive-product';
+      const content = `<div class="form-span"><p><strong>${esc(product.nome)}</strong> · ${esc(product.codigo)}</p><p class="product-retire-help">${archive ? 'O produto sai do catálogo ativo. Os dados e o histórico ficam disponíveis para consulta.' : 'A eliminação é definitiva e exige um produto sem histórico. Podes arquivar o produto para o retirar do catálogo ativo.'}</p>${!archive && product.ativo ? b('Arquivar produto', 'archive-product', `data-id="${esc(product.id)}"`) : ''}</div>`;
+      formHtml(kind, archive ? 'Arquivar produto' : 'Eliminar produto', content, archive ? 'Arquivar produto' : 'Eliminar definitivamente', { product }, 'danger');
+      break;
     }
     case 'import': {
       const lots = (await api.all('/lotes')).filter(l => l.estado === 'VALIDADO');
@@ -447,10 +475,35 @@ async function command(form, context) {
   const text = name => String(d.get(name) || '').trim();
   const instant = name => form.elements[name].dataset.initial === text(name) ? new Date().toISOString() : new Date(text(name)).toISOString();
   switch (kind) {
+    case 'delete-product': case 'archive-product': {
+      const product = context.product;
+      const path = '/produtos/' + encodeURIComponent(product.id);
+      if (kind === 'delete-product') {
+        await api.send(path + '?versaoEsperada=' + encodeURIComponent(product.versao), undefined, 'DELETE');
+      } else {
+        await api.send(path, { ativo: false, versaoEsperada: product.versao }, 'PATCH');
+      }
+      state.pages.products = 0;
+      return { message: kind === 'delete-product' ? 'Produto eliminado.' : 'Produto arquivado.' };
+    }
     case 'product': {
       const body = { codigo: text('codigo'), nome: text('nome'), unidade: text('unidade') };
       if (context.product) Object.assign(body, { ativo: d.has('ativo'), versaoEsperada: context.product.versao });
-      await api.send('/produtos' + (context.product ? '/' + context.product.id : ''), body, context.product ? 'PATCH' : 'POST');return { message: 'Produto guardado.' };
+      const photo = d.get('foto');
+      const path = context.product ? '/produtos/' + encodeURIComponent(context.product.id) : '/produtos';
+      const method = context.product ? 'PATCH' : 'POST';
+      if (context.product && d.has('removerFoto')) body.removerFoto = true;
+      if (photo?.name) {
+        if (photo.size === 0) throw new Error('A fotografia está vazia. Escolhe outro ficheiro.');
+        if (photo.size > 2 * 1024 * 1024) throw new Error('A fotografia deve ter até 2 MiB.');
+        const upload = new FormData();
+        upload.set('produto', new Blob([JSON.stringify(body)], { type: 'application/json' }));
+        upload.set('foto', photo);
+        await api.send(path, upload, method);
+      } else {
+        await api.send(path, body, method);
+      }
+      return { message: 'Produto guardado.' };
     }
     case 'import': {
       const file = d.get('ficheiro');if (!file || !file.size) throw new Error('Seleciona um ficheiro CSV com conteúdo.');if (file.size > 10 * 1024 * 1024) throw new Error('O ficheiro excede 10 MiB.');
@@ -612,6 +665,17 @@ document.addEventListener('click', async event => {
       }
       case 'dialog': target.disabled = true;await dialog(target.dataset.kind, { execution: target.dataset.execution, plan: target.dataset.plan, history: target.dataset.history });break;
       case 'edit-product': await dialog('product', { id: target.dataset.id });break;
+      case 'delete-product': case 'archive-product': await dialog(action, { id: target.dataset.id });break;
+      case 'product-view': {
+        const view = target.dataset.view;
+        if (state.productView === view) break;
+        state.productView = view;
+        state.search = target.form.elements.q.value.trim();
+        state.pages.products = 0;
+        try { localStorage.setItem(productViewPreference, view); } catch { /* Keep the choice for this visit. */ }
+        await render({ preserveFocus: { trigger: target, selector: `[data-action="product-view"][data-view="${CSS.escape(view)}"]` } });
+        break;
+      }
       case 'adjust': await dialog('adjust', { cell: state.revisionCells[Number(target.dataset.index)] });break;
       case 'download': target.disabled = true;await api.download(target.dataset.id);notify('Download do CSV preparado.');break;
       case 'reset-search': {
@@ -754,11 +818,26 @@ document.addEventListener('change', async event => {
       const id = target.dataset.compare;
       if (target.checked && state.compareIds.length >= 5) { target.checked = false;notify('A comparação aceita no máximo cinco revisões.');return; }
       state.compareIds = target.checked ? [...new Set([...state.compareIds, id])] : state.compareIds.filter(i => i !== id);
-      state.comparison = null;await render();return;
+      state.comparison = null;await render({ preserveFocus: { trigger: target, selector: `[data-compare="${CSS.escape(id)}"]` } });return;
+    }
+    if (target.dataset.chartSelection) {
+      state.chartProducts ||= {};state.chartProducts[target.dataset.chartSelection] = target.value;
+      await render({ preserveFocus: { trigger: target, selector: `[data-chart-selection="${CSS.escape(target.dataset.chartSelection)}"]` } });return;
     }
     if (target.name === 'scenarioExecution') { state.pages.scenarios = 0;navigate('cenarios?execucaoId=' + encodeURIComponent(target.value));return; }
+    if (target.name === 'productStatus') {
+      state.productStatus = target.value;
+      state.search = target.form.elements.q.value.trim();
+      state.pages.products = 0;
+      await render({ preserveFocus: { trigger: target, selector: '[name="productStatus"]' } });return;
+    }
     if (target.name === 'monitorProduct') { state.monitorProduct = target.value;await render();return; }
     if (!modal.contains(target)) return;
+    if (dialogContext?.kind === 'product') {
+      const { foto, removerFoto } = target.form?.elements || {};
+      if (target === foto && foto.files.length && removerFoto) removerFoto.checked = false;
+      if (target === removerFoto && removerFoto.checked) foto.value = '';
+    }
     if (target.name === 'tipo' && dialogContext?.kind === 'import') updateImportFormat();
     if (target.name === 'tipo' && dialogContext?.kind === 'scenario') modal.querySelector('[name=fator]').value = { BASE: '1.00', OTIMISTA: '1.10', CONSERVADOR: '0.90', PERSONALIZADO: '1.00' }[target.value] || '1.00';
     if (target.name === 'metodo') updateMethod();

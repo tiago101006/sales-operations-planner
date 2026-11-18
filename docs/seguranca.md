@@ -5,6 +5,13 @@ configuração Docker e dependências do projeto. A revisão inclui alterações
 testes de regressão. A avaliação de uma futura instalação pública depende também
 da configuração do servidor, do domínio, do HTTPS e da rede.
 
+A [revisão complementar de 18 de novembro de 2026](validacao-tecnica-2026-11-18.md)
+verificou o código mais recente e alargou o orçamento de concorrência à criação
+de cenários/contas, cópia de revisões e aprovação/publicação. Inclui um
+[modelo de ameaças](security/sales-operations-planner-threat-model.md) para o uso
+local atual e a eventual publicação na Internet. Os resultados abaixo mantêm a
+data da revisão original.
+
 ## Resultado da revisão
 
 | Área | Constatação e tratamento |

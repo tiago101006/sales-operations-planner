@@ -6,6 +6,7 @@ import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -15,12 +16,25 @@ import pt.tiagodias.sop.catalog.ProdutoController.*;
 @Transactional(readOnly = true)
 public class ProdutoService {
     private final ProdutoRepository repository;
-    public ProdutoService(ProdutoRepository repository) { this.repository = repository; }
+    private final JdbcTemplate jdbc;
+    public ProdutoService(ProdutoRepository repository, JdbcTemplate jdbc) {
+        this.repository = repository;
+        this.jdbc = jdbc;
+    }
 
     @Transactional
     public ProdutoDto create(CreateProduto request) {
+        return create(request, null);
+    }
+
+    @Transactional
+    public ProdutoDto create(CreateProduto request, byte[] image) {
         if (repository.existsByCodigo(request.codigo())) { throw conflict("Código de produto já existente."); }
-        return dto(repository.saveAndFlush(new Produto(request.codigo(), request.nome().strip(), request.unidade().strip())));
+        var produto = new Produto(request.codigo(), request.nome().strip(), request.unidade().strip());
+        if (image != null) produto.marcarNovaFoto();
+        repository.saveAndFlush(produto);
+        if (image != null) savePhoto(produto.getId(), image);
+        return dto(produto);
     }
 
     public ProdutoDto get(Long id) {
@@ -50,6 +64,15 @@ public class ProdutoService {
 
     @Transactional
     public ProdutoDto update(Long id, UpdateProduto request) {
+        return update(id, request, null);
+    }
+
+    @Transactional
+    public ProdutoDto update(Long id, UpdateProduto request, byte[] image) {
+        boolean removePhoto = Boolean.TRUE.equals(request.removerFoto());
+        if (removePhoto && image != null) {
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Escolhe entre remover ou substituir a foto.");
+        }
         var produto = repository.findForUpdate(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Produto não encontrado."));
         if (!produto.getVersao().equals(request.versaoEsperada())) { throw conflict("Versão desatualizada. Consulta novamente o produto antes de alterar."); }
@@ -61,12 +84,50 @@ public class ProdutoService {
         if (identityChanged && repository.usage(id) != 0) { throw conflict("Código e unidade ficam fixos depois de o produto ter dados associados."); }
         if (request.codigo() != null && repository.existsByCodigoAndIdNot(request.codigo(), id)) { throw conflict("Código de produto já existente."); }
         produto.update(request.codigo(), request.nome(), request.unidade(), request.ativo());
+        if (image != null) {
+            savePhoto(id, image);
+            produto.marcarNovaFoto();
+        } else if (removePhoto && produto.temFoto()) {
+            jdbc.update("DELETE FROM foto_produto WHERE produto_id=?", id);
+            produto.limparFoto();
+        }
         return dto(repository.saveAndFlush(produto));
+    }
+
+    @Transactional
+    public void delete(Long id, long versaoEsperada) {
+        if (versaoEsperada < 0) {
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "A versão esperada deve ser igual ou superior a zero.");
+        }
+        var produto = repository.findForUpdate(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Produto não encontrado."));
+        if (!produto.getVersao().equals(versaoEsperada)) {
+            throw conflict("Versão desatualizada. Consulta novamente o produto antes de eliminar.");
+        }
+        if (repository.usage(id) != 0) {
+            throw conflict("O produto tem histórico associado. Arquiva-o para preservar os dados e os planos.");
+        }
+        jdbc.update("DELETE FROM foto_produto WHERE produto_id=?", id);
+        repository.delete(produto);
+        repository.flush();
+    }
+
+    public byte[] photo(Long id) {
+        return jdbc.query("SELECT imagem FROM foto_produto WHERE produto_id=?", (rs, row) -> rs.getBytes(1), id)
+                .stream().findFirst()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "O produto não tem foto."));
+    }
+
+    private void savePhoto(Long id, byte[] image) {
+        jdbc.update("""
+                INSERT INTO foto_produto (produto_id, imagem) VALUES (?, ?) AS nova
+                ON DUPLICATE KEY UPDATE imagem=nova.imagem
+                """, id, image);
     }
 
     private static ResponseStatusException conflict(String message) { return new ResponseStatusException(HttpStatus.CONFLICT, message); }
     private static ProdutoDto dto(Produto produto) {
         return new ProdutoDto(produto.getId().toString(), produto.getCodigo(), produto.getNome(),
-                produto.getUnidade(), produto.isAtivo(), produto.getVersao());
+                produto.getUnidade(), produto.isAtivo(), produto.getVersao(), produto.temFoto());
     }
 }

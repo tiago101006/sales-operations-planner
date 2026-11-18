@@ -1,0 +1,309 @@
+{
+  "versao": 1,
+  "sintetico": true,
+  "origem": "OpenAI ImageGen (ferramenta integrada)",
+  "descricao": "Imagens ilustrativas com fundo uniforme para os 100 produtos DEMO. As cinco variantes de embalagem de cada tipo partilham a mesma imagem representativa.",
+  "imagens": [
+    {
+      "ficheiro": "arroz.jpg",
+      "prompt": "Use case: product-mockup. Asset type: square product photograph for NexoPlan's fictional wholesale catalogue. Primary request: a photorealistic studio packshot of a single upright transparent sealed bag of uncooked long-grain white rice, plain cream paper label and small muted forest-green band, recognisable rice grains visible. Warm off-white seamless background, soft diffuse light, subtle contact shadow, front three-quarter view, entire product centered with modest margins, occupying 80% of square image height. Realistic flexible packaging and grain detail. No text, no logos, no brands, no people, no extra props or UI. This is illustrative demo catalogue photography.",
+      "codigos": [
+        "DEMO001",
+        "DEMO021",
+        "DEMO041",
+        "DEMO061",
+        "DEMO081"
+      ],
+      "sha256": "043aad924a63c8bc47f2a401bad84c001c16b48bef5c075d4436baae174a8dd2",
+      "sha256_anterior": "da21d08a384c4dd1222d229d5f2100736c5cd47ea4868d6a9967c8dd979bd980",
+      "recorte": "recortes/arroz.png",
+      "prompt_recorte": "Use case: background-extraction. Edit target: the supplied NexoPlan product photograph. Remove the complete studio background and all floor/contact-shadow pixels. Produce a clean product cutout on a genuinely transparent alpha background. Preserve this exact product, its original material colors, packaging, label, text, proportions, viewpoint and all edges. Keep the whole object and align it centrally in a square canvas with 8% clear margin. Only the product remains opaque. No beige or white matte, no floor, no halo, no extra objects, no redesign. For transparent product packaging retain a natural faithful appearance while removing the external backdrop."
+    },
+    {
+      "ficheiro": "massa.jpg",
+      "prompt": "Use case: product-mockup. Asset type: square product photograph for NexoPlan's fictional wholesale catalogue. Primary request: a photorealistic studio packshot of a single upright transparent sealed bag of dry spaghetti pasta, pale golden strands clearly visible, minimal cream paper label. Warm off-white seamless background, soft diffuse light, subtle contact shadow, front three-quarter view, entire product centered with modest margins, occupying 80% of square image height. Realistic material texture. Simple cream labeling with subtle muted forest-green accents where packaging allows. No text, no logos, no brands, no people, no extra props or UI. This is illustrative demo catalogue photography.",
+      "codigos": [
+        "DEMO002",
+        "DEMO022",
+        "DEMO042",
+        "DEMO062",
+        "DEMO082"
+      ],
+      "sha256": "8cab26272decdb36790d15353871dcd6c610b520747796a0bfdb395b29aa82aa",
+      "sha256_anterior": "f0bb0ca3823ca9772fb9d9320f3c8fec00bae370d451e1acd4107707cd52d39c",
+      "recorte": "recortes/massa.png",
+      "prompt_recorte": "Use case: background-extraction. Edit target: the supplied NexoPlan product photograph. Remove the complete studio background and all floor/contact-shadow pixels. Produce a clean product cutout on a genuinely transparent alpha background. Preserve this exact product, its original material colors, packaging, label, text, proportions, viewpoint and all edges. Keep the whole object and align it centrally in a square canvas with 8% clear margin. Only the product remains opaque. No beige or white matte, no floor, no halo, no extra objects, no redesign. For transparent product packaging retain a natural faithful appearance while removing the external backdrop."
+    },
+    {
+      "ficheiro": "farinha.jpg",
+      "prompt": "Use case: product-mockup. Asset type: square product photograph for NexoPlan's fictional wholesale catalogue. Primary request: a photorealistic studio packshot of a single upright one-kilogram matte cream paper bag of wheat flour, folded and crimped at the top, subtle wheat ear illustration. Warm off-white seamless background, soft diffuse light, subtle contact shadow, front three-quarter view, entire product centered with modest margins, occupying 80% of square image height. Realistic material texture. Simple cream labeling with subtle muted forest-green accents where packaging allows. No text, no logos, no brands, no people, no extra props or UI. This is illustrative demo catalogue photography.",
+      "codigos": [
+        "DEMO003",
+        "DEMO023",
+        "DEMO043",
+        "DEMO063",
+        "DEMO083"
+      ],
+      "sha256": "b449670c4d220f206ad454dc42b0888a87b078774e2f16b4ca2a4a528e439907",
+      "sha256_anterior": "8f8e6f7e83828718e435af921155a3043a91577c1be0d540310ef842e55bf261",
+      "recorte": "recortes/farinha.png",
+      "prompt_recorte": "Use case: background-extraction. Edit target: the supplied NexoPlan product photograph. Remove the complete studio background and all floor/contact-shadow pixels. Produce a clean product cutout on a genuinely transparent alpha background. Preserve this exact product, its original material colors, packaging, label, text, proportions, viewpoint and all edges. Keep the whole object and align it centrally in a square canvas with 8% clear margin. Only the product remains opaque. No beige or white matte, no floor, no halo, no extra objects, no redesign. For transparent product packaging retain a natural faithful appearance while removing the external backdrop."
+    },
+    {
+      "ficheiro": "azeite.jpg",
+      "prompt": "Use case: product-mockup. Asset type: square product photograph for NexoPlan's fictional wholesale catalogue. Primary request: a photorealistic studio packshot of a single dark olive-green glass bottle of extra virgin olive oil, short black screw cap and understated cream label. Warm off-white seamless background, soft diffuse light, subtle contact shadow, front three-quarter view, entire product centered with modest margins, occupying 80% of square image height. Realistic material texture. Simple cream labeling with subtle muted forest-green accents where packaging allows. No text, no logos, no brands, no people, no extra props or UI. This is illustrative demo catalogue photography.",
+      "codigos": [
+        "DEMO004",
+        "DEMO024",
+        "DEMO044",
+        "DEMO064",
+        "DEMO084"
+      ],
+      "sha256": "b3942b74aca62b76432c91903cb492adfd8caa0c7c332499874e39b231cab4f9",
+      "sha256_anterior": "95c9b94eeb258ada1730fab69af9ab770c6e9872362025bb0e24d1ef383d6f79",
+      "recorte": "recortes/azeite.png",
+      "prompt_recorte": "Use case: background-extraction. Edit target: the supplied NexoPlan product photograph. Remove the complete studio background and all floor/contact-shadow pixels. Produce a clean product cutout on a genuinely transparent alpha background. Preserve this exact product, its original material colors, packaging, label, text, proportions, viewpoint and all edges. Keep the whole object and align it centrally in a square canvas with 8% clear margin. Only the product remains opaque. No beige or white matte, no floor, no halo, no extra objects, no redesign. For transparent product packaging retain a natural faithful appearance while removing the external backdrop."
+    },
+    {
+      "ficheiro": "leite.jpg",
+      "prompt": "Use case: product-mockup. Asset type: square product photograph for NexoPlan's fictional wholesale catalogue. Primary request: a photorealistic studio packshot of a single rectangular one-litre cream-colored milk carton with a white screw cap, a small green band and simple milk-drop symbol. Warm off-white seamless background, soft diffuse light, subtle contact shadow, front three-quarter view, entire product centered with modest margins, occupying 80% of square image height. Realistic material texture. Simple cream labeling with subtle muted forest-green accents where packaging allows. No text, no logos, no brands, no people, no extra props or UI. This is illustrative demo catalogue photography.",
+      "codigos": [
+        "DEMO005",
+        "DEMO025",
+        "DEMO045",
+        "DEMO065",
+        "DEMO085"
+      ],
+      "sha256": "3d609160ddd78e8a542548a47b9f4e28c9273579703d72a491f5d73912e0af39",
+      "sha256_anterior": "8d5bbcc29cbcda34ca9546279e22c979155b839c5b00c85fc4abacfff84af88c",
+      "recorte": "recortes/leite.png",
+      "prompt_recorte": "Use case: background-extraction. Edit target: the supplied NexoPlan product photograph. Remove the complete studio background and all floor/contact-shadow pixels. Produce a clean product cutout on a genuinely transparent alpha background. Preserve this exact product, its original material colors, packaging, label, text, proportions, viewpoint and all edges. Keep the whole object and align it centrally in a square canvas with 8% clear margin. Only the product remains opaque. No beige or white matte, no floor, no halo, no extra objects, no redesign. For transparent product packaging retain a natural faithful appearance while removing the external backdrop."
+    },
+    {
+      "ficheiro": "cafe.jpg",
+      "prompt": "Use case: product-mockup. Asset type: square product photograph for NexoPlan's fictional wholesale catalogue. Primary request: a photorealistic studio packshot of a single standing kraft-paper pouch of ground roasted coffee, deep brown coffee bean motif on a small cream label and resealable top. Warm off-white seamless background, soft diffuse light, subtle contact shadow, front three-quarter view, entire product centered with modest margins, occupying 80% of square image height. Realistic material texture. Simple cream labeling with subtle muted forest-green accents where packaging allows. No text, no logos, no brands, no people, no extra props or UI. This is illustrative demo catalogue photography.",
+      "codigos": [
+        "DEMO006",
+        "DEMO026",
+        "DEMO046",
+        "DEMO066",
+        "DEMO086"
+      ],
+      "sha256": "b92c2c3216518611a80fa68bb083d347e7eb04d530e684d42fb0fc114fc9a61d",
+      "sha256_anterior": "4aaea8169d0bdcf223389bbe6cf9b63c866929c0f3fad8381c90d1b6f8aefbc6",
+      "recorte": "recortes/cafe.png",
+      "prompt_recorte": "Use case: background-extraction. Edit target: the supplied NexoPlan product photograph. Remove the complete studio background and all floor/contact-shadow pixels. Produce a clean product cutout on a genuinely transparent alpha background. Preserve this exact product, its original material colors, packaging, label, text, proportions, viewpoint and all edges. Keep the whole object and align it centrally in a square canvas with 8% clear margin. Only the product remains opaque. No beige or white matte, no floor, no halo, no extra objects, no redesign. For transparent product packaging retain a natural faithful appearance while removing the external backdrop."
+    },
+    {
+      "ficheiro": "cha.jpg",
+      "prompt": "Use case: product-mockup. Asset type: square product photograph for NexoPlan's fictional wholesale catalogue. Primary request: a photorealistic studio packshot of a single cream cardboard box of tea bags, green botanical tea-leaf illustration and a small visible tea bag resting against the box. Warm off-white seamless background, soft diffuse light, subtle contact shadow, front three-quarter view, entire product centered with modest margins, occupying 80% of square image height. Realistic material texture. Simple cream labeling with subtle muted forest-green accents where packaging allows. No text, no logos, no brands, no people, no extra props or UI. This is illustrative demo catalogue photography.",
+      "codigos": [
+        "DEMO007",
+        "DEMO027",
+        "DEMO047",
+        "DEMO067",
+        "DEMO087"
+      ],
+      "sha256": "a8641258da4a733eeaca511317d5f18cc8b06f14b7daa1d33623837cc3970f15",
+      "sha256_anterior": "340bbd03c43ffcd746c80bf0e183462935e072a0277e44da24f63fdff80abdab",
+      "recorte": "recortes/cha.png",
+      "prompt_recorte": "Use case: background-extraction. Edit target: the supplied NexoPlan product photograph. Remove the complete studio background and all floor/contact-shadow pixels. Produce a clean product cutout on a genuinely transparent alpha background. Preserve this exact product, its original material colors, packaging, label, text, proportions, viewpoint and all edges. Keep the whole object and align it centrally in a square canvas with 8% clear margin. Only the product remains opaque. No beige or white matte, no floor, no halo, no extra objects, no redesign. For transparent product packaging retain a natural faithful appearance while removing the external backdrop."
+    },
+    {
+      "ficheiro": "bolachas.jpg",
+      "prompt": "Use case: product-mockup. Asset type: square product photograph for NexoPlan's fictional wholesale catalogue. Primary request: a photorealistic studio packshot of a single transparent sealed packet of golden oat biscuits, stacked round biscuits visibly textured through the wrapper, cream paper sleeve. Warm off-white seamless background, soft diffuse light, subtle contact shadow, front three-quarter view, entire product centered with modest margins, occupying 80% of square image height. Realistic material texture. Simple cream labeling with subtle muted forest-green accents where packaging allows. No text, no logos, no brands, no people, no extra props or UI. This is illustrative demo catalogue photography.",
+      "codigos": [
+        "DEMO008",
+        "DEMO028",
+        "DEMO048",
+        "DEMO068",
+        "DEMO088"
+      ],
+      "sha256": "185d74718538c5b44472493bcdb112d784ccb11d857586faf10bc2740a7085f2",
+      "sha256_anterior": "46df0aa6d02deb1199596a8e5da3c08ce05ece47144be08e7a387d6e1c65807f",
+      "recorte": "recortes/bolachas.png",
+      "prompt_recorte": "Use case: background-extraction. Edit target: the supplied NexoPlan product photograph. Remove the complete studio background and all floor/contact-shadow pixels. Produce a clean product cutout on a genuinely transparent alpha background. Preserve this exact product, its original material colors, packaging, label, text, proportions, viewpoint and all edges. Keep the whole object and align it centrally in a square canvas with 8% clear margin. Only the product remains opaque. No beige or white matte, no floor, no halo, no extra objects, no redesign. For transparent product packaging retain a natural faithful appearance while removing the external backdrop."
+    },
+    {
+      "ficheiro": "cereais.jpg",
+      "prompt": "Use case: product-mockup. Asset type: square product photograph for NexoPlan's fictional wholesale catalogue. Primary request: a photorealistic studio packshot of a single breakfast cereal cardboard box with a realistic photo of golden oat flakes and puffed cereal on its cream front panel. Warm off-white seamless background, soft diffuse light, subtle contact shadow, front three-quarter view, entire product centered with modest margins, occupying 80% of square image height. Realistic material texture. Simple cream labeling with subtle muted forest-green accents where packaging allows. No text, no logos, no brands, no people, no extra props or UI. This is illustrative demo catalogue photography.",
+      "codigos": [
+        "DEMO009",
+        "DEMO029",
+        "DEMO049",
+        "DEMO069",
+        "DEMO089"
+      ],
+      "sha256": "8177c1f32b753e0642beac11e9176863bab8c93ba40cdfaebe0e6cdcf0c42018",
+      "sha256_anterior": "8b863037434d5c2e61ff1bff32960f6c91656cba23de52fdd316f52ee13b4bb2",
+      "recorte": "recortes/cereais.png",
+      "prompt_recorte": "Use case: background-extraction. Edit target: the supplied NexoPlan product photograph. Remove the complete studio background and all floor/contact-shadow pixels. Produce a clean product cutout on a genuinely transparent alpha background. Preserve this exact product, its original material colors, packaging, label, text, proportions, viewpoint and all edges. Keep the whole object and align it centrally in a square canvas with 8% clear margin. Only the product remains opaque. No beige or white matte, no floor, no halo, no extra objects, no redesign. For transparent product packaging retain a natural faithful appearance while removing the external backdrop."
+    },
+    {
+      "ficheiro": "agua.jpg",
+      "prompt": "Use case: product-mockup. Asset type: square product photograph for NexoPlan's fictional wholesale catalogue. Primary request: a photorealistic studio packshot of a single clear mineral water bottle filled with water, pale green cap, transparent realistic PET with fine droplets and a minimal cream label. Warm off-white seamless background, soft diffuse light, subtle contact shadow, front three-quarter view, entire product centered with modest margins, occupying 80% of square image height. Realistic material texture. Simple cream labeling with subtle muted forest-green accents where packaging allows. No text, no logos, no brands, no people, no extra props or UI. This is illustrative demo catalogue photography.",
+      "codigos": [
+        "DEMO010",
+        "DEMO030",
+        "DEMO050",
+        "DEMO070",
+        "DEMO090"
+      ],
+      "sha256": "1cf3e6ee68d3a662915b1fbdd0dc0b3c6c96c0f4dd28a6ab5d7d59c78295ead7",
+      "sha256_anterior": "b08d866202ea3aba12f8c0aecf0ec38f8991ea5924566edabda82a0c69e9fa11",
+      "recorte": "recortes/agua.png",
+      "prompt_recorte": "Use case: background-extraction. Edit target: the supplied NexoPlan product photograph. Remove the complete studio background and all floor/contact-shadow pixels. Produce a clean product cutout on a genuinely transparent alpha background. Preserve this exact product, its original material colors, packaging, label, text, proportions, viewpoint and all edges. Keep the whole object and align it centrally in a square canvas with 8% clear margin. Only the product remains opaque. No beige or white matte, no floor, no halo, no extra objects, no redesign. For transparent product packaging retain a natural faithful appearance while removing the external backdrop."
+    },
+    {
+      "ficheiro": "sumo.jpg",
+      "prompt": "Use case: product-mockup. Asset type: square product photograph for NexoPlan's fictional wholesale catalogue. Primary request: a photorealistic studio packshot of a single clear one-litre bottle of orange juice with vivid natural orange liquid, white cap, cream label showing a small orange slice. Warm off-white seamless background, soft diffuse light, subtle contact shadow, front three-quarter view, entire product centered with modest margins, occupying 80% of square image height. Realistic material texture. Simple cream labeling with subtle muted forest-green accents where packaging allows. No text, no logos, no brands, no people, no extra props or UI. This is illustrative demo catalogue photography.",
+      "codigos": [
+        "DEMO011",
+        "DEMO031",
+        "DEMO051",
+        "DEMO071",
+        "DEMO091"
+      ],
+      "sha256": "6a73f76eb247c6fcd75023bc2718d972939ae09f43ad9d7985b4da0954187d5d",
+      "sha256_anterior": "18addd41c00e54ace6b3f17a63cfe0c336185f2d283e41406d200417696c817b",
+      "recorte": "recortes/sumo.png",
+      "prompt_recorte": "Use case: background-extraction. Edit target: the supplied NexoPlan product photograph. Remove the complete studio background and all floor/contact-shadow pixels. Produce a clean product cutout on a genuinely transparent alpha background. Preserve this exact product, its original material colors, packaging, label, text, proportions, viewpoint and all edges. Keep the whole object and align it centrally in a square canvas with 8% clear margin. Only the product remains opaque. No beige or white matte, no floor, no halo, no extra objects, no redesign. For transparent product packaging retain a natural faithful appearance while removing the external backdrop."
+    },
+    {
+      "ficheiro": "atum.jpg",
+      "prompt": "Use case: product-mockup. Asset type: square product photograph for NexoPlan's fictional wholesale catalogue. Primary request: a photorealistic studio packshot of a single open shallow silver tin of tuna with its ring-pull lid lifted back, realistic pale tuna chunks clearly visible, small cream and green side label. Warm off-white seamless background, soft diffuse light, subtle contact shadow, front three-quarter view, entire product centered with modest margins, occupying 80% of square image height. Realistic material texture. Simple cream labeling with subtle muted forest-green accents where packaging allows. No text, no logos, no brands, no people, no extra props or UI. This is illustrative demo catalogue photography.",
+      "codigos": [
+        "DEMO012",
+        "DEMO032",
+        "DEMO052",
+        "DEMO072",
+        "DEMO092"
+      ],
+      "sha256": "281cff865a00b4c276e7e6d2ae1d1b50673c633a9596dabc281b73096c3148fe",
+      "sha256_anterior": "75342ff6ae9e7b440ee10c0acb89a817428c49bfbd7a95fa367ab405bd08f6f4",
+      "recorte": "recortes/atum.png",
+      "prompt_recorte": "Use case: background-extraction. Edit target: the supplied NexoPlan product photograph. Remove the complete studio background and all floor/contact-shadow pixels. Produce a clean product cutout on a genuinely transparent alpha background. Preserve this exact product, its original material colors, packaging, label, text, proportions, viewpoint and all edges. Keep the whole object and align it centrally in a square canvas with 8% clear margin. Only the product remains opaque. No beige or white matte, no floor, no halo, no extra objects, no redesign. For transparent product packaging retain a natural faithful appearance while removing the external backdrop."
+    },
+    {
+      "ficheiro": "feijao.jpg",
+      "prompt": "Use case: product-mockup. Asset type: square product photograph for NexoPlan's fictional wholesale catalogue. Primary request: a photorealistic studio packshot of a single clear glass jar filled with cooked red kidney beans, dark-green metal screw lid and a minimal cream label. Warm off-white seamless background, soft diffuse light, subtle contact shadow, front three-quarter view, entire product centered with modest margins, occupying 80% of square image height. Realistic material texture. Simple cream labeling with subtle muted forest-green accents where packaging allows. No text, no logos, no brands, no people, no extra props or UI. This is illustrative demo catalogue photography.",
+      "codigos": [
+        "DEMO013",
+        "DEMO033",
+        "DEMO053",
+        "DEMO073",
+        "DEMO093"
+      ],
+      "sha256": "ed156d4f9d8920a930f9b21c5aeb07dc0dd4ebc28bffcf7917a29738f62cc9bc",
+      "sha256_anterior": "e7456ad8ba125eaf62d32486d02569504aec12f7c7f895b815f5fe30732871dd",
+      "recorte": "recortes/feijao.png",
+      "prompt_recorte": "Use case: background-extraction. Edit target: the supplied NexoPlan product photograph. Remove the complete studio background and all floor/contact-shadow pixels. Produce a clean product cutout on a genuinely transparent alpha background. Preserve this exact product, its original material colors, packaging, label, text, proportions, viewpoint and all edges. Keep the whole object and align it centrally in a square canvas with 8% clear margin. Only the product remains opaque. No beige or white matte, no floor, no halo, no extra objects, no redesign. For transparent product packaging retain a natural faithful appearance while removing the external backdrop."
+    },
+    {
+      "ficheiro": "grao.jpg",
+      "prompt": "Use case: product-mockup. Asset type: square product photograph for NexoPlan's fictional wholesale catalogue. Primary request: a photorealistic studio packshot of a single clear glass jar filled with cooked golden chickpeas, dark-green metal screw lid and a minimal cream label. Warm off-white seamless background, soft diffuse light, subtle contact shadow, front three-quarter view, entire product centered with modest margins, occupying 80% of square image height. Realistic material texture. Simple cream labeling with subtle muted forest-green accents where packaging allows. No text, no logos, no brands, no people, no extra props or UI. This is illustrative demo catalogue photography.",
+      "codigos": [
+        "DEMO014",
+        "DEMO034",
+        "DEMO054",
+        "DEMO074",
+        "DEMO094"
+      ],
+      "sha256": "d3d220138385c905b7b8396bcb180380fb1da5f34ae2184f454b19f566db7591",
+      "sha256_anterior": "b5d567b86a4a7602f1931d2a09a7001f261538ab5217e65e80705c761cbd0099",
+      "recorte": "recortes/grao.png",
+      "prompt_recorte": "Use case: background-extraction. Edit target: the supplied NexoPlan product photograph. Remove the complete studio background and all floor/contact-shadow pixels. Produce a clean product cutout on a genuinely transparent alpha background. Preserve this exact product, its original material colors, packaging, label, text, proportions, viewpoint and all edges. Keep the whole object and align it centrally in a square canvas with 8% clear margin. Only the product remains opaque. No beige or white matte, no floor, no halo, no extra objects, no redesign. For transparent product packaging retain a natural faithful appearance while removing the external backdrop."
+    },
+    {
+      "ficheiro": "acucar.jpg",
+      "prompt": "Use case: product-mockup. Asset type: square product photograph for NexoPlan's fictional wholesale catalogue. Primary request: a photorealistic studio packshot of a single sealed transparent bag of white granulated sugar, fine crystalline grains visible, simple cream paper sleeve and folded upper seal. Warm off-white seamless background, soft diffuse light, subtle contact shadow, front three-quarter view, entire product centered with modest margins, occupying 80% of square image height. Realistic material texture. Simple cream labeling with subtle muted forest-green accents where packaging allows. No text, no logos, no brands, no people, no extra props or UI. This is illustrative demo catalogue photography.",
+      "codigos": [
+        "DEMO015",
+        "DEMO035",
+        "DEMO055",
+        "DEMO075",
+        "DEMO095"
+      ],
+      "sha256": "6baa605372780072a06135d34002a5f69154fb3d66e7668c6579dd24916face7",
+      "sha256_anterior": "da27b538546b60ada1de9cf4bf9a2aac03df0c7ca4230ee5dcb033f93675e7f0",
+      "recorte": "recortes/acucar.png",
+      "prompt_recorte": "Use case: background-extraction. Edit target: the supplied NexoPlan product photograph. Remove the complete studio background and all floor/contact-shadow pixels. Produce a clean product cutout on a genuinely transparent alpha background. Preserve this exact product, its original material colors, packaging, label, text, proportions, viewpoint and all edges. Keep the whole object and align it centrally in a square canvas with 8% clear margin. Only the product remains opaque. No beige or white matte, no floor, no halo, no extra objects, no redesign. For transparent product packaging retain a natural faithful appearance while removing the external backdrop."
+    },
+    {
+      "ficheiro": "sal.jpg",
+      "prompt": "Use case: product-mockup. Asset type: square product photograph for NexoPlan's fictional wholesale catalogue. Primary request: a photorealistic studio packshot of a single cylindrical cardboard table salt container, white perforated shaker cap and subtle sea-salt crystal imagery on cream packaging. Warm off-white seamless background, soft diffuse light, subtle contact shadow, front three-quarter view, entire product centered with modest margins, occupying 80% of square image height. Realistic material texture. Simple cream labeling with subtle muted forest-green accents where packaging allows. No text, no logos, no brands, no people, no extra props or UI. This is illustrative demo catalogue photography.",
+      "codigos": [
+        "DEMO016",
+        "DEMO036",
+        "DEMO056",
+        "DEMO076",
+        "DEMO096"
+      ],
+      "sha256": "c9436bb71b0b68b93c996174e253edbeba1ee9b62c53d85c30ff70e8637b5e53",
+      "sha256_anterior": "f5bf560ea7bf721937d7f99da0222489c28346a5d3f83d71442b5ad6999f4887",
+      "recorte": "recortes/sal.png",
+      "prompt_recorte": "Use case: background-extraction. Edit target: the supplied NexoPlan product photograph. Remove the complete studio background and all floor/contact-shadow pixels. Produce a clean product cutout on a genuinely transparent alpha background. Preserve this exact product, its original material colors, packaging, label, text, proportions, viewpoint and all edges. Keep the whole object and align it centrally in a square canvas with 8% clear margin. Only the product remains opaque. No beige or white matte, no floor, no halo, no extra objects, no redesign. For transparent product packaging retain a natural faithful appearance while removing the external backdrop."
+    },
+    {
+      "ficheiro": "detergente.jpg",
+      "prompt": "Use case: product-mockup. Asset type: square product photograph for NexoPlan's fictional wholesale catalogue. Primary request: a photorealistic studio packshot of a single translucent green plastic dishwashing-liquid bottle with a short flip-top cap, visible pale green liquid and minimal cream label. Warm off-white seamless background, soft diffuse light, subtle contact shadow, front three-quarter view, entire product centered with modest margins, occupying 80% of square image height. Realistic material texture. Simple cream labeling with subtle muted forest-green accents where packaging allows. No text, no logos, no brands, no people, no extra props or UI. This is illustrative demo catalogue photography.",
+      "codigos": [
+        "DEMO017",
+        "DEMO037",
+        "DEMO057",
+        "DEMO077",
+        "DEMO097"
+      ],
+      "sha256": "429666355815d8b9ee8a155e8c9e745261887ac67e9631ad10903aedad00cfd2",
+      "sha256_anterior": "40dde870a1f8978acae7b90bd83d71ec104c36044a08d2d9e5605feffbc60445",
+      "recorte": "recortes/detergente.png",
+      "prompt_recorte": "Use case: background-extraction. Edit target: the supplied NexoPlan product photograph. Remove the complete studio background and all floor/contact-shadow pixels. Produce a clean product cutout on a genuinely transparent alpha background. Preserve this exact product, its original material colors, packaging, label, text, proportions, viewpoint and all edges. Keep the whole object and align it centrally in a square canvas with 8% clear margin. Only the product remains opaque. No beige or white matte, no floor, no halo, no extra objects, no redesign. For transparent product packaging retain a natural faithful appearance while removing the external backdrop."
+    },
+    {
+      "ficheiro": "sabao.jpg",
+      "prompt": "Use case: product-mockup. Asset type: square product photograph for NexoPlan's fictional wholesale catalogue. Primary request: a photorealistic studio packshot of a single rectangular ivory hand-soap bar in a partially open cream paper wrapper, clean natural texture and subtly embossed leaf mark. Warm off-white seamless background, soft diffuse light, subtle contact shadow, front three-quarter view, entire product centered with modest margins, occupying 80% of square image height. Realistic material texture. Simple cream labeling with subtle muted forest-green accents where packaging allows. No text, no logos, no brands, no people, no extra props or UI. This is illustrative demo catalogue photography.",
+      "codigos": [
+        "DEMO018",
+        "DEMO038",
+        "DEMO058",
+        "DEMO078",
+        "DEMO098"
+      ],
+      "sha256": "acca6f7d50615a93f235494a70c3fd20e7405284b56b0575fad9064fd7bc9ff7",
+      "sha256_anterior": "d4a702f3d5a419197fdcdf8ec25b0d468617c26cd0d243af34f7b7aab8ca6a7e",
+      "recorte": "recortes/sabao.png",
+      "prompt_recorte": "Use case: background-extraction. Edit target: the supplied NexoPlan product photograph. Remove the complete studio background and all floor/contact-shadow pixels. Produce a clean product cutout on a genuinely transparent alpha background. Preserve this exact product, its original material colors, packaging, label, text, proportions, viewpoint and all edges. Keep the whole object and align it centrally in a square canvas with 8% clear margin. Only the product remains opaque. No beige or white matte, no floor, no halo, no extra objects, no redesign. For transparent product packaging retain a natural faithful appearance while removing the external backdrop."
+    },
+    {
+      "ficheiro": "guardanapos.jpg",
+      "prompt": "Use case: product-mockup. Asset type: square product photograph for NexoPlan's fictional wholesale catalogue. Primary request: a photorealistic studio packshot of a single square pack of neatly folded white paper napkins, crisp layered tissue edges visible through clear wrapping, small cream paper band. Warm off-white seamless background, soft diffuse light, subtle contact shadow, front three-quarter view, entire product centered with modest margins, occupying 80% of square image height. Realistic material texture. Simple cream labeling with subtle muted forest-green accents where packaging allows. No text, no logos, no brands, no people, no extra props or UI. This is illustrative demo catalogue photography.",
+      "codigos": [
+        "DEMO019",
+        "DEMO039",
+        "DEMO059",
+        "DEMO079",
+        "DEMO099"
+      ],
+      "sha256": "f635c61bfdb3684a664fa1076f029ee2a427c06d5482166d734131ebf116620d",
+      "sha256_anterior": "06b6fb1db1bd24b80b8464de15354cedd0bfc87de9c1d8e8bfe06aff36bb572f",
+      "recorte": "recortes/guardanapos.png",
+      "prompt_recorte": "Use case: background-extraction. Edit target: the supplied NexoPlan product photograph. Remove the complete studio background and all floor/contact-shadow pixels. Produce a clean product cutout on a genuinely transparent alpha background. Preserve this exact product, its original material colors, packaging, label, text, proportions, viewpoint and all edges. Keep the whole object and align it centrally in a square canvas with 8% clear margin. Only the product remains opaque. No beige or white matte, no floor, no halo, no extra objects, no redesign. For transparent product packaging retain a natural faithful appearance while removing the external backdrop."
+    },
+    {
+      "ficheiro": "papel-cozinha.jpg",
+      "prompt": "Use case: product-mockup. Asset type: square product photograph for NexoPlan's fictional wholesale catalogue. Primary request: a photorealistic studio packshot of a single retail pack of two upright white kitchen paper rolls side by side, realistic embossed paper texture, transparent protective wrap and a small cream paper band. Warm off-white seamless background, soft diffuse light, subtle contact shadow, front three-quarter view, entire product centered with modest margins, occupying 80% of square image height. Realistic material texture. Simple cream labeling with subtle muted forest-green accents where packaging allows. No text, no logos, no brands, no people, no extra props or UI. This is illustrative demo catalogue photography.",
+      "codigos": [
+        "DEMO020",
+        "DEMO040",
+        "DEMO060",
+        "DEMO080",
+        "DEMO100"
+      ],
+      "sha256": "df3583324e2eca1839ac2f1d80a679bacdd9a82d6eb7bf6f8f49e4233dd974e5",
+      "sha256_anterior": "e2dde6f96943d1cc19def96a7128bd42341ce1ff35c1ba3c2675b119c3e40216",
+      "recorte": "recortes/papel-cozinha.png",
+      "prompt_recorte": "Use case: background-extraction. Edit target: the supplied NexoPlan product photograph. Remove the complete studio background and all floor/contact-shadow pixels. Produce a clean product cutout on a genuinely transparent alpha background. Preserve this exact product, its original material colors, packaging, label, text, proportions, viewpoint and all edges. Keep the whole object and align it centrally in a square canvas with 8% clear margin. Only the product remains opaque. No beige or white matte, no floor, no halo, no extra objects, no redesign. For transparent product packaging retain a natural faithful appearance while removing the external backdrop."
+    }
+  ],
+  "cor_fundo": "#f2e5dc"
+}

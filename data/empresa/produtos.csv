@@ -1,0 +1,25 @@
+codigo;nome;unidade;padrao
+NX-001;Arroz agulha 1 kg;un;ESTAVEL
+NX-002;Massa esparguete 500 g;un;TENDENCIA
+NX-003;Água mineral 1,5 L;un;SAZONAL
+NX-004;Erva-cidreira 20 saquetas;un;INTERMITENTE
+NX-005;Bolachas de aveia 200 g;un;CAMPANHA
+NX-006;Leite meio-gordo 1 L;un;ESTAVEL
+NX-007;Atum ao natural 120 g;un;TENDENCIA
+NX-008;Sumo de laranja 1 L;un;SAZONAL
+NX-009;Guardanapos festivos 50 folhas;un;INTERMITENTE
+NX-010;Detergente da loiça 750 ml;un;CAMPANHA
+NX-011;Feijão encarnado 540 g;un;ESTAVEL
+NX-012;Café moído 250 g;un;TENDENCIA
+NX-013;Papel de cozinha 2 rolos;un;SAZONAL
+NX-014;Cobertura de chocolate a granel;kg;INTERMITENTE
+NX-015;Azeite virgem extra 750 ml;un;CAMPANHA
+NX-016;Açúcar branco a granel;kg;ESTAVEL
+NX-017;Farinha de trigo a granel;kg;TENDENCIA
+NX-018;Detergente multiusos a granel;L;SAZONAL
+NX-019;Ambientador recarga 250 ml;un;INTERMITENTE
+NX-020;Cereais de pequeno-almoço 375 g;un;CAMPANHA
+NX-021;Sabonete líquido recarga 500 ml;un;ESTAVEL
+NX-022;Óleo alimentar a granel;L;TENDENCIA
+NX-023;Água com gás 1 L;un;SAZONAL
+NX-024;Chá de menta 20 saquetas;un;INTERMITENTE
