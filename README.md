@@ -117,4 +117,5 @@ As [migrações SQL](backend/src/main/resources/db/migration/) são a fonte do e
 - [Importação CSV](docs/importacao-historicos.md), [Média Móvel](docs/previsao-media-movel.md), [ETS](docs/previsao-ets.md) e [comparação de modelos](docs/backtesting.md).
 - [Cenários e ajustes](docs/cenarios-ajustes.md), [aprovação e publicação](docs/aprovacao-publicacao.md) e [monitorização](docs/monitorizacao.md).
 - [Dados de demonstração](docs/dados-demonstracao.md), [simulação de uma empresa NexoPlan](docs/simulacao-empresa.md), [backup e restauro](docs/backup-restauro.md) e [plano de adoção](docs/plano-adocao.md).
+- [Equipa fictícia com retratos e emails empresariais](docs/equipa-demonstracao.md).
 - [Validação funcional](docs/validacao-piloto.md), [desempenho](docs/desempenho.md) e [protocolo de usabilidade](docs/usabilidade.md).

@@ -23,16 +23,16 @@ import uuid
 
 
 ACCOUNTS = [
-    {"key": "admin", "nome": "Leonor Matos", "email": "admin@nexoplan.pt", "papeis": ["ADMIN"]},
-    {"key": "admin2", "nome": "Miguel Varela", "email": "miguel.varela@nexoplan.pt", "papeis": ["ADMIN"]},
-    {"key": "planeador", "nome": "Inês Seabra", "email": "ines.seabra@nexoplan.pt", "papeis": ["PLANEADOR"]},
-    {"key": "planeador2", "nome": "Rui Falcão", "email": "rui.falcao@nexoplan.pt", "papeis": ["PLANEADOR"]},
-    {"key": "comercial", "nome": "Carolina Pires", "email": "carolina.pires@nexoplan.pt", "papeis": ["COMERCIAL"]},
-    {"key": "aprovador", "nome": "Sofia Neves", "email": "sofia.neves@nexoplan.pt", "papeis": ["APROVADOR"]},
-    {"key": "aprovador2", "nome": "Tomás Brito", "email": "tomas.brito@nexoplan.pt", "papeis": ["APROVADOR"]},
-    {"key": "consumidor", "nome": "Duarte Esteves", "email": "duarte.esteves@nexoplan.pt", "papeis": ["CONSUMIDOR"]},
-    {"key": "consumidor2", "nome": "Mariana Lobo", "email": "mariana.lobo@nexoplan.pt", "papeis": ["CONSUMIDOR"]},
-    {"key": "antigo", "nome": "Pedro Teles", "email": "pedro.teles@nexoplan.pt", "papeis": ["CONSUMIDOR"]},
+    {"key": "admin", "nome": "Leonor Matos", "email": "leonor.matos@nexoplan.com", "papeis": ["ADMIN"]},
+    {"key": "admin2", "nome": "Miguel Varela", "email": "miguel.varela@nexoplan.com", "papeis": ["ADMIN"]},
+    {"key": "planeador", "nome": "Inês Seabra", "email": "ines.seabra@nexoplan.com", "papeis": ["PLANEADOR"]},
+    {"key": "planeador2", "nome": "Rui Falcão", "email": "rui.falcao@nexoplan.com", "papeis": ["PLANEADOR"]},
+    {"key": "comercial", "nome": "Carolina Pires", "email": "carolina.pires@nexoplan.com", "papeis": ["COMERCIAL"]},
+    {"key": "aprovador", "nome": "Sofia Neves", "email": "sofia.neves@nexoplan.com", "papeis": ["APROVADOR"]},
+    {"key": "aprovador2", "nome": "Tomás Brito", "email": "tomas.brito@nexoplan.com", "papeis": ["APROVADOR"]},
+    {"key": "consumidor", "nome": "Duarte Esteves", "email": "duarte.esteves@nexoplan.com", "papeis": ["CONSUMIDOR"]},
+    {"key": "consumidor2", "nome": "Mariana Lobo", "email": "mariana.lobo@nexoplan.com", "papeis": ["CONSUMIDOR"]},
+    {"key": "antigo", "nome": "Pedro Teles", "email": "pedro.teles@nexoplan.com", "papeis": ["COMERCIAL"]},
 ]
 
 

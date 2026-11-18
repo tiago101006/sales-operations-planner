@@ -141,7 +141,7 @@ def verify_company(sql, base, accounts, report):
     check(counts['produto'] == 24, 'Catálogo completo: 24 produtos')
     check(counts['utilizador'] == len(accounts), 'Todas as contas esperadas, sem contas externas')
     zero('Emails de domínio da empresa',
-         "SELECT COUNT(*) FROM utilizador WHERE email NOT LIKE '%@nexoplan.pt'")
+         "SELECT COUNT(*) FROM utilizador WHERE email NOT LIKE '%@nexoplan.com'")
     check(counts['execucao_previsao'] >= 8, 'Oito execuções: média móvel e ETS em quatro ciclos')
     check(counts['cenario'] >= 12, 'Doze cenários nos quatro ciclos')
     check(counts['plano_publicado'] == 4, 'Quatro planos publicados')

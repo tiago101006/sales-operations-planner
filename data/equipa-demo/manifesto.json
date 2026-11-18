@@ -1,0 +1,139 @@
+{
+  "versao": 1,
+  "sintetico": true,
+  "empresa": "NexoPlan",
+  "dominio": "nexoplan.com",
+  "retratos": "Pessoas inteiramente fictícias, criadas com a ferramenta Imagegen integrada.",
+  "pessoas": [
+    {
+      "key": "admin",
+      "idExistente": 1,
+      "nome": "Leonor Matos",
+      "email": "leonor.matos@nexoplan.com",
+      "papeis": [
+        "ADMIN"
+      ],
+      "ativo": true,
+      "foto": "leonor-matos.jpg",
+      "prompt": "Use case: photorealistic-natural. Asset type: square corporate employee avatar for NexoPlan, a fictional Portuguese supply planning company. Primary request: an original photorealistic professional headshot of one entirely fictional person (Leonor Matos is a fictional demo identity, do not depict any real person). Subject: Fictional Portuguese woman, about 44, dark brown shoulder length hair tucked on one side, warm brown eyes, navy tailored blazer over ivory blouse, composed approachable expression. Composition: centered front facing head and upper shoulders, generous clean margins on all sides, entire head visible with hair not cut off, straight camera, eye line around 43 percent from top, works beautifully in small circular avatar crop. Scene/backdrop: softly blurred contemporary office, warm light stone and subtle sage green, very quiet and unobtrusive. Style: authentic corporate editorial portrait, realistic skin texture and natural facial asymmetry, no beauty airbrushing, no stock photo glamour. Lighting: soft window daylight, even exposure and gentle shadows. Constraints: ONE person only, no text, no names, no logos, no watermark, no collage, opaque background.",
+      "sha256": "47dc9612b5ccef521578d7fe22efe9b49b092e82038ac379c2cdd9437e767a3a"
+    },
+    {
+      "key": "admin2",
+      "idExistente": null,
+      "nome": "Miguel Varela",
+      "email": "miguel.varela@nexoplan.com",
+      "papeis": [
+        "ADMIN"
+      ],
+      "ativo": true,
+      "foto": "miguel-varela.jpg",
+      "prompt": "Use case: photorealistic-natural. Asset type: square corporate employee avatar for NexoPlan, a fictional Portuguese supply planning company. Primary request: an original professional photographic headshot of ONE entirely fictional person (Miguel Varela is a demo identity, no real person likeness). Subject: Fictional man about 46 with short dark wavy hair lightly grey at temples, neatly trimmed beard, hazel eyes, navy blazer and open collar light blue shirt, slightly angular long face and confident welcoming expression. Composition: centered front facing head and upper shoulders, full head and hair within frame with generous clear margins, eye line at around 43 percent from top, suitable for circular avatar. Scene: softly blurred contemporary office, light warm stone with quiet sage accents. Natural candid corporate editorial portrait, realistic skin texture and facial asymmetry, soft window daylight, even gentle shadows. Constraints: one person only, a distinct individual identity, no text, no logos, no watermark, no collage, no glamour retouching, opaque background.",
+      "sha256": "02f57d1dcb4876d8e97e9639348a239125820c84288f77d729b8359dd51ebd54"
+    },
+    {
+      "key": "planeador",
+      "idExistente": 3,
+      "nome": "Inês Seabra",
+      "email": "ines.seabra@nexoplan.com",
+      "papeis": [
+        "PLANEADOR"
+      ],
+      "ativo": true,
+      "foto": "ines-seabra.jpg",
+      "prompt": "Use case: photorealistic-natural. Asset type: square corporate employee avatar for NexoPlan, a fictional Portuguese supply planning company. Primary request: an original photorealistic professional headshot of one entirely fictional person (Inês Seabra is a fictional demo identity, do not depict any real person). Subject: Fictional Portuguese woman, about 31, fair skin, chestnut wavy bob hair, fine dark round glasses, soft olive blazer over cream blouse, relaxed intelligent smile. Composition: centered front facing head and upper shoulders, generous clean margins on all sides, entire head visible with hair not cut off, straight camera, eye line around 43 percent from top, works beautifully in small circular avatar crop. Scene/backdrop: softly blurred contemporary office, warm light stone and subtle sage green, very quiet and unobtrusive. Style: authentic corporate editorial portrait, realistic skin texture and natural facial asymmetry, no beauty airbrushing, no stock photo glamour. Lighting: soft window daylight, even exposure and gentle shadows. Constraints: ONE person only, no text, no names, no logos, no watermark, no collage, opaque background.",
+      "sha256": "92797962e4d68f37b89e3b0aeaa434bea84273d14f67f2597fbf61596ba272c8"
+    },
+    {
+      "key": "planeador2",
+      "idExistente": null,
+      "nome": "Rui Falcão",
+      "email": "rui.falcao@nexoplan.com",
+      "papeis": [
+        "PLANEADOR"
+      ],
+      "ativo": true,
+      "foto": "rui-falcao.jpg",
+      "prompt": "Use case: photorealistic-natural. Asset type: square corporate employee avatar for NexoPlan, a fictional Portuguese supply planning company. Primary request: an original professional photographic headshot of ONE entirely fictional person (Rui Falcão is a demo identity, no real person likeness). Subject: Fictional man about 33 with medium warm olive skin, short black hair with a natural side part, clean shaven, dark brown eyes, fine rectangular eyeglasses, sage green overshirt over ivory shirt, thoughtful gentle smile, slim oval face. Composition: centered front facing head and upper shoulders, full head and hair within frame with generous clear margins, eye line at around 43 percent from top, suitable for circular avatar. Scene: softly blurred contemporary office, light warm stone with quiet sage accents. Natural candid corporate editorial portrait, realistic skin texture and facial asymmetry, soft window daylight, even gentle shadows. Constraints: one person only, a distinct individual identity, no text, no logos, no watermark, no collage, no glamour retouching, opaque background.",
+      "sha256": "b26d30495382f57b77bda4e72a3c43f2a4725ebc7dc55b40f05d2a23f703ef2b"
+    },
+    {
+      "key": "comercial",
+      "idExistente": 5,
+      "nome": "Carolina Pires",
+      "email": "carolina.pires@nexoplan.com",
+      "papeis": [
+        "COMERCIAL"
+      ],
+      "ativo": true,
+      "foto": "carolina-pires.jpg",
+      "prompt": "Use case: photorealistic-natural. Asset type: square corporate employee avatar for NexoPlan, a fictional Portuguese supply planning company. Primary request: original realistic business headshot of ONE entirely fictional person (Carolina Pires is an invented demonstration identity, not an existing real person). Subject: Fictional woman about 35, fair skin with light freckles, shoulder length copper brown wavy hair, green eyes, terracotta blouse and soft beige blazer, warm open professional smile and rounded face. Composition: front facing centered head and upper shoulders, full head with generous clean margin above and beside hair, eye line around 43 percent, fits a small circular avatar. Scene/backdrop: softly blurred contemporary office with warm stone and soft sage tones. Lighting/mood: natural soft window daylight, approachable and credible. Authentic corporate editorial photography, realistic skin texture, natural human asymmetry and age lines, no glamour retouching. Constraints: one distinct individual, no text, no logos, no watermark, no collage, opaque background.",
+      "sha256": "2410bef8881b5194a39de05b587eda2123b77c337fa828be2c8fa5fe2a377150"
+    },
+    {
+      "key": "aprovador",
+      "idExistente": 2,
+      "nome": "Sofia Neves",
+      "email": "sofia.neves@nexoplan.com",
+      "papeis": [
+        "APROVADOR"
+      ],
+      "ativo": true,
+      "foto": "sofia-neves.jpg",
+      "prompt": "Use case: photorealistic-natural. Asset type: square corporate employee avatar for NexoPlan, a fictional Portuguese supply planning company. Primary request: an original photorealistic professional headshot of one entirely fictional person (Sofia Neves is a fictional demo identity, do not depict any real person). Subject: Fictional Portuguese woman, about 39, medium brown skin, dark curly hair gathered neatly, small gold stud earrings, charcoal blazer over pale sage top, confident friendly expression. Composition: centered front facing head and upper shoulders, generous clean margins on all sides, entire head visible with hair not cut off, straight camera, eye line around 43 percent from top, works beautifully in small circular avatar crop. Scene/backdrop: softly blurred contemporary office, warm light stone and subtle sage green, very quiet and unobtrusive. Style: authentic corporate editorial portrait, realistic skin texture and natural facial asymmetry, no beauty airbrushing, no stock photo glamour. Lighting: soft window daylight, even exposure and gentle shadows. Constraints: ONE person only, no text, no names, no logos, no watermark, no collage, opaque background.",
+      "sha256": "a3780f43ef36651eda6261bea70660687ae59013e55a52a656036bc6f92a95d4"
+    },
+    {
+      "key": "aprovador2",
+      "idExistente": null,
+      "nome": "Tomás Brito",
+      "email": "tomas.brito@nexoplan.com",
+      "papeis": [
+        "APROVADOR"
+      ],
+      "ativo": true,
+      "foto": "tomas-brito.jpg",
+      "prompt": "Use case: photorealistic-natural. Asset type: square corporate employee avatar for NexoPlan, a fictional Portuguese supply planning company. Primary request: an original professional photographic headshot of ONE entirely fictional person (Tomás Brito is a demo identity, no real person likeness). Subject: Fictional Black Portuguese man about 40 with deep brown skin, close cropped hair, short tidy beard, thin metal round glasses, dark olive blazer over white open collar shirt, warm self assured expression, broad square face. Composition: centered front facing head and upper shoulders, full head and hair within frame with generous clear margins, eye line at around 43 percent from top, suitable for circular avatar. Scene: softly blurred contemporary office, light warm stone with quiet sage accents. Natural candid corporate editorial portrait, realistic skin texture and facial asymmetry, soft window daylight, even gentle shadows. Constraints: one person only, a distinct individual identity, no text, no logos, no watermark, no collage, no glamour retouching, opaque background.",
+      "sha256": "521c322ba4f0c073017c6ddaf2a8de62dd1b69e78ba9d314b5a76aae0c28c2bc"
+    },
+    {
+      "key": "consumidor",
+      "idExistente": 4,
+      "nome": "Duarte Esteves",
+      "email": "duarte.esteves@nexoplan.com",
+      "papeis": [
+        "CONSUMIDOR"
+      ],
+      "ativo": true,
+      "foto": "duarte-esteves.jpg",
+      "prompt": "Use case: photorealistic-natural. Asset type: square corporate employee avatar for NexoPlan, a fictional Portuguese supply planning company. Primary request: an original professional photographic headshot of ONE entirely fictional person (Duarte Esteves is a demo identity, no real person likeness). Subject: Fictional man about 53 with fair skin, short salt and pepper hair, clean shaven round broad face, brown eyes, charcoal blazer over pale stone shirt, friendly understated smile and natural age lines. Composition: centered front facing head and upper shoulders, full head and hair within frame with generous clear margins, eye line at around 43 percent from top, suitable for circular avatar. Scene: softly blurred contemporary office, light warm stone with quiet sage accents. Natural candid corporate editorial portrait, realistic skin texture and facial asymmetry, soft window daylight, even gentle shadows. Constraints: one person only, a distinct individual identity, no text, no logos, no watermark, no collage, no glamour retouching, opaque background.",
+      "sha256": "e5f0cee29882577bb212d4b949357e56a9737935e6d967297e1793a87367b1c9"
+    },
+    {
+      "key": "consumidor2",
+      "idExistente": 7,
+      "nome": "Mariana Lobo",
+      "email": "mariana.lobo@nexoplan.com",
+      "papeis": [
+        "CONSUMIDOR"
+      ],
+      "ativo": true,
+      "foto": "mariana-lobo.jpg",
+      "prompt": "Use case: photorealistic-natural. Asset type: square corporate employee avatar for NexoPlan, a fictional Portuguese supply planning company. Primary request: original realistic business headshot of ONE entirely fictional person (Mariana Lobo is an invented demonstration identity, not an existing real person). Subject: Fictional woman about 29, medium tan skin, long straight dark brown hair resting behind shoulders, dark brown eyes, cream blouse with navy jacket, calm confident subtle smile, slender face, tiny silver stud earrings. Composition: front facing centered head and upper shoulders, full head with generous clean margin above and beside hair, eye line around 43 percent, fits a small circular avatar. Scene/backdrop: softly blurred contemporary office with warm stone and soft sage tones. Lighting/mood: natural soft window daylight, approachable and credible. Authentic corporate editorial photography, realistic skin texture, natural human asymmetry and age lines, no glamour retouching. Constraints: one distinct individual, no text, no logos, no watermark, no collage, opaque background.",
+      "sha256": "5ab996484dd8c4a4494dbabe4a35792b89c04ca3412fec90c965c4f4bc1af173"
+    },
+    {
+      "key": "antigo",
+      "idExistente": 6,
+      "nome": "Pedro Teles",
+      "email": "pedro.teles@nexoplan.com",
+      "papeis": [
+        "COMERCIAL"
+      ],
+      "ativo": false,
+      "foto": "pedro-teles.jpg",
+      "prompt": "Use case: photorealistic-natural. Asset type: square corporate employee avatar for NexoPlan, a fictional Portuguese supply planning company. Primary request: original realistic business headshot of ONE entirely fictional person (Pedro Teles is an invented demonstration identity, not an existing real person). Subject: Fictional man about 48, light olive skin, receding short brown hair with grey flecks, neatly maintained moustache and short beard, light brown eyes, subtle small rectangular glasses, stone grey business casual shirt, easy natural smile, broad face. Composition: front facing centered head and upper shoulders, full head with generous clean margin above and beside hair, eye line around 43 percent, fits a small circular avatar. Scene/backdrop: softly blurred contemporary office with warm stone and soft sage tones. Lighting/mood: natural soft window daylight, approachable and credible. Authentic corporate editorial photography, realistic skin texture, natural human asymmetry and age lines, no glamour retouching. Constraints: one distinct individual, no text, no logos, no watermark, no collage, opaque background.",
+      "sha256": "1832cae4a813a92a32a8372924b6a2bea0f397123a8e7d30f17b2fcdbb14278f"
+    }
+  ]
+}

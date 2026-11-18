@@ -94,7 +94,7 @@ o reinício do backend.
 
 Cada preparação cria uma pasta privada em `tmp/empresa/nexoplan-empresa-.../`:
 
-- `acessos.md` e `contas.json`: nomes, emails `@nexoplan.pt`, perfis e
+- `acessos.md` e `contas.json`: nomes, emails `@nexoplan.com`, perfis e
   palavras-passe de demonstração fáceis de decorar.
 - `simulacao.json` e, após substituição, `resultado.json`: IDs dos recursos e
   verificações executadas, sem palavras-passe ou tokens de convite.
