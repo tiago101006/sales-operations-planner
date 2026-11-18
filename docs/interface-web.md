@@ -42,7 +42,12 @@ Para um ensaio que não altere os teus dados, usar o teste isolado descrito abai
 | Planos publicados | Metadados de aprovação, células paginadas, CSV completo e entrada para avaliação |
 | Monitorização | Plano/lotes/corte, seleção de produto, precisão por horizonte, operação e motivos de exclusão |
 | Equipa | ADMIN cria contas, pesquisa membros e consulta uma ficha com retrato em destaque, nome, perfis, estado e ações autorizadas |
-| A minha conta | Dados pessoais, alteração da fotografia recolhida por defeito e alteração explícita da palavra-passe |
+| A minha conta | Ficha pessoal com retrato em destaque, nome e papéis, dados da conta e segurança integrados; editores abertos apenas por pedido |
+
+A página da conta usa uma ficha de largura limitada: retrato, nome e papéis numa
+coluna suave; email, identificador, estado e segurança na outra. Em ecrãs pequenos
+as duas áreas ficam empilhadas. A opção de alterar a fotografia acompanha o
+retrato e mantém o formulário recolhido até ser solicitado.
 
 A ficha da equipa reutiliza a fotografia existente e mostra as iniciais quando
 não existe imagem ou o carregamento falha. A alteração da palavra-passe só cria
