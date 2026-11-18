@@ -1,7 +1,8 @@
 import { Api, ApiError } from './api.mjs';
 import { esc, date, month, quantity as q, factorValue, revisionCaption, label, badge, icon, button as b, field, input, select, role, lastMonth, independent, productThumbnail, memberAvatar } from './ui.mjs';
 import { createViews } from './views.mjs';
-import { accountAvatar, accountPage, mountAccountPage, closePasswordEditor } from './profile.mjs';
+import { accountAvatar, accountPage, mountAccountPage, closePasswordEditor, requireCurrentPassword } from './profile.mjs';
+import { themeButton } from './theme.mjs';
 
 const api = new Api();
 const root = document.querySelector('#app');
@@ -141,10 +142,10 @@ function logoutView(message = '', loggedIn = false) {
   closeDialog();
   root.innerHTML = `<main id="conteudo" class="login" tabindex="-1">
     <section class="login-panel" aria-labelledby="login-title">
-      <a class="brand login-brand" href="#/visao" aria-label="NexoPlan">
+      <div class="login-panel-header"><a class="brand login-brand" href="#/visao" aria-label="NexoPlan">
         <img src="/assets/brand.svg" width="42" height="42" alt="">
         <div><strong>NexoPlan<span class="brand-period">.</span></strong><small>PROCURA → DECISÃO</small></div>
-      </a>
+      </a>${themeButton()}</div>
       <div class="login-entry">
         <h1 id="login-title">Entrar na aplicação</h1>
         <p class="login-welcome">Bom ter-te de volta.</p>
@@ -193,7 +194,7 @@ function shell() {
     return `<a class="nav-link" href="#/${entry[0]}" data-nav="${entry[0]}">${icon(entry[2], 16)}<span>${entry[1]}</span></a>`;
   };
   const groups = [['01', 'Dados', ['produtos', 'importacoes']], ['02', 'Previsão', ['previsoes', 'backtests']], ['03', 'Decisão', ['cenarios', 'planos']], ['04', 'Resultados', ['monitorizacao']]];
-  root.innerHTML = `<div class="shell"><header class="app-header"><div class="topbar"><a class="brand" href="#/visao"><img src="/assets/brand.svg" width="42" height="42" alt=""><div><strong>NexoPlan<span class="brand-period">.</span></strong><small>PROCURA → DECISÃO</small></div></a><span class="workspace-label">PLANEAMENTO DE VENDAS & OPERAÇÕES</span><div class="account"><a class="account-link" href="#/conta" data-nav="conta" aria-label="A minha conta" title="A minha conta">${accountAvatar(state.user, photoRevision)}<span class="account-name">${esc(state.user.nome)}<small>${state.user.papeis.map(p => esc(label(p))).join(' · ')}</small></span></a>${b(icon('logout', 18), 'logout', 'aria-label="Terminar sessão" title="Terminar sessão"', 'icon-button')}${b('<span></span><span></span>', 'toggle-nav', 'aria-label="Abrir navegação" aria-controls="main-navigation" aria-expanded="false"', 'nav-toggle')}</div></div><div class="sidebar"><nav id="main-navigation" aria-label="Navegação principal"><div class="nav-home">${navLink('visao')}</div>${groups.map(([number, title, keys]) => { const links = keys.map(navLink).join(''); return links ? `<div class="nav-group" aria-label="${title}"><span class="nav-stage"><span>${number}</span>${title}</span><div class="nav-options">${links}</div></div>` : ''; }).join('')}${role(state.user, 'ADMIN') ? `<div class="nav-admin">${navLink('equipa')}</div>` : ''}</nav></div></header><div class="workspace"><div class="location-bar"><span class="location-mark"></span><span>NexoPlan</span><span>/</span><strong id="breadcrumb">Visão geral</strong><span class="location-note">${state.user.papeis.map(p => esc(label(p))).join(' · ')}</span></div><main id="conteudo" class="content" tabindex="-1"></main><footer class="app-footer"><span>NexoPlan<span class="brand-period">.</span></span><span>Dados · Previsões · Decisões</span></footer></div></div>`;
+  root.innerHTML = `<div class="shell"><header class="app-header"><div class="topbar"><a class="brand" href="#/visao" aria-label="NexoPlan"><img src="/assets/brand.svg" width="42" height="42" alt=""><div><strong>NexoPlan<span class="brand-period">.</span></strong><small>PROCURA → DECISÃO</small></div></a><span class="workspace-label">PLANEAMENTO DE VENDAS & OPERAÇÕES</span><div class="account">${themeButton({ compact: true })}<a class="account-link" href="#/conta" data-nav="conta" aria-label="A minha conta" title="A minha conta">${accountAvatar(state.user, photoRevision)}<span class="account-name">${esc(state.user.nome)}<small>${state.user.papeis.map(p => esc(label(p))).join(' · ')}</small></span></a>${b(icon('logout', 18), 'logout', 'aria-label="Terminar sessão" title="Terminar sessão"', 'icon-button')}${b('<span></span><span></span>', 'toggle-nav', 'aria-label="Abrir navegação" aria-controls="main-navigation" aria-expanded="false"', 'nav-toggle')}</div></div><div class="sidebar"><nav id="main-navigation" aria-label="Navegação principal"><div class="nav-home">${navLink('visao')}</div>${groups.map(([number, title, keys]) => { const links = keys.map(navLink).join(''); return links ? `<div class="nav-group" aria-label="${title}"><span class="nav-stage"><span>${number}</span>${title}</span><div class="nav-options">${links}</div></div>` : ''; }).join('')}${role(state.user, 'ADMIN') ? `<div class="nav-admin">${navLink('equipa')}</div>` : ''}</nav></div></header><div class="workspace"><div class="location-bar"><span class="location-mark"></span><span>NexoPlan</span><span>/</span><strong id="breadcrumb">Visão geral</strong><span class="location-note">${state.user.papeis.map(p => esc(label(p))).join(' · ')}</span></div><main id="conteudo" class="content" tabindex="-1"></main><footer class="app-footer"><span>NexoPlan<span class="brand-period">.</span></span><span>Dados · Previsões · Decisões</span></footer></div></div>`;
 }
 function updateAccountPhoto(hasPhoto) {
   state.user.temFoto = hasPhoto;
@@ -614,7 +615,7 @@ document.addEventListener('submit', async event => {
     } else if (form.id === 'account-password-form') {
       const user = state.user;
       const values = new FormData(form);
-      const passwordAtual = values.get('passwordAtual');
+      const passwordAtual = requireCurrentPassword(form);
       const novaPassword = values.get('novaPassword');
       const confirmacao = values.get('confirmacao');
       if (novaPassword !== confirmacao) throw new Error('As palavras-passe não coincidem.');

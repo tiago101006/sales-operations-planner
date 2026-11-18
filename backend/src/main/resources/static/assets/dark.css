@@ -1,0 +1,254 @@
+/* Theme controls belong to the same warm planning desk in both appearances. */
+:root { color-scheme: light; }
+.theme-toggle { min-width: 44px; min-height: 44px; flex-shrink: 0; }
+.theme-sun { display: none; }
+[data-theme="dark"] .theme-moon { display: none; }
+[data-theme="dark"] .theme-sun { display: initial; }
+.topbar .theme-toggle { width: 44px; height: 44px; min-height: 44px; }
+.login-panel-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+.login-panel-header .theme-toggle { background: transparent; font-size: 11px; padding: 9px 10px; }
+@media (max-width: 480px) {
+  .login-panel-header { flex-wrap: nowrap; gap: 10px; }
+  .login-panel-header .theme-toggle { width: 44px; padding: 10px; }
+  .login-panel-header .theme-toggle > span { display: none; }
+  .topbar .account { gap: 5px; }
+}
+@media (max-width: 380px) {
+  .topbar .brand > div { display: none; }
+}
+
+/* Deep forest canvas; elevation is expressed through warmer, lighter surfaces. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #111f1a;
+  --paper: #1b2c24;
+  --surface-soft: #17271f;
+  --sage: #2b3d2e;
+  --sand: #3d3626;
+  --ink: #ecebdd;
+  --muted: #b5c0ad;
+  --line: #415144;
+  --green: #b8d58b;
+  --nav: #122c24;
+  --lime: #d7e7b3;
+  --copper: #dfaa82;
+  --focus: #d7e7b3;
+  --negative-ink: #efa38a;
+  --negative-strong: #f9c0aa;
+  --negative-bg: #422c25;
+  --negative-border: #a97059;
+  --control-border: #7d8d72;
+  --control-bg: #16251e;
+  --surface-hover: #2c3e30;
+  --chart-0: #9dccac;
+  --chart-1: #dfb27d;
+  --chart-2: #a4c9c0;
+  --chart-3: #b9addb;
+  --chart-4: #e6a1ac;
+}
+:root[data-theme="dark"] ::selection { background: #c8dda5; color: #173d34; }
+:root[data-theme="dark"] * { scrollbar-color: #7d8d72 #17271f; }
+:root[data-theme="dark"] .skip { background: var(--paper); color: var(--green); }
+:root[data-theme="dark"] .app-header,
+:root[data-theme="dark"] .sidebar { background: var(--nav); }
+:root[data-theme="dark"] .nav-link.active { background: var(--lime); color: #173d34; }
+:root[data-theme="dark"] .location-bar,
+:root[data-theme="dark"] .location-bar strong,
+:root[data-theme="dark"] .app-footer,
+:root[data-theme="dark"] .app-footer > span:first-child { color: var(--muted); }
+
+/* Shared controls and their hover/focus states. */
+:root[data-theme="dark"] .btn { background: #26382c; border-color: var(--control-border); color: var(--ink); }
+:root[data-theme="dark"] .btn:hover:not(:disabled) { background: #364b37; border-color: #b5c69e; color: var(--ink); }
+:root[data-theme="dark"] .btn.primary { background: var(--green); border-color: var(--green); color: #15291d; }
+:root[data-theme="dark"] .btn.primary:hover:not(:disabled),
+:root[data-theme="dark"] .btn.primary:focus-visible { background: #d0e7ac; border-color: #d0e7ac; color: #15291d; }
+:root[data-theme="dark"] .btn.link { background: transparent; color: var(--green); border-color: transparent; }
+:root[data-theme="dark"] .btn.link:hover:not(:disabled) { background: transparent; color: #d0e7ac; border-color: transparent; }
+:root[data-theme="dark"] .btn.danger { color: var(--negative-ink); background: #34271f; border-color: var(--negative-border); }
+:root[data-theme="dark"] .btn.danger:hover:not(:disabled),
+:root[data-theme="dark"] .btn.danger:focus-visible { color: var(--negative-strong); background: var(--negative-bg); border-color: var(--negative-ink); }
+:root[data-theme="dark"] .topbar .icon-button,
+:root[data-theme="dark"] .topbar .nav-toggle { background: transparent; color: #d5dfcd; border-color: #7d927c; }
+:root[data-theme="dark"] .topbar .icon-button:hover:not(:disabled),
+:root[data-theme="dark"] .topbar .nav-toggle:hover:not(:disabled) { background: #2d4637; color: #fffef2; border-color: #b5c69e; }
+:root[data-theme="dark"] .field,
+:root[data-theme="dark"] .check-group label { color: var(--ink); }
+:root[data-theme="dark"] input,
+:root[data-theme="dark"] select,
+:root[data-theme="dark"] textarea { background: var(--control-bg); border-color: var(--control-border); color: var(--ink); }
+:root[data-theme="dark"] input::placeholder,
+:root[data-theme="dark"] textarea::placeholder { color: var(--muted); }
+:root[data-theme="dark"] input[readonly],
+:root[data-theme="dark"] input[type="file"] { background: var(--surface-soft); color: var(--ink); }
+:root[data-theme="dark"] input::file-selector-button { background: #2b3d2e; border: 1px solid var(--control-border); border-radius: 5px; color: var(--ink); }
+:root[data-theme="dark"] input:autofill { background: var(--control-bg); color: var(--ink); }
+:root[data-theme="dark"] input:-webkit-autofill { -webkit-text-fill-color: var(--ink); caret-color: var(--green); box-shadow: 0 0 0 100px var(--control-bg) inset; }
+:root[data-theme="dark"] .compare-control:hover { background: var(--surface-hover); }
+
+/* Tables, disclosures, and supporting surfaces retain clear scan lines. */
+:root[data-theme="dark"] .panel,
+:root[data-theme="dark"] .panel-head,
+:root[data-theme="dark"] .admin-dashboard .panel-head,
+:root[data-theme="dark"] .pagination,
+:root[data-theme="dark"] .empty { border-color: var(--line); background: var(--paper); }
+:root[data-theme="dark"] th,
+:root[data-theme="dark"] .admin-dashboard th { background: #29382b; color: #ced7c2; }
+:root[data-theme="dark"] td,
+:root[data-theme="dark"] .admin-dashboard td { border-color: #38493b; }
+:root[data-theme="dark"] tbody tr:hover,
+:root[data-theme="dark"] tbody tr:focus-within { background: var(--surface-hover); }
+:root[data-theme="dark"] td small,
+:root[data-theme="dark"] .empty p,
+:root[data-theme="dark"] .empty h3,
+:root[data-theme="dark"] .empty > svg,
+:root[data-theme="dark"] .page-context > summary,
+:root[data-theme="dark"] .panel-context > summary,
+:root[data-theme="dark"] .panel-context p,
+:root[data-theme="dark"] .search-scope,
+:root[data-theme="dark"] .detail-meta div > small,
+:root[data-theme="dark"] .detail-description,
+:root[data-theme="dark"] .back,
+:root[data-theme="dark"] .subheading { color: var(--muted); }
+:root[data-theme="dark"] .toolbar,
+:root[data-theme="dark"] .table-search,
+:root[data-theme="dark"] .catalogue-controls,
+:root[data-theme="dark"] .scenario-source,
+:root[data-theme="dark"] .detail-meta,
+:root[data-theme="dark"] .history-details { background: var(--surface-soft); border-color: var(--line); }
+:root[data-theme="dark"] .catalogue-controls .catalogue-toolbar { background: transparent; }
+:root[data-theme="dark"] .detail-description,
+:root[data-theme="dark"] .form-actions,
+:root[data-theme="dark"] .event,
+:root[data-theme="dark"] .secondary-details,
+:root[data-theme="dark"] .secondary-details[open] > summary { border-color: var(--line); }
+:root[data-theme="dark"] .history-results { background: var(--control-bg); border-color: var(--control-border); }
+:root[data-theme="dark"] .history-option:hover,
+:root[data-theme="dark"] .history-option.is-active,
+:root[data-theme="dark"] .panel-context[open],
+:root[data-theme="dark"] .panel-context > summary:hover { background: var(--surface-hover); }
+:root[data-theme="dark"] .history-option[aria-selected="true"] { outline-color: var(--green); }
+:root[data-theme="dark"] .timeline { background: var(--surface-soft); }
+:root[data-theme="dark"] .event .dot { background: var(--green); }
+:root[data-theme="dark"] .reason { color: #dfbc81; }
+:root[data-theme="dark"] .spinner { border-color: var(--line); border-top-color: var(--green); }
+:root[data-theme="dark"] .csv-help .csv-caption,
+:root[data-theme="dark"] .csv-help .csv-snippet code { color: var(--ink); }
+:root[data-theme="dark"] .csv-help .csv-snippet { background: var(--control-bg); border-color: var(--line); }
+
+/* Semantic colors keep their established meaning and readable text. */
+:root[data-theme="dark"] .badge.good { background: #30462c; color: #d0e7ac; }
+:root[data-theme="dark"] .badge.warn { background: #443923; color: #f0cc8e; }
+:root[data-theme="dark"] .badge.bad { background: var(--negative-bg); color: var(--negative-ink); }
+:root[data-theme="dark"] .badge.neutral { background: #344033; color: #cbd3c0; }
+:root[data-theme="dark"] .info { background: #283c29; border-color: #617854; color: #d2dfbf; }
+:root[data-theme="dark"] .info.warn { background: #3b3222; border-color: #8e754a; color: #f0cc8e; }
+:root[data-theme="dark"] .info.error,
+:root[data-theme="dark"] .form-error:not(:empty) { background: var(--negative-bg); border-color: var(--negative-border); color: var(--negative-ink); }
+:root[data-theme="dark"] #notice { background: #d7e7b3; color: #15291d; box-shadow: 0 8px 32px #0004; }
+:root[data-theme="dark"] #notice.error { background: var(--negative-bg); color: var(--negative-strong); }
+
+/* Dialogs sit one surface above the planning desk. */
+:root[data-theme="dark"] dialog { background: #223429; box-shadow: 0 24px 70px #0007; }
+:root[data-theme="dark"] dialog::backdrop { background: #08130cb8; }
+:root[data-theme="dark"] .modal-head { background: #2b3d2e; border-color: var(--line); }
+:root[data-theme="dark"] .close { color: var(--ink); }
+:root[data-theme="dark"] .close:hover { background: #40513a; }
+:root[data-theme="dark"] .invitation-content textarea[readonly] { background: var(--control-bg); border-color: var(--control-border); color: var(--ink); }
+
+/* The overview keeps its forest, sage, sand, and copper relationships. */
+:root[data-theme="dark"] .planning-hero { background: #234a38; }
+:root[data-theme="dark"] .planning-hero .btn { background: #e5edc1; color: #20452e; border-color: #e5edc1; }
+:root[data-theme="dark"] .planning-hero .btn:hover:not(:disabled) { background: #f7f1d5; color: #173d34; border-color: #f7f1d5; }
+:root[data-theme="dark"] .planning-hero .btn.link { color: #f3eaca; background: transparent; border-color: transparent; }
+:root[data-theme="dark"] .planning-route { border-color: var(--line); background: var(--sage); }
+:root[data-theme="dark"] .planning-route > a { color: var(--ink); background: #2b3d2e; border-color: var(--line); }
+:root[data-theme="dark"] .planning-route > a:nth-child(2) { background: #3a3628; }
+:root[data-theme="dark"] .planning-route > a:nth-child(3) { background: #402f25; }
+:root[data-theme="dark"] .planning-route > a:last-child { background: #2e412b; }
+:root[data-theme="dark"] .planning-route > a:hover { background: #3b5036; }
+:root[data-theme="dark"] .route-number { border-color: #82946b; }
+:root[data-theme="dark"] .planning-route > a:nth-child(3) .route-number { border-color: #b88562; color: #e8b28a; }
+:root[data-theme="dark"] .route-label small,
+:root[data-theme="dark"] .route-count,
+:root[data-theme="dark"] .work-copy small,
+:root[data-theme="dark"] .work-meta,
+:root[data-theme="dark"] .overview-disclosure > p,
+:root[data-theme="dark"] .overview-imports > summary > span { color: var(--muted); }
+:root[data-theme="dark"] .route-count strong,
+:root[data-theme="dark"] .work-copy strong { color: var(--ink); }
+:root[data-theme="dark"] .work-item { border-color: var(--line); }
+:root[data-theme="dark"] .work-symbol { background: var(--sage); color: #c0d69f; }
+:root[data-theme="dark"] .work-symbol.copper { background: #493426; color: #e6b18b; }
+:root[data-theme="dark"] .work-open { color: var(--green); }
+:root[data-theme="dark"] .work-summary { background: #343628; }
+:root[data-theme="dark"] .work-summary > div,
+:root[data-theme="dark"] .work-summary > a,
+:root[data-theme="dark"] .work-summary > span { color: #c4c9b2; }
+:root[data-theme="dark"] .work-summary strong { color: #e1e8c9; }
+:root[data-theme="dark"] .work-summary .copper strong { color: #e6b18b; }
+:root[data-theme="dark"] .overview-disclosure { background: var(--paper); border-color: var(--line); }
+:root[data-theme="dark"] .overview-disclosure > summary { color: #c0d69f; }
+:root[data-theme="dark"] .overview-disclosure:not(.overview-imports) { background: transparent; }
+:root[data-theme="dark"] .overview-disclosure:not(.overview-imports)[open] > p { background: var(--paper); }
+:root[data-theme="dark"] .metric { background: #243428; border-color: var(--line); }
+:root[data-theme="dark"] .metric:nth-child(2) { background: #393426; border-color: #61563a; }
+:root[data-theme="dark"] .metric:nth-child(3) { background: #2b3b2a; }
+:root[data-theme="dark"] .metric:nth-child(4) { background: #3d2f25; border-color: #6b4a36; }
+:root[data-theme="dark"] .metric.highlight { background: #34472c; border-color: #647d48; }
+:root[data-theme="dark"] .metric p,
+:root[data-theme="dark"] .metric small { color: #c3cbb5; }
+
+/* Chart paths and points are authored SVG with presentation attributes. */
+:root[data-theme="dark"] .chart text { fill: var(--muted); }
+:root[data-theme="dark"] .legend,
+:root[data-theme="dark"] .chart-scale-note,
+:root[data-theme="dark"] .chart-context,
+:root[data-theme="dark"] .chart-context span:first-child { color: var(--muted); }
+:root[data-theme="dark"] .chart-context,
+:root[data-theme="dark"] .workbench .chart-context { background: #253628; border-color: var(--line); }
+:root[data-theme="dark"] .chart svg line:not(.chart-guide) { stroke: #465442; }
+:root[data-theme="dark"] .chart [stroke="#23786a"] { stroke: var(--chart-0); }
+:root[data-theme="dark"] .chart [stroke="#b28142"] { stroke: var(--chart-1); }
+:root[data-theme="dark"] .chart [stroke="#7b9b92"] { stroke: var(--chart-2); }
+:root[data-theme="dark"] .chart [stroke="#7769ad"] { stroke: var(--chart-3); }
+:root[data-theme="dark"] .chart [stroke="#be6670"] { stroke: var(--chart-4); }
+:root[data-theme="dark"] .chart [fill="#23786a"] { fill: var(--chart-0); opacity: .12; }
+:root[data-theme="dark"] .chart-point { fill: var(--paper); }
+:root[data-theme="dark"] .chart-point:focus-visible { fill: var(--lime); }
+:root[data-theme="dark"] .chart-guide { stroke: #a8ba91; }
+:root[data-theme="dark"] .chart .line-0 { --line: var(--chart-0); }
+:root[data-theme="dark"] .chart .line-1 { --line: var(--chart-1); }
+:root[data-theme="dark"] .chart .line-2 { --line: var(--chart-2); }
+:root[data-theme="dark"] .chart .line-3 { --line: var(--chart-3); }
+:root[data-theme="dark"] .chart .line-4 { --line: var(--chart-4); }
+:root[data-theme="dark"] .chart-tooltip { background: #122c24; border-color: #879d75; box-shadow: 0 6px 20px #0004; }
+
+/* Portraits and product photography remain natural; their framing is themed. */
+:root[data-theme="dark"] .product-thumbnail,
+:root[data-theme="dark"] .product-card-image .product-thumbnail { background: #3d3026; }
+:root[data-theme="dark"] .product-card-image .product-thumbnail:has(img) { background: #f2e5dc; }
+:root[data-theme="dark"] .product-thumbnail img { background: #dcd6c5; }
+:root[data-theme="dark"] .product-card-image img { background: transparent; }
+:root[data-theme="dark"] .catalogue-view .btn { background: transparent; border-color: transparent; }
+:root[data-theme="dark"] .catalogue-view .btn[aria-pressed="true"] { background: var(--sage); color: var(--ink); }
+:root[data-theme="dark"] .profile-roles span { border-color: #82946b; }
+:root[data-theme="dark"] .profile-photo-editor > summary:hover { color: var(--green); }
+:root[data-theme="dark"] .profile-photo-fields input { background: var(--control-bg); }
+:root[data-theme="dark"] .profile-photo-fields input::file-selector-button { background: var(--sage); color: var(--ink); border-color: var(--control-border); }
+
+/* Login keeps its quiet paper-to-forest composition in a lower-light register. */
+:root[data-theme="dark"] .login { background: #10271f; }
+:root[data-theme="dark"] .login-panel { background: var(--paper); }
+:root[data-theme="dark"] .login-brand,
+:root[data-theme="dark"] .login-entry h1,
+:root[data-theme="dark"] .login-entry .field,
+:root[data-theme="dark"] .login-help { color: var(--ink); }
+:root[data-theme="dark"] .login-brand small,
+:root[data-theme="dark"] .login-welcome,
+:root[data-theme="dark"] .login-help span,
+:root[data-theme="dark"] .login-panel-footer { color: var(--muted); }
+:root[data-theme="dark"] .login-panel-footer { border-color: var(--line); }
+:root[data-theme="dark"] .login-entry input { background: var(--control-bg); color: var(--ink); border-color: var(--control-border); }
+:root[data-theme="dark"] .login-panel-header .theme-toggle { background: transparent; color: var(--muted); border-color: var(--control-border); }
+:root[data-theme="dark"] .login-panel-header .theme-toggle:hover { background: var(--surface-hover); color: var(--ink); }

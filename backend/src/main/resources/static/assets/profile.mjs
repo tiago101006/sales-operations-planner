@@ -54,7 +54,7 @@ export function accountPage(user, revision) {
           <template id="account-password-template">
             <form id="account-password-form" class="profile-form" autocomplete="off">
               <div class="profile-password-fields">
-                ${field('Palavra-passe atual', input('passwordAtual', 'password', '', 'required maxlength="200" autocomplete="off"'))}
+                ${field('Palavra-passe atual', input('passwordAtual', 'password', '', 'required maxlength="200" autocomplete="off" readonly data-manual-password placeholder="Escreve a palavra-passe atual"') + button('Escrever palavra-passe', 'begin-current-password', 'aria-label="Introduzir palavra-passe atual"', 'small manual-password-unlock'), 'Introdução manual. A colagem está desativada neste campo.')}
                 ${field('Nova palavra-passe', input('novaPassword', 'password', '', newPasswordAttrs), 'Pelo menos 12 caracteres e até 72 bytes UTF-8.')}
                 ${field('Confirmar nova palavra-passe', input('confirmacao', 'password', '', newPasswordAttrs))}
               </div>
@@ -76,6 +76,57 @@ export function closePasswordEditor(container = document) {
   if (start) start.hidden = false;
 }
 
+export function requireCurrentPassword(form) {
+  const current = form.querySelector('[data-manual-password]');
+  if (!current || current.readOnly || current.dataset.manualPasswordReady !== 'true' || !current.value) {
+    throw new Error('Introduz a tua palavra-passe atual para continuar.');
+  }
+  return current.value;
+}
+
+function prepareCurrentPassword(form) {
+  const current = form.querySelector('[data-manual-password]');
+  const begin = form.querySelector('[data-action="begin-current-password"]');
+  let typedValue = '';
+  const blockedInsertion = type => /^insert(?:FromPaste.*|FromDrop|ReplacementText)$/.test(type);
+  const unlock = (editing = false) => {
+    if (current.dataset.manualPasswordReady !== 'true') current.value = '';
+    current.readOnly = false;
+    if (editing) current.dataset.manualPasswordReady = 'true';
+    begin.hidden = true;
+  };
+  current.addEventListener('keydown', event => {
+    if (!event.isTrusted || event.defaultPrevented) return;
+    const paste = ((event.ctrlKey || event.metaKey) && ['v', 'c', 'x'].includes(event.key.toLowerCase())) || (event.shiftKey && event.key === 'Insert');
+    if (paste) { event.preventDefault(); return; }
+    const plain = (!event.ctrlKey && !event.metaKey && !event.altKey) || event.getModifierState('AltGraph');
+    const character = plain && ([...event.key].length === 1 || ['Dead', 'Process', 'Unidentified'].includes(event.key) || event.isComposing);
+    if (character || ['Backspace', 'Delete'].includes(event.key)) unlock(true);
+  });
+  for (const name of ['paste', 'drop', 'copy', 'cut']) current.addEventListener(name, event => {
+    event.preventDefault();
+  });
+  current.addEventListener('beforeinput', event => {
+    if (blockedInsertion(event.inputType)) { event.preventDefault(); return; }
+    if (event.isTrusted && /^insert(?:Text|CompositionText)$/.test(event.inputType)) unlock(true);
+  });
+  for (const name of ['input', 'change']) current.addEventListener(name, event => {
+    // Keep saved-login replacement and clipboard insertion out of this field.
+    if (current.readOnly || current.dataset.manualPasswordReady !== 'true') {
+      current.value = '';
+    } else if (blockedInsertion(event.inputType) || !event.isTrusted) {
+      current.value = typedValue;
+    } else if (name === 'input') {
+      typedValue = current.value;
+    }
+  });
+  begin.addEventListener('click', event => {
+    if (!event.isTrusted) return;
+    unlock();
+    current.focus();
+  });
+}
+
 export function mountAccountPage(container) {
   const open = container.querySelector('[data-action="open-account-password"]');
   const host = container.querySelector('#account-password-editor');
@@ -86,6 +137,7 @@ export function mountAccountPage(container) {
     host.append(template.content.cloneNode(true));
     container.querySelector('.profile-password-start').hidden = true;
     host.querySelector('form').reset();
+    prepareCurrentPassword(host.querySelector('form'));
     host.querySelector('[name="passwordAtual"]').focus();
   });
   host.addEventListener('click', event => {

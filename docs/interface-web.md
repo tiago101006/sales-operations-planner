@@ -53,8 +53,12 @@ A ficha da equipa reutiliza a fotografia existente e mostra as iniciais quando
 não existe imagem ou o carregamento falha. A alteração da palavra-passe só cria
 os campos quando o utilizador a inicia. Cancelar, sair da página ou restaurar a
 página pelo navegador elimina os valores introduzidos; a API continua a exigir
-a palavra-passe atual. O formulário pede ao navegador que não a preencha
-automaticamente, embora gestores de credenciais possam ignorar esse pedido.
+a palavra-passe atual. O campo começa vazio e só fica editável quando a pessoa
+escreve ou escolhe **Escrever palavra-passe**. Receber foco não o desbloqueia.
+O envio exige uma introdução manual não vazia, e a API verifica a palavra-passe
+atual. Este comportamento foi verificado com um login guardado num perfil
+isolado do Firefox. A colagem, o arrastar de texto e a cópia estão desativados
+neste campo; a escrita por teclado e os métodos de composição mantêm-se disponíveis.
 
 O painel ADMIN apresenta os totais de lotes, execuções, cenários e planos num
 percurso de planeamento, com acesso direto a cada área. Estes valores são contagens
@@ -92,6 +96,12 @@ atalho na Visão geral. As opções dentro de cada etapa têm separação própr
 permitem deslocação dentro da sua própria área, sem alargar a página.
 
 A tipografia usa DM Sans, servida localmente com licença SIL Open Font License.
+O botão **Modo escuro**, no login e no cabeçalho, alterna as duas aparências sem
+alterar a página ou os dados introduzidos. A escolha fica guardada neste navegador
+e sincronizada entre separadores. Antes de existir uma escolha, segue o tema do
+sistema. O tema é aplicado antes dos estilos para evitar uma passagem pelo tema
+claro ao carregar. A aparência escura usa superfícies verdes profundas, ações
+em verde sálvia e avisos negativos em terracota; fotografias mantêm as suas cores.
 O login ocupa o ecrã inteiro, com um painel areia para o formulário e uma
 composição verde profunda com percursos abstratos que representam alternativas
 de planeamento. A ilustração SVG é decorativa e não contém dados de negócio.
