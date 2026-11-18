@@ -54,7 +54,9 @@ não existe imagem ou o carregamento falha. A alteração da palavra-passe só c
 os campos quando o utilizador a inicia. Cancelar, sair da página ou restaurar a
 página pelo navegador elimina os valores introduzidos; a API continua a exigir
 a palavra-passe atual. O campo começa vazio e só fica editável quando a pessoa
-escreve ou escolhe **Escrever palavra-passe**. Receber foco não o desbloqueia.
+escreve ou toca/clica no próprio campo. Não existe um botão de desbloqueio.
+O foco automático ao abrir o formulário mantém o campo vazio; tocar/clicar
+apenas permite introduzir texto e não confirma a palavra-passe guardada.
 O envio exige uma introdução manual não vazia, e a API verifica a palavra-passe
 atual. Este comportamento foi verificado com um login guardado num perfil
 isolado do Firefox. A colagem, o arrastar de texto e a cópia estão desativados

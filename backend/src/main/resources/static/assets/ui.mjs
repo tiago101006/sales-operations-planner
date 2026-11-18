@@ -84,12 +84,13 @@ const numericHeaders = new Set(['Registos', 'Linhas', 'Células', 'Horizonte', '
 export const table = (headers, rows, title = 'Ainda não há registos', detail = 'Os registos aparecem aqui depois de serem criados.') => rows.length ? `<div class="table-wrap"><table><thead><tr>${headers.map(h => `<th scope="col"${numericHeaders.has(h) ? ' class="numeric"' : ''}>${h}</th>`).join('')}</tr></thead><tbody>${rows.map(row => `<tr>${row.map((cell, i) => `<td${numericHeaders.has(headers[i]) ? ' class="numeric"' : ''}>${cell ?? '—'}</td>`).join('')}</tr>`).join('')}</tbody></table></div>` : empty(title, detail);
 export const panel = (title, subtitle, content, actions = '', beforeFilters = '') => {
   const context = subtitle && subtitle.length <= 80 && !/[.!?]$/.test(subtitle);
+  const help = subtitle && !context;
   const filters = [];
   content = content.replace(/<form class="table-search"[\s\S]*?<\/form>/g, form => { filters.push(form);return ''; });
   if (filters.some(form => /value="[^"<>]+"/.test(form)) && content.includes('class="empty"')) {
     content = content.replace(/<div class="empty">[\s\S]*?<\/div>/g, empty('Nenhum resultado para estes filtros', 'Altera a pesquisa ou usa Limpar filtros.'));
   }
-  return `<section class="panel"><div class="panel-head"><div><h2>${title}</h2>${context ? `<p class="panel-caption">${subtitle}</p>` : ''}</div><div class="actions">${subtitle && !context ? `<details class="panel-context"><summary aria-label="Sobre esta secção: ${esc(title)}" title="Sobre esta secção">${icon('info', 16)}<span>Sobre esta secção</span></summary><p>${subtitle}</p></details>` : ''}${actions}</div></div>${beforeFilters}${filters.join('')}${content}</section>`;
+  return `<section class="panel"><div class="panel-head${help ? ' has-context' : ''}"><div><h2>${title}</h2>${context ? `<p class="panel-caption">${subtitle}</p>` : ''}</div><div class="actions">${actions}</div>${help ? `<details class="panel-context"><summary aria-label="Sobre esta secção: ${esc(title)}" title="Sobre esta secção">${icon('info', 16)}<span>Sobre esta secção</span></summary><p>${subtitle}</p></details>` : ''}</div>${beforeFilters}${filters.join('')}${content}</section>`;
 };
 export const metric = (name, value, note, tone = '') => `<article class="metric ${tone}"><p>${esc(name)}</p><strong>${esc(value)}</strong><small>${esc(note)}</small></article>`;
 const tableSearch = search => {

@@ -117,6 +117,7 @@
 :root[data-theme="dark"] .detail-meta,
 :root[data-theme="dark"] .history-details { background: var(--surface-soft); border-color: var(--line); }
 :root[data-theme="dark"] .catalogue-controls .catalogue-toolbar { background: transparent; }
+:root[data-theme="dark"] .catalogue-controls .pagination { background: transparent; }
 :root[data-theme="dark"] .detail-description,
 :root[data-theme="dark"] .form-actions,
 :root[data-theme="dark"] .event,
@@ -125,8 +126,8 @@
 :root[data-theme="dark"] .history-results { background: var(--control-bg); border-color: var(--control-border); }
 :root[data-theme="dark"] .history-option:hover,
 :root[data-theme="dark"] .history-option.is-active,
-:root[data-theme="dark"] .panel-context[open],
 :root[data-theme="dark"] .panel-context > summary:hover { background: var(--surface-hover); }
+:root[data-theme="dark"] .panel-context[open] > summary { background: var(--sage); color: var(--green); }
 :root[data-theme="dark"] .history-option[aria-selected="true"] { outline-color: var(--green); }
 :root[data-theme="dark"] .timeline { background: var(--surface-soft); }
 :root[data-theme="dark"] .event .dot { background: var(--green); }

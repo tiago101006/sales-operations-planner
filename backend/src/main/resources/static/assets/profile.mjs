@@ -54,7 +54,7 @@ export function accountPage(user, revision) {
           <template id="account-password-template">
             <form id="account-password-form" class="profile-form" autocomplete="off">
               <div class="profile-password-fields">
-                ${field('Palavra-passe atual', input('passwordAtual', 'password', '', 'required maxlength="200" autocomplete="off" readonly data-manual-password placeholder="Escreve a palavra-passe atual"') + button('Escrever palavra-passe', 'begin-current-password', 'aria-label="Introduzir palavra-passe atual"', 'small manual-password-unlock'), 'Introdução manual. A colagem está desativada neste campo.')}
+                ${field('Palavra-passe atual', input('passwordAtual', 'password', '', 'required maxlength="200" autocomplete="off" readonly data-manual-password placeholder="Escreve a palavra-passe atual"'))}
                 ${field('Nova palavra-passe', input('novaPassword', 'password', '', newPasswordAttrs), 'Pelo menos 12 caracteres e até 72 bytes UTF-8.')}
                 ${field('Confirmar nova palavra-passe', input('confirmacao', 'password', '', newPasswordAttrs))}
               </div>
@@ -86,19 +86,21 @@ export function requireCurrentPassword(form) {
 
 function prepareCurrentPassword(form) {
   const current = form.querySelector('[data-manual-password]');
-  const begin = form.querySelector('[data-action="begin-current-password"]');
   let typedValue = '';
   const blockedInsertion = type => /^insert(?:FromPaste.*|FromDrop|ReplacementText)$/.test(type);
   const unlock = (editing = false) => {
     if (current.dataset.manualPasswordReady !== 'true') current.value = '';
     current.readOnly = false;
     if (editing) current.dataset.manualPasswordReady = 'true';
-    begin.hidden = true;
   };
+  // Direct touch/click enables the keyboard without accepting a saved login.
+  for (const name of ['pointerdown', 'click']) current.addEventListener(name, event => {
+    if (event.isTrusted && !event.defaultPrevented) unlock();
+  });
   current.addEventListener('keydown', event => {
     if (!event.isTrusted || event.defaultPrevented) return;
-    const paste = ((event.ctrlKey || event.metaKey) && ['v', 'c', 'x'].includes(event.key.toLowerCase())) || (event.shiftKey && event.key === 'Insert');
-    if (paste) { event.preventDefault(); return; }
+    const clipboardShortcut = ((event.ctrlKey || event.metaKey) && !event.altKey && ['v', 'c', 'x'].includes(event.key.toLowerCase())) || (event.shiftKey && event.key === 'Insert');
+    if (clipboardShortcut) { event.preventDefault(); return; }
     const plain = (!event.ctrlKey && !event.metaKey && !event.altKey) || event.getModifierState('AltGraph');
     const character = plain && ([...event.key].length === 1 || ['Dead', 'Process', 'Unidentified'].includes(event.key) || event.isComposing);
     if (character || ['Backspace', 'Delete'].includes(event.key)) unlock(true);
@@ -114,16 +116,11 @@ function prepareCurrentPassword(form) {
     // Keep saved-login replacement and clipboard insertion out of this field.
     if (current.readOnly || current.dataset.manualPasswordReady !== 'true') {
       current.value = '';
-    } else if (blockedInsertion(event.inputType) || !event.isTrusted) {
-      current.value = typedValue;
-    } else if (name === 'input') {
+    } else if (name === 'input' && event.isTrusted && /^(?:insertText|insertCompositionText|delete\w+|historyUndo|historyRedo)$/.test(event.inputType)) {
       typedValue = current.value;
+    } else {
+      current.value = typedValue;
     }
-  });
-  begin.addEventListener('click', event => {
-    if (!event.isTrusted) return;
-    unlock();
-    current.focus();
   });
 }
 

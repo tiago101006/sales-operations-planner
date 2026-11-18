@@ -743,10 +743,12 @@ test('um consumidor consulta a conta, gere a foto e altera a palavra-passe', asy
   const newPassword = password + '-perfil';
   await page.getByRole('button', { name: 'Alterar palavra-passe', exact: true }).click();
   const currentPassword = page.getByLabel('Palavra-passe atual', { exact: true });
+  await expect(page.locator('[data-action="begin-current-password"]')).toHaveCount(0);
   await expect(currentPassword).toBeEmpty();
   await expect(currentPassword).toHaveJSProperty('readOnly', true);
   await currentPassword.click();
-  await expect(currentPassword).toHaveJSProperty('readOnly', true);
+  await expect(currentPassword).toHaveJSProperty('readOnly', false);
+  await expect(currentPassword).toBeEmpty();
   await currentPassword.evaluate(input => {
     input.value = 'valor-injetado-sem-edicao';
     input.dispatchEvent(new Event('input', { bubbles: true }));
@@ -772,7 +774,7 @@ test('um consumidor consulta a conta, gere a foto e altera a palavra-passe', asy
   await page.getByLabel('Confirmar nova palavra-passe', { exact: true }).fill(newPassword);
   await page.getByRole('button', { name: 'Guardar nova palavra-passe', exact: true }).click();
   await expect(page.locator('#account-password-form .form-error')).toHaveText('Introduz a tua palavra-passe atual para continuar.');
-  await page.getByRole('button', { name: 'Introduzir palavra-passe atual', exact: true }).click();
+  await currentPassword.click();
   await expect(currentPassword).toBeEmpty();
   await expect(currentPassword).toBeFocused();
   await currentPassword.pressSequentially(password);
