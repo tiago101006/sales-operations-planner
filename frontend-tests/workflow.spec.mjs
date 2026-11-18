@@ -691,9 +691,13 @@ test('um consumidor consulta a conta, gere a foto e altera a palavra-passe', asy
   await expect(page.getByRole('heading', { name: 'Dados da conta', exact: true })).toBeVisible();
   await expect(page.getByText('consumer@ui.test', { exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
-  await expect(page.getByRole('heading', { name: 'Foto de perfil', exact: true })).toBeVisible();
+  const photoEditor = page.locator('.profile-photo-editor');
+  await expect(photoEditor).not.toHaveAttribute('open', '');
+  await expect(page.getByLabel('Fotografia', { exact: true })).toBeHidden();
+  await expect(page.getByLabel('Palavra-passe atual', { exact: true })).toHaveCount(0);
   await expect(account.locator('img')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Remover foto', exact: true })).toHaveCount(0);
+  await photoEditor.locator('summary').click();
 
   const savePhoto = async (colour) => {
     const image = await page.evaluate(fill => {
@@ -730,16 +734,24 @@ test('um consumidor consulta a conta, gere a foto e altera a palavra-passe', asy
   const savedPhoto = await context.request.get('/api/v1/auth/foto');
   expect((await savedPhoto.body()).equals(replacementPhoto)).toBe(true);
 
+  await photoEditor.locator('summary').click();
   await page.getByRole('button', { name: 'Remover foto', exact: true }).click();
   await modal(page).getByRole('button', { name: 'Confirmar remoção', exact: true }).click();
   await expect(account.locator('img')).toHaveCount(0);
   expect((await context.request.get('/api/v1/auth/foto')).status()).toBe(404);
 
   const newPassword = password + '-perfil';
+  await page.getByRole('button', { name: 'Alterar palavra-passe', exact: true }).click();
+  await expect(page.getByLabel('Palavra-passe atual', { exact: true })).toBeEmpty();
+  await page.getByLabel('Palavra-passe atual', { exact: true }).fill('rascunho-a-descartar');
+  await page.getByRole('button', { name: 'Cancelar', exact: true }).click();
+  await expect(page.getByLabel('Palavra-passe atual', { exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Alterar palavra-passe', exact: true }).click();
+  await expect(page.getByLabel('Palavra-passe atual', { exact: true })).toBeEmpty();
   await page.getByLabel('Palavra-passe atual', { exact: true }).fill(password);
   await page.getByLabel('Nova palavra-passe', { exact: true }).fill(newPassword);
   await page.getByLabel('Confirmar nova palavra-passe', { exact: true }).fill(newPassword);
-  await page.getByRole('button', { name: 'Alterar palavra-passe', exact: true }).click();
+  await page.getByRole('button', { name: 'Guardar nova palavra-passe', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Entrar na aplicação' })).toBeVisible();
   await login(page, 'consumer@ui.test', newPassword);
   await expect(page.getByRole('heading', { name: 'Planos e resultados', exact: true })).toBeVisible();
@@ -875,6 +887,7 @@ test('fotos opcionais no catálogo e avatares de perfil na equipa', async ({ pag
     await logout(page);
     await login(page, 'approver@ui.test');
     await page.getByRole('link', { name: 'A minha conta', exact: true }).click();
+    await page.locator('.profile-photo-editor > summary').click();
     await page.getByLabel('Fotografia', { exact: true }).setInputFiles(await photo('perfil.png', '#285a46'));
     const uploaded = page.waitForResponse(response =>
       response.request().method() === 'PUT' && new URL(response.url()).pathname === '/api/v1/auth/foto');
@@ -899,6 +912,16 @@ test('fotos opcionais no catálogo e avatares de perfil na equipa', async ({ pag
     await expect(initials).toBeVisible();
     await expect(initials).toHaveText('C');
     await expect(initials.locator('img')).toHaveCount(0);
+    await page.getByRole('row').filter({ hasText: 'approver@ui.test' }).getByRole('button', { name: 'Consultar', exact: true }).click();
+    const portrait = modal(page).locator('.member-portrait img');
+    await loaded(portrait);
+    expect((await portrait.boundingBox()).width).toBeGreaterThanOrEqual(104);
+    await expect(modal(page).getByRole('heading', { name: profile.nome, exact: true })).toBeVisible();
+    await page.keyboard.press('Escape');
+    await page.getByRole('row').filter({ hasText: 'commercial@ui.test' }).getByRole('button', { name: 'Consultar', exact: true }).click();
+    await expect(modal(page).locator('.member-portrait')).toHaveText('C');
+    await expect(modal(page).locator('.member-portrait img')).toHaveCount(0);
+    await page.keyboard.press('Escape');
     await page.screenshot({ path: '../tmp/ui-preview/equipa-avatares.png', fullPage: true });
   });
 });

@@ -7,6 +7,8 @@ compose.override.yaml
 tmp/
 backups/
 *.sql.gz
+acessosNexoPlan.md
+.~lock.*#
 
 # Dependências e resultados de compilação
 target/

@@ -57,9 +57,10 @@ export function initials(name) {
   return (first + last).toLocaleUpperCase('pt-PT');
 }
 
-export function memberAvatar(user) {
-  const photo = user.temFoto ? `<img src="/api/v1/utilizadores/${esc(encodeURIComponent(user.id))}/foto" alt="" width="32" height="32" loading="lazy">` : '';
-  return `<span class="inline-photo member-avatar" data-inline-photo aria-hidden="true"><span>${esc(initials(user.nome))}</span>${photo}</span>`;
+export function memberAvatar(user, { prominent = false } = {}) {
+  const size = prominent ? 144 : 32;
+  const photo = user.temFoto ? `<img src="/api/v1/utilizadores/${esc(encodeURIComponent(user.id))}/foto" alt="" width="${size}" height="${size}" loading="${prominent ? 'eager' : 'lazy'}">` : '';
+  return `<span class="inline-photo member-avatar${prominent ? ' member-portrait' : ''}" data-inline-photo aria-hidden="true"><span>${esc(initials(user.nome))}</span>${photo}</span>`;
 }
 
 export function productThumbnail(product, { current = false, gallery = false } = {}) {

@@ -1,7 +1,7 @@
 import { Api, ApiError } from './api.mjs';
-import { esc, date, month, quantity as q, factorValue, revisionCaption, label, badge, icon, button as b, field, input, select, role, lastMonth, independent, productThumbnail } from './ui.mjs';
+import { esc, date, month, quantity as q, factorValue, revisionCaption, label, badge, icon, button as b, field, input, select, role, lastMonth, independent, productThumbnail, memberAvatar } from './ui.mjs';
 import { createViews } from './views.mjs';
-import { accountAvatar, accountPage } from './profile.mjs';
+import { accountAvatar, accountPage, mountAccountPage, closePasswordEditor } from './profile.mjs';
 
 const api = new Api();
 const root = document.querySelector('#app');
@@ -247,6 +247,7 @@ async function render({ pagination, preserveFocus } = {}) {
       Object.assign(state, html.context);
       main.innerHTML = html.html;
     }
+    if (active === 'conta') mountAccountPage(main);
     if (interaction) {
       window.scrollTo({ top: scrollTop, behavior: 'instant' });
       if (restoreFocus && preserveFocus) {
@@ -585,6 +586,8 @@ document.addEventListener('submit', async event => {
   const submit = form.querySelector('button[type=submit]');if (submit) submit.disabled = true;
   const removePhoto = form.querySelector('[data-action=remove-account-photo]');
   if (removePhoto) removePhoto.disabled = true;
+  const cancelPassword = form.querySelector('[data-action=cancel-account-password]');
+  if (cancelPassword) cancelPassword.disabled = true;
   try {
     if (form.id === 'activation-form') {
       const values = new FormData(form), password = String(values.get('password') || ''), confirmation = String(values.get('confirmacao') || '');
@@ -640,6 +643,7 @@ document.addEventListener('submit', async event => {
   } finally {
     delete form.dataset.busy;form.removeAttribute('aria-busy');if (submit) submit.disabled = false;
     if (removePhoto) removePhoto.disabled = false;
+    if (cancelPassword) cancelPassword.disabled = false;
     if (form.id === 'login-form') form.querySelector('[name=password]').value = '';
   }
 });
@@ -705,15 +709,18 @@ document.addEventListener('click', async event => {
         target.disabled = true;
         const member = await api.get('/utilizadores/' + encodeURIComponent(target.dataset.id));
         if (version !== epoch || !target.isConnected || modal.open) break;
-        modal.innerHTML = `<div class="modal-head">
-          <h2 id="modal-title">${esc(member.nome)}</h2>
+        modal.innerHTML = `<div class="modal-head member-profile-header">
+          ${memberAvatar(member, { prominent: true })}
+          <div class="member-profile-identity">
+            <h2 id="modal-title">${esc(member.nome)}</h2>
+            <p>${member.papeis.map(p => esc(label(p))).join(' · ')}</p>
+            ${badge(!member.ativo ? 'INATIVO' : member.passwordDefinida ? 'ATIVO' : 'POR_ATIVAR')}
+          </div>
           <button type="button" class="close" data-action="close-dialog" aria-label="Fechar">×</button>
         </div>
         <dl class="member-profile">
           <div><dt>ID</dt><dd>#${esc(member.id)}</dd></div>
           <div><dt>Email</dt><dd>${esc(member.email)}</dd></div>
-          <div><dt>Perfis</dt><dd>${member.papeis.map(p => esc(label(p))).join(' · ')}</dd></div>
-          <div><dt>Estado</dt><dd>${badge(!member.ativo ? 'INATIVO' : member.passwordDefinida ? 'ATIVO' : 'POR_ATIVAR')}</dd></div>
         </dl>
         <div class="member-status-actions">${member.id === state.user.id ? '<p>Esta é a tua conta. A desativação exige outro administrador.</p>' : b(member.ativo ? 'Desativar utilizador' : 'Reativar utilizador', 'user-status', `data-id="${esc(member.id)}"`, member.ativo ? 'danger' : '')}${member.ativo && !member.passwordDefinida ? b('Gerar novo convite', 'user-invite', `data-id="${esc(member.id)}"`) : ''}</div>`;
         target.disabled = false;
@@ -848,6 +855,8 @@ document.addEventListener('change', async event => {
 });
 modal.addEventListener('cancel', event => { if (modal.querySelector('[data-busy]')) event.preventDefault(); });
 modal.addEventListener('close', () => { if (!modal.open) { modal.innerHTML = '';dialogContext = null; } });
+window.addEventListener('pagehide', () => closePasswordEditor());
+window.addEventListener('pageshow', () => closePasswordEditor());
 window.addEventListener('hashchange', () => { if (modal.querySelector('[data-busy]')) return;closeDialog();setNavigation(false);state.pages = {};if (activationRequested()) logoutView('', Boolean(state.user));else if (state.user) render();else { activationToken = '';logoutView(); } });
 document.addEventListener('keydown', event => {
   if (event.key === 'Escape' && !modal.open && document.querySelector('.sidebar.open')) {

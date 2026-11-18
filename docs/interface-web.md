@@ -41,7 +41,15 @@ Para um ensaio que não altere os teus dados, usar o teste isolado descrito abai
 | Revisão | Base/calculada/final, ajustes justificados, cópia/recálculo, auditoria herdada, eventos e workflow |
 | Planos publicados | Metadados de aprovação, células paginadas, CSV completo e entrada para avaliação |
 | Monitorização | Plano/lotes/corte, seleção de produto, precisão por horizonte, operação e motivos de exclusão |
-| Equipa | ADMIN cria contas com papéis explícitos, pesquisa membros e abre o perfil pelo botão Consultar |
+| Equipa | ADMIN cria contas, pesquisa membros e consulta uma ficha com retrato em destaque, nome, perfis, estado e ações autorizadas |
+| A minha conta | Dados pessoais, alteração da fotografia recolhida por defeito e alteração explícita da palavra-passe |
+
+A ficha da equipa reutiliza a fotografia existente e mostra as iniciais quando
+não existe imagem ou o carregamento falha. A alteração da palavra-passe só cria
+os campos quando o utilizador a inicia. Cancelar, sair da página ou restaurar a
+página pelo navegador elimina os valores introduzidos; a API continua a exigir
+a palavra-passe atual. O formulário pede ao navegador que não a preencha
+automaticamente, embora gestores de credenciais possam ignorar esse pedido.
 
 O painel ADMIN apresenta os totais de lotes, execuções, cenários e planos num
 percurso de planeamento, com acesso direto a cada área. Estes valores são contagens
