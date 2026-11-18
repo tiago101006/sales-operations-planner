@@ -417,6 +417,11 @@ test('percurso completo com APIs reais, auditoria, aprovação independente e mo
     await page.getByRole('link', { name: 'Voltar ao cenário', exact: true }).click();
     await expect(page).toHaveURL(new RegExp('#/revisao/' + revisionId + '$'));
     await page.getByRole('button', { name: 'Enviar para aprovação', exact: true }).click();
+    // Geometry assertions compare the settled layout, rather than two different
+    // frames of the dialog's brief entrance transform.
+    await modal(page).evaluate(async element => {
+      await Promise.all(element.getAnimations().map(animation => animation.finished.catch(() => {})));
+    });
     const confirmationGrid = await modal(page).locator('.form-grid').boundingBox();
     const confirmationBox = await modal(page).locator('.form-grid > .info').boundingBox();
     expect(Math.abs(confirmationBox.width - confirmationGrid.width)).toBeLessThan(2);

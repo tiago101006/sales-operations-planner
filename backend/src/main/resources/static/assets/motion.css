@@ -1,0 +1,77 @@
+/* Quiet feedback for work that lasts all day. Content is visible without motion. */
+:root {
+  --motion-quick: 120ms;
+  --motion-surface: 180ms;
+  --motion-arrive: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#notice {
+  align-items: flex-start;
+  gap: 12px;
+  max-width: min(440px, calc(100vw - 32px));
+}
+#notice.visible { display: flex; }
+.notice-symbol { display: flex; flex: none; padding-top: 1px; }
+.notice-message { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.notice-dismiss {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  margin: -5px -8px -5px 0;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  color: inherit;
+  background: transparent;
+}
+.notice-dismiss:hover { background: #ffffff18; }
+:root[data-theme="dark"] .notice-dismiss:hover { background: #15291d18; }
+.notice-dismiss:focus-visible { outline: 2px solid currentColor; outline-offset: 1px; }
+.nav-toggle[aria-expanded="true"] span:first-child { transform: translateY(3px) rotate(45deg); }
+.nav-toggle[aria-expanded="true"] span:last-child { transform: translateY(-3px) rotate(-45deg); }
+
+@media (prefers-reduced-motion: no-preference) {
+  dialog[open][data-motion-open] {
+    animation: dialog-arrive var(--motion-surface) var(--motion-arrive);
+    transform-origin: center;
+  }
+  dialog[open][data-motion-open]::backdrop {
+    animation: backdrop-arrive var(--motion-surface) var(--motion-arrive);
+  }
+  html[data-motion-input="pointer"] .nav-toggle span {
+    transition: transform var(--motion-quick) var(--motion-arrive);
+  }
+  #notice.success[data-motion-feedback] .notice-symbol {
+    animation: saved-confirmation 220ms var(--motion-arrive);
+  }
+  @media (max-width: 800px) {
+    .sidebar.open[data-motion-open] nav {
+      animation: navigation-arrive 160ms var(--motion-arrive);
+    }
+  }
+  @media (hover: hover) and (pointer: fine) {
+    html[data-motion-input="pointer"] .btn.primary > svg {
+      transition: transform var(--motion-quick) var(--motion-arrive);
+    }
+    html[data-motion-input="pointer"] .btn.primary:active:not(:disabled) > svg { transform: translateX(2px); }
+  }
+}
+
+@keyframes dialog-arrive {
+  from { opacity: 0; transform: translateY(6px) scale(.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes backdrop-arrive { from { opacity: 0; } to { opacity: 1; } }
+@keyframes navigation-arrive { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes saved-confirmation { from { opacity: .4; transform: scale(.8); } to { opacity: 1; transform: scale(1); } }
+
+@media (prefers-reduced-motion: reduce) {
+  dialog[open], dialog[open]::backdrop, .sidebar.open nav, #notice.success .notice-symbol { animation: none; }
+  .nav-toggle span, .btn.primary > svg { transition: none; }
+}
+@media (max-width: 800px) {
+  #notice { right: 16px; bottom: 16px; padding: 16px; }
+  .notice-dismiss { width: 44px; height: 44px; margin: -10px -8px -10px 0; }
+}

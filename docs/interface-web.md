@@ -108,6 +108,23 @@ O login ocupa o ecrã inteiro, com um painel areia para o formulário e uma
 composição verde profunda com percursos abstratos que representam alternativas
 de planeamento. A ilustração SVG é decorativa e não contém dados de negócio.
 Em ecrãs pequenos, apresenta apenas o painel de entrada.
+
+### Movimento e feedback
+
+As janelas abrem com uma transição curta de 180 ms, com o fundo a acompanhar.
+Fechar é imediato, incluindo Escape e a troca entre formulários: uma animação
+nunca atrasa a ação nem interfere com um convite acabado de criar. No telemóvel,
+o menu aparece suavemente e o botão indica o estado aberto.
+
+Uma ação concluída apresenta uma confirmação com ícone e texto; o aviso pode ser
+dispensado e permanece enquanto o rato ou o foco estiverem sobre ele. Operações
+que demoram mostram no próprio botão o que está a acontecer, sem simular uma
+percentagem de progresso nem atrasar respostas rápidas.
+
+Tabelas, paginação e valores dos gráficos não têm animações de entrada. O teclado
+mantém respostas imediatas e a preferência do sistema **Reduzir movimento**
+desativa as transições, conservando o texto e os estados. Os efeitos novos não
+usam ciclos contínuos nem bibliotecas externas, e funcionam nos dois temas.
 Verde profundo, areia e cobre identificam a NexoPlan. O destaque principal enquadra
 a tarefa do perfil e apresenta uma contagem real. Os elementos gráficos de fundo
 são decorativos; não apresentam medidas de negócio nem variações percentuais.

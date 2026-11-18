@@ -11,12 +11,13 @@
   <link rel="stylesheet" href="/assets/app.css">
   <link rel="stylesheet" href="/assets/workbench.css">
   <link rel="stylesheet" href="/assets/dark.css">
+  <link rel="stylesheet" href="/assets/motion.css">
   <script type="module" src="/assets/app.mjs"></script>
 </head>
 <body>
   <a class="skip" href="#conteudo">Saltar para o conteúdo</a>
   <div id="app"><main id="conteudo" class="initial"><img src="/assets/brand.svg" width="48" height="48" alt=""><p>A preparar o teu espaço NexoPlan…</p></main></div>
-  <div id="notice" role="status" aria-live="polite"></div>
+  <div id="notice"><span class="notice-symbol" aria-hidden="true"></span><span class="notice-message" role="status" aria-live="polite"></span><button class="notice-dismiss" type="button" aria-label="Dispensar aviso" title="Dispensar aviso"></button></div>
   <dialog id="modal" aria-labelledby="modal-title"></dialog>
   <noscript>Ativa o JavaScript no navegador para utilizar a NexoPlan.</noscript>
 </body>

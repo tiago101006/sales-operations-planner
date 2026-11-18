@@ -3,6 +3,10 @@ import { esc, date, month, quantity as q, factorValue, revisionCaption, label, b
 import { createViews } from './views.mjs';
 import { accountAvatar, accountPage, mountAccountPage, closePasswordEditor, requireCurrentPassword } from './profile.mjs';
 import { themeButton } from './theme.mjs';
+import { createMotionController } from './motion.mjs';
+import { startBusyFeedback } from './busy.mjs';
+
+const motion = createMotionController();
 
 const api = new Api();
 const root = document.querySelector('#app');
@@ -83,9 +87,32 @@ const navigate = path => { if (location.hash === '#/' + path) render(); else loc
 function notify(text, tone = 'default') {
   const box = document.querySelector('#notice');
   box.classList.toggle('error', tone === 'error');
-  box.textContent = text;box.classList.add('visible');clearTimeout(noticeTimer);
+  box.classList.toggle('success', tone === 'success');
+  box.toggleAttribute('data-motion-feedback', motion.allowed());
+  box.querySelector('.notice-symbol').innerHTML = icon(tone === 'success' ? 'check' : 'info', 20);
+  box.querySelector('.notice-message').textContent = text;
+  box.querySelector('.notice-dismiss').innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"/></svg>';
+  box.classList.add('visible');
+  clearTimeout(noticeTimer);
+  motion.acknowledge(box);
+  scheduleNoticeDismissal();
+}
+function scheduleNoticeDismissal() {
+  const box = document.querySelector('#notice');
+  if (box.matches(':hover') || box.contains(document.activeElement)) return;
+  clearTimeout(noticeTimer);
   noticeTimer = setTimeout(() => box.classList.remove('visible'), 6500);
 }
+const notice = document.querySelector('#notice');
+notice.addEventListener('pointerenter', () => clearTimeout(noticeTimer));
+notice.addEventListener('focusin', () => clearTimeout(noticeTimer));
+notice.addEventListener('pointerleave', scheduleNoticeDismissal);
+notice.addEventListener('focusout', () => queueMicrotask(scheduleNoticeDismissal));
+notice.querySelector('.notice-dismiss').addEventListener('click', () => {
+  clearTimeout(noticeTimer);
+  notice.classList.remove('visible');
+  document.querySelector('#conteudo')?.focus({ preventScroll: true });
+});
 let activationToken = '';
 const activationRequested = () => /^#\/ativar(?:\?|$)/.test(location.hash);
 function activationView(loggedIn = false) {
@@ -131,7 +158,7 @@ function showInvitation(invite) {
       </div>
     </div>
     <div class="form-actions invitation-actions">${b('Concluir', 'close-dialog')}</div>`;
-  modal.showModal();
+  openDialog();
   modal.querySelector('[name=invitationLink]').focus();
 }
 function logoutView(message = '', loggedIn = false) {
@@ -212,7 +239,9 @@ document.addEventListener('error', event => {
   }
 }, true);
 function setNavigation(open) {
-  document.querySelector('.sidebar')?.classList.toggle('open', open);
+  const sidebar = document.querySelector('.sidebar');
+  sidebar?.toggleAttribute('data-motion-open', open && motion.allowed());
+  sidebar?.classList.toggle('open', open);
   const toggle = document.querySelector('[data-action=toggle-nav]');
   if (toggle) { toggle.setAttribute('aria-expanded', String(open));toggle.setAttribute('aria-label', open ? 'Fechar navegação' : 'Abrir navegação'); }
 }
@@ -265,6 +294,12 @@ async function render({ pagination, preserveFocus } = {}) {
   }
 }
 api.onUnauthorized = () => { if (state.user) logoutView('A sessão terminou. Volta a entrar para continuar.'); };
+function openDialog() {
+  if (modal.open) return;
+  // Freeze the input method for this opening; clicks while editing must not replay it.
+  modal.toggleAttribute('data-motion-open', motion.allowed());
+  modal.showModal();
+}
 function closeDialog() {
   if (modal.open) modal.close();modal.innerHTML = '';dialogContext = null;
 }
@@ -283,7 +318,7 @@ function formHtml(kind, title, content, submit, context = {}, submitStyle = 'pri
   dialogContext = { kind, ...context };
   modal.innerHTML = `<div class="modal-head"><h2 id="modal-title">${title}</h2><button class="close" type="button" data-action="close-dialog" aria-label="Fechar">×</button></div><form id="command-form" data-kind="${kind}"><div class="form-grid">${content}</div><div class="form-error" role="alert"></div><div class="form-actions">${b('Cancelar', 'close-dialog')}<button class="btn ${submitStyle}" type="submit">${submit}</button></div></form>`;
   modal.querySelectorAll('input[type=datetime-local]').forEach(input => input.dataset.initial = input.value);
-  if (!modal.open) modal.showModal();
+  openDialog();
   modal.querySelector('input:not([type=hidden]),select,textarea,button[type=submit]')?.focus();
 }
 const textArea = (name, value = '', max = 2000, required = true) => `<textarea name="${name}" maxlength="${max}" ${required ? 'required' : ''}>${esc(value)}</textarea>`;
@@ -585,6 +620,9 @@ document.addEventListener('submit', async event => {
   // Build the request before disabling controls; disabled fields are omitted from FormData.
   const submission = form.id === 'login-form' ? new FormData(form) : null;
   const submit = form.querySelector('button[type=submit]');if (submit) submit.disabled = true;
+  const busyLabels = { import: 'A validar…', forecast: 'A prever…', backtest: 'A comparar…', approve: 'A publicar…', user: 'A criar…' };
+  const busyLabel = form.id === 'login-form' ? 'A entrar…' : form.id === 'activation-form' ? 'A ativar…' : busyLabels[form.dataset.kind] || 'A guardar…';
+  const finishBusyFeedback = startBusyFeedback(submit, { label: busyLabel });
   const removePhoto = form.querySelector('[data-action=remove-account-photo]');
   if (removePhoto) removePhoto.disabled = true;
   const cancelPassword = form.querySelector('[data-action=cancel-account-password]');
@@ -596,7 +634,7 @@ document.addEventListener('submit', async event => {
       if (new TextEncoder().encode(password).length > 72) throw new Error('A password não pode exceder 72 bytes UTF-8.');
       await api.send('/auth/ativacao', { token: activationToken, password, confirmacao: confirmation });
       activationToken = '';form.reset();history.replaceState(null, '', '#/visao');logoutView();
-      notify('Conta ativada. Já podes entrar com o teu email e a password que escolheste.');
+      notify('Conta ativada. Já podes entrar com o teu email e a password que escolheste.', 'success');
     } else if (form.id === 'login-form') {
       const user = await api.send('/auth/login', { email: String(submission.get('email') || '').trim(), password: submission.get('password') });
       form.reset();state.user = user;
@@ -611,7 +649,7 @@ document.addEventListener('submit', async event => {
       updateAccountPhoto(true);
       form.reset();
       form.querySelector('.form-error').textContent = '';
-      notify('Foto de perfil guardada.');
+      notify('Foto de perfil guardada.', 'success');
     } else if (form.id === 'account-password-form') {
       const user = state.user;
       const values = new FormData(form);
@@ -625,10 +663,10 @@ document.addEventListener('submit', async event => {
       if (state.user !== user) return;
       history.replaceState(null, '', '#/visao');
       logoutView();
-      notify('Palavra-passe alterada. Volta a entrar com a nova palavra-passe.');
+      notify('Palavra-passe alterada. Volta a entrar com a nova palavra-passe.', 'success');
     } else if (form.id === 'command-form') {
       const result = await command(form, context);
-      closeDialog();notify(result.message);
+      closeDialog();notify(result.message, 'success');
       if (result.photoRemoved) updateAccountPhoto(false);
       else if (result.route) navigate(result.route);
       else await render();
@@ -642,6 +680,7 @@ document.addEventListener('submit', async event => {
       }
     }
   } finally {
+    finishBusyFeedback();
     delete form.dataset.busy;form.removeAttribute('aria-busy');if (submit) submit.disabled = false;
     if (removePhoto) removePhoto.disabled = false;
     if (cancelPassword) cancelPassword.disabled = false;
@@ -682,7 +721,7 @@ document.addEventListener('click', async event => {
         break;
       }
       case 'adjust': await dialog('adjust', { cell: state.revisionCells[Number(target.dataset.index)] });break;
-      case 'download': target.disabled = true;await api.download(target.dataset.id);notify('Download do CSV preparado.');break;
+      case 'download': target.disabled = true;await api.download(target.dataset.id);notify('Download do CSV preparado.', 'success');break;
       case 'reset-search': {
         const current = route();
         for (const key of [...current.params.keys()]) if (/^f_/.test(key)) current.params.delete(key);
@@ -699,7 +738,7 @@ document.addEventListener('click', async event => {
         break;
       case 'copy-invitation': {
         const input = modal.querySelector('[name=invitationLink]');
-        try { await navigator.clipboard.writeText(input.value);notify('Link copiado.'); }
+        try { await navigator.clipboard.writeText(input.value);notify('Link copiado.', 'success'); }
         catch { input.focus();input.select();notify('Selecionámos o link. Usa Ctrl+C para copiar.'); }
         break;
       }
@@ -726,7 +765,7 @@ document.addEventListener('click', async event => {
         <div class="member-status-actions">${member.id === state.user.id ? '<p>Esta é a tua conta. A desativação exige outro administrador.</p>' : b(member.ativo ? 'Desativar utilizador' : 'Reativar utilizador', 'user-status', `data-id="${esc(member.id)}"`, member.ativo ? 'danger' : '')}${member.ativo && !member.passwordDefinida ? b('Gerar novo convite', 'user-invite', `data-id="${esc(member.id)}"`) : ''}</div>`;
         target.disabled = false;
         target.focus({ preventScroll: true });
-        modal.showModal();
+        openDialog();
         break;
       }
       case 'clear-search': state.search = '';state.pages.products = 0;await render();break;
