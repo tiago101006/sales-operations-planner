@@ -342,9 +342,10 @@ test('percurso completo com APIs reais, auditoria, aprovação independente e mo
     await modal(page).getByLabel('Tipo', { exact: true }).selectOption('CONSERVADOR');
     await expect(modal(page).getByLabel('Fator', { exact: true })).toHaveValue('0.90');
     await modal(page).getByLabel('Tipo', { exact: true }).selectOption('OTIMISTA');
-    const scenarioBox = await modal(page).locator('.form-grid > .info').boundingBox();
-    const scenarioGrid = await modal(page).locator('.form-grid').boundingBox();
-    expect(Math.abs(scenarioBox.width - scenarioGrid.width)).toBeLessThan(2);
+    // Measure both boxes in one frame, including while the dialog is entering.
+    await expect.poll(() => modal(page).locator('.form-grid').evaluate(grid =>
+      Math.abs(grid.querySelector(':scope > .info').getBoundingClientRect().width
+        - grid.getBoundingClientRect().width))).toBeLessThan(2);
     await page.screenshot({ path: '../tmp/ui-preview/cenario-formulario.png' });
     await modal(page).getByLabel('Nome', { exact: true }).fill('Otimista do navegador');
     await modal(page).getByLabel('Pressupostos').fill('Hipótese sintética de aumento de procura.');

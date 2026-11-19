@@ -3,11 +3,17 @@
 export function createMotionController({ page = document, browser = window } = {}) {
   const media = browser.matchMedia('(prefers-reduced-motion: reduce)');
   const running = new Map();
+  const navigation = new Map();
+  const stopNavigation = () => {
+    for (const animation of navigation.values()) animation.cancel();
+    navigation.clear();
+  };
   const setInput = event => {
     page.documentElement.dataset.motionInput = event.type === 'pointerdown' ? 'pointer' : 'keyboard';
     if (event.type === 'keydown') stop();
   };
   const stop = () => {
+    stopNavigation();
     for (const animation of running.values()) animation.cancel();
     running.clear();
   };
@@ -21,6 +27,33 @@ export function createMotionController({ page = document, browser = window } = {
   const allowed = () => !media.matches && !page.hidden && page.documentElement.dataset.motionInput === 'pointer';
   return {
     allowed,
+    navigateSelection(previous, next) {
+      // A table refresh or a detail route in the same section keeps its selection.
+      if (previous === next) return;
+      const outgoing = previous?.querySelector('.nav-selection');
+      const incoming = next?.querySelector('.nav-selection');
+      const full = 'inset(0% 0% 0% 0% round 7px)';
+      const closed = 'inset(50% 50% 50% 50% round 7px)';
+      const currentClip = (layer, fallback) => navigation.has(layer)
+        ? browser.getComputedStyle?.(layer).clipPath || fallback : fallback;
+      const from = currentClip(outgoing, full), to = currentClip(incoming, closed);
+      stopNavigation();
+      if (!previous?.isConnected || !next?.isConnected || !allowed()) return;
+      if (!previous.getClientRects().length || !next.getClientRects().length) return;
+      if (!outgoing?.animate || !incoming?.animate) return;
+      const shrink = outgoing.animate([{ clipPath: from }, { clipPath: closed }], {
+        duration: 90, easing: 'cubic-bezier(0.4, 0, 0.6, 1)',
+      });
+      const grow = incoming.animate([{ clipPath: to }, { clipPath: full }], {
+        duration: 150, delay: 90, fill: 'backwards', easing: 'cubic-bezier(0.16, 1, 0.3, 1)',
+      });
+      for (const [layer, animation] of [[outgoing, shrink], [incoming, grow]]) {
+        navigation.set(layer, animation);
+        const finished = () => { if (navigation.get(layer) === animation) navigation.delete(layer); };
+        animation.addEventListener('finish', finished, { once: true });
+        animation.addEventListener('cancel', finished, { once: true });
+      }
+    },
     acknowledge(element) {
       running.get(element)?.cancel();
       running.delete(element);

@@ -124,22 +124,24 @@ function prepareCurrentPassword(form) {
   });
 }
 
-export function mountAccountPage(container) {
+export function mountAccountPage(container, { change = (element, mutate) => mutate() } = {}) {
   const open = container.querySelector('[data-action="open-account-password"]');
   const host = container.querySelector('#account-password-editor');
   const template = container.querySelector('#account-password-template');
   if (!open || !host || !template) return;
   open.addEventListener('click', () => {
-    closePasswordEditor(container);
-    host.append(template.content.cloneNode(true));
-    container.querySelector('.profile-password-start').hidden = true;
-    host.querySelector('form').reset();
-    prepareCurrentPassword(host.querySelector('form'));
-    host.querySelector('[name="passwordAtual"]').focus();
+    change(container.querySelector('.profile-security'), () => {
+      closePasswordEditor(container);
+      host.append(template.content.cloneNode(true));
+      container.querySelector('.profile-password-start').hidden = true;
+      host.querySelector('form').reset();
+      prepareCurrentPassword(host.querySelector('form'));
+    });
+    host.querySelector('[name="passwordAtual"]').focus({ preventScroll: true });
   });
   host.addEventListener('click', event => {
     if (!event.target.closest('[data-action="cancel-account-password"]') || host.querySelector('form')?.dataset.busy) return;
-    closePasswordEditor(container);
-    open.focus();
+    change(container.querySelector('.profile-security'), () => closePasswordEditor(container));
+    open.focus({ preventScroll: true });
   });
 }

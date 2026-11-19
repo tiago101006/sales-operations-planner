@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test unit.test.mjs theme.test.mjs motion.test.mjs busy.test.mjs",
+    "test": "node --test unit.test.mjs theme.test.mjs motion.test.mjs busy.test.mjs nav-motion.test.mjs disclosure.test.mjs",
     "test:e2e": "playwright test",
     "test:performance": "playwright test performance.spec.mjs"
   },

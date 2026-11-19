@@ -3,7 +3,38 @@
   --motion-quick: 120ms;
   --motion-surface: 180ms;
   --motion-arrive: cubic-bezier(0.16, 1, 0.3, 1);
+  --nav-selection: #e6edcd;
 }
+:root[data-theme="dark"] { --nav-selection: var(--lime); }
+
+/* The clipped foreground travels with the fill, so text stays still and readable
+   on both the pale pill and the dark header throughout the handover. */
+.sidebar .nav-link { position: relative; font-weight: 550; }
+.sidebar .nav-link.active,
+:root[data-theme="dark"] .sidebar .nav-link.active {
+  background: transparent;
+  color: #dce5d3;
+  font-weight: 550;
+}
+.nav-label, .nav-selection { display: flex; align-items: center; gap: inherit; }
+.nav-selection {
+  position: absolute;
+  inset: 0;
+  padding: inherit;
+  border-radius: inherit;
+  background: var(--nav-selection);
+  color: #173d34;
+  clip-path: inset(50% 50% 50% 50% round 7px);
+  pointer-events: none;
+}
+.nav-link.active > .nav-selection { clip-path: inset(0% 0% 0% 0% round 7px); }
+
+/* Keep focus inside controls while a section clips its expanding height. */
+.profile-security :focus-visible,
+.form-grid :focus-visible,
+details :focus-visible { outline-offset: -3px; }
+/* Theme foreground and fill change together, without a pale-on-pale interval. */
+.profile-security .btn { transition: none; }
 
 #notice {
   align-items: flex-start;

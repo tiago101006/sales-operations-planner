@@ -5,8 +5,10 @@ import { accountAvatar, accountPage, mountAccountPage, closePasswordEditor, requ
 import { themeButton } from './theme.mjs';
 import { createMotionController } from './motion.mjs';
 import { startBusyFeedback } from './busy.mjs';
+import { createDisclosureController } from './disclosure.mjs';
 
 const motion = createMotionController();
+const disclosures = createDisclosureController({ shouldAnimate: motion.allowed });
 
 const api = new Api();
 const root = document.querySelector('#app');
@@ -218,7 +220,8 @@ function shell() {
   const navLink = key => {
     const entry = routes.find(r => r[0] === key);
     if (!entry?.[3]()) return '';
-    return `<a class="nav-link" href="#/${entry[0]}" data-nav="${entry[0]}">${icon(entry[2], 16)}<span>${entry[1]}</span></a>`;
+    const content = `${icon(entry[2], 16)}<span>${entry[1]}</span>`;
+    return `<a class="nav-link" href="#/${entry[0]}" data-nav="${entry[0]}"><span class="nav-label">${content}</span><span class="nav-selection" aria-hidden="true">${content}</span></a>`;
   };
   const groups = [['01', 'Dados', ['produtos', 'importacoes']], ['02', 'Previsão', ['previsoes', 'backtests']], ['03', 'Decisão', ['cenarios', 'planos']], ['04', 'Resultados', ['monitorizacao']]];
   root.innerHTML = `<div class="shell"><header class="app-header"><div class="topbar"><a class="brand" href="#/visao" aria-label="NexoPlan"><img src="/assets/brand.svg" width="42" height="42" alt=""><div><strong>NexoPlan<span class="brand-period">.</span></strong><small>PROCURA → DECISÃO</small></div></a><span class="workspace-label">PLANEAMENTO DE VENDAS & OPERAÇÕES</span><div class="account">${themeButton({ compact: true })}<a class="account-link" href="#/conta" data-nav="conta" aria-label="A minha conta" title="A minha conta">${accountAvatar(state.user, photoRevision)}<span class="account-name">${esc(state.user.nome)}<small>${state.user.papeis.map(p => esc(label(p))).join(' · ')}</small></span></a>${b(icon('logout', 18), 'logout', 'aria-label="Terminar sessão" title="Terminar sessão"', 'icon-button')}${b('<span></span><span></span>', 'toggle-nav', 'aria-label="Abrir navegação" aria-controls="main-navigation" aria-expanded="false"', 'nav-toggle')}</div></div><div class="sidebar"><nav id="main-navigation" aria-label="Navegação principal"><div class="nav-home">${navLink('visao')}</div>${groups.map(([number, title, keys]) => { const links = keys.map(navLink).join(''); return links ? `<div class="nav-group" aria-label="${title}"><span class="nav-stage"><span>${number}</span>${title}</span><div class="nav-options">${links}</div></div>` : ''; }).join('')}${role(state.user, 'ADMIN') ? `<div class="nav-admin">${navLink('equipa')}</div>` : ''}</nav></div></header><div class="workspace"><div class="location-bar"><span class="location-mark"></span><span>NexoPlan</span><span>/</span><strong id="breadcrumb">Visão geral</strong><span class="location-note">${state.user.papeis.map(p => esc(label(p))).join(' · ')}</span></div><main id="conteudo" class="content" tabindex="-1"></main><footer class="app-footer"><span>NexoPlan<span class="brand-period">.</span></span><span>Dados · Previsões · Decisões</span></footer></div></div>`;
@@ -240,10 +243,15 @@ document.addEventListener('error', event => {
 }, true);
 function setNavigation(open) {
   const sidebar = document.querySelector('.sidebar');
-  sidebar?.toggleAttribute('data-motion-open', open && motion.allowed());
-  sidebar?.classList.toggle('open', open);
-  const toggle = document.querySelector('[data-action=toggle-nav]');
-  if (toggle) { toggle.setAttribute('aria-expanded', String(open));toggle.setAttribute('aria-label', open ? 'Fechar navegação' : 'Abrir navegação'); }
+  const change = () => {
+    sidebar?.toggleAttribute('data-motion-open', open && motion.allowed());
+    sidebar?.classList.toggle('open', open);
+    const toggle = document.querySelector('[data-action=toggle-nav]');
+    if (toggle) { toggle.setAttribute('aria-expanded', String(open));toggle.setAttribute('aria-label', open ? 'Fechar navegação' : 'Abrir navegação'); }
+  };
+  if (sidebar && window.innerWidth <= 800 && sidebar.classList.contains('open') !== open) {
+    disclosures.change(document.querySelector('.app-header'), change);
+  } else change();
 }
 async function render({ pagination, preserveFocus } = {}) {
   if (!state.user) return;
@@ -257,7 +265,9 @@ async function render({ pagination, preserveFocus } = {}) {
   }
   const main = document.querySelector('#conteudo');const version = ++epoch;
   hideChartTooltip();
+  const previousNav = document.querySelector('.sidebar .nav-link.active');
   document.querySelectorAll('[data-nav]').forEach(el => { el.classList.toggle('active', el.dataset.nav === active); if (el.dataset.nav === active) el.setAttribute('aria-current', 'page'); else el.removeAttribute('aria-current'); });
+  motion.navigateSelection(previousNav, document.querySelector('.sidebar .nav-link.active'));
   document.querySelector('#breadcrumb').textContent = permission?.[1] || 'Página';
   document.title = `${permission?.[1] || 'Página'} — NexoPlan`;
   if (!pagination && !preserveFocus) main.innerHTML = '<div class="loading" role="status"><span class="spinner"></span>A carregar os dados…</div>';
@@ -277,7 +287,7 @@ async function render({ pagination, preserveFocus } = {}) {
       Object.assign(state, html.context);
       main.innerHTML = html.html;
     }
-    if (active === 'conta') mountAccountPage(main);
+    if (active === 'conta') mountAccountPage(main, { change: disclosures.change });
     if (interaction) {
       window.scrollTo({ top: scrollTop, behavior: 'instant' });
       if (restoreFocus && preserveFocus) {
@@ -485,9 +495,11 @@ function updateImportFormat() {
   modal.querySelector('#csv-example').textContent = format.example;
   modal.querySelector('#csv-description').textContent = format.description;
 }
-function updateMethod() {
+function updateMethod(animate = false) {
   const method = modal.querySelector('[name=metodo]').value;
-  modal.querySelectorAll('[data-method]').forEach(el => { const hidden = el.dataset.method !== method;el.classList.toggle('display-none', hidden);el.querySelectorAll('input,select').forEach(input => input.disabled = hidden); });
+  const change = () => modal.querySelectorAll('[data-method]').forEach(el => { const hidden = el.dataset.method !== method;el.classList.toggle('display-none', hidden);el.querySelectorAll('input,select').forEach(input => input.disabled = hidden); });
+  if (animate) disclosures.change(modal.querySelector('.form-grid'), change);
+  else change();
 }
 let suggestionEpoch = 0;
 async function suggestBacktest() {
@@ -887,8 +899,8 @@ document.addEventListener('change', async event => {
     }
     if (target.name === 'tipo' && dialogContext?.kind === 'import') updateImportFormat();
     if (target.name === 'tipo' && dialogContext?.kind === 'scenario') modal.querySelector('[name=fator]').value = { BASE: '1.00', OTIMISTA: '1.10', CONSERVADOR: '0.90', PERSONALIZADO: '1.00' }[target.value] || '1.00';
-    if (target.name === 'metodo') updateMethod();
-    if (target.name === 'recalcular') { modal.querySelector('#new-factor').classList.toggle('display-none', !target.checked);modal.querySelector('[name=fator]').disabled = !target.checked; }
+    if (target.name === 'metodo') updateMethod(true);
+    if (target.name === 'recalcular') disclosures.change(modal.querySelector('.form-grid'), () => { modal.querySelector('#new-factor').classList.toggle('display-none', !target.checked);modal.querySelector('[name=fator]').disabled = !target.checked; });
     if (dialogContext?.kind === 'backtest' && ['loteHistoricoId', 'tipoSerie', 'horizonteMeses'].includes(target.name)) await suggestBacktest();
     if (dialogContext?.kind === 'assessment' && target.name === 'planoId') await suggestWindow(target.value);
   } catch (error) { const form = modal.querySelector('form');if (form) formError(form, error);else notify(error.message, 'error'); }

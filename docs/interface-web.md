@@ -112,7 +112,16 @@ Em ecrãs pequenos, apresenta apenas o painel de entrada.
 ### Movimento e feedback
 
 As janelas abrem com uma transição curta de 180 ms, com o fundo a acompanhar.
-Fechar é imediato, incluindo Escape e a troca entre formulários: uma animação
+Ao escolher outra área da navegação com o rato, o destaque verde encolhe na opção
+anterior (90 ms) e cresce na nova (150 ms), sem deslocar o texto nem atrasar a
+página. Cliques rápidos interrompem a sequência anterior e mantêm a última
+escolha. Pesquisa, paginação e detalhes da mesma área não repetem o efeito.
+Os formulários que se estendem para baixo, como a alteração da palavra-passe,
+e as secções recolhíveis abrem e fecham em cerca de 220 ms. A mesma transição
+acompanha o menu móvel e os campos adicionais de configuração. Texto e campos
+mantêm o tamanho; é o espaço disponível que cresce ou diminui. Cancelar a edição
+da palavra-passe continua a apagar os valores e a remover o formulário de imediato.
+Fechar as janelas é imediato, incluindo Escape e a troca entre formulários: uma animação
 nunca atrasa a ação nem interfere com um convite acabado de criar. No telemóvel,
 o menu aparece suavemente e o botão indica o estado aberto.
 
