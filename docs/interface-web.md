@@ -102,8 +102,10 @@ O botão **Modo escuro**, no login e no cabeçalho, alterna as duas aparências 
 alterar a página ou os dados introduzidos. A escolha fica guardada neste navegador
 e sincronizada entre separadores. Antes de existir uma escolha, segue o tema do
 sistema. O tema é aplicado antes dos estilos para evitar uma passagem pelo tema
-claro ao carregar. A aparência escura usa superfícies verdes profundas, ações
-em verde sálvia e avisos negativos em terracota; fotografias mantêm as suas cores.
+claro ao carregar. A aparência escura usa fundos em verde petróleo, cabeçalho em
+verde profundo e painéis com diferentes níveis de luminosidade. As ações usam
+verde com texto claro; seleções e foco usam sálvia. Os avisos mantêm âmbar e
+terracota, e as fotografias conservam as suas cores naturais.
 O login ocupa o ecrã inteiro, com um painel areia para o formulário e uma
 composição verde profunda com percursos abstratos que representam alternativas
 de planeamento. A ilustração SVG é decorativa e não contém dados de negócio.

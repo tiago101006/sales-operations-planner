@@ -19,37 +19,39 @@
   .topbar .brand > div { display: none; }
 }
 
-/* Deep forest canvas; elevation is expressed through warmer, lighter surfaces. */
+/* Green petrol working surfaces, forest navigation and restrained sage accents. */
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #111f1a;
-  --paper: #1b2c24;
-  --surface-soft: #17271f;
-  --sage: #2b3d2e;
+  --bg: #122125;
+  --paper: #1b2e31;
+  --surface-soft: #19292c;
+  --surface-raised: #263a3b;
+  --sage: #263a3b;
   --sand: #3d3626;
-  --ink: #ecebdd;
-  --muted: #b5c0ad;
-  --line: #415144;
-  --green: #b8d58b;
-  --nav: #122c24;
-  --lime: #d7e7b3;
+  --ink: #edf1e8;
+  --muted: #adc0b8;
+  --line: #3b5756;
+  --green: #add4b8;
+  --nav: #123c35;
+  --lime: #cbdcb2;
   --copper: #dfaa82;
-  --focus: #d7e7b3;
+  --focus: #add4b8;
+  --action-bg: #396f5c;
   --negative-ink: #efa38a;
   --negative-strong: #f9c0aa;
   --negative-bg: #422c25;
   --negative-border: #a97059;
-  --control-border: #7d8d72;
-  --control-bg: #16251e;
-  --surface-hover: #2c3e30;
+  --control-border: #789b8f;
+  --control-bg: #142528;
+  --surface-hover: #2b4140;
   --chart-0: #9dccac;
   --chart-1: #dfb27d;
   --chart-2: #a4c9c0;
   --chart-3: #b9addb;
   --chart-4: #e6a1ac;
 }
-:root[data-theme="dark"] ::selection { background: #c8dda5; color: #173d34; }
-:root[data-theme="dark"] * { scrollbar-color: #7d8d72 #17271f; }
+:root[data-theme="dark"] ::selection { background: var(--lime); color: #173d34; }
+:root[data-theme="dark"] * { scrollbar-color: #789b8f var(--surface-soft); }
 :root[data-theme="dark"] .skip { background: var(--paper); color: var(--green); }
 :root[data-theme="dark"] .app-header,
 :root[data-theme="dark"] .sidebar { background: var(--nav); }
@@ -60,20 +62,20 @@
 :root[data-theme="dark"] .app-footer > span:first-child { color: var(--muted); }
 
 /* Shared controls and their hover/focus states. */
-:root[data-theme="dark"] .btn { background: #26382c; border-color: var(--control-border); color: var(--ink); }
-:root[data-theme="dark"] .btn:hover:not(:disabled):where(:not(.danger)) { background: #364b37; border-color: #b5c69e; color: var(--ink); }
-:root[data-theme="dark"] .btn.primary { background: var(--green); border-color: var(--green); color: #15291d; }
+:root[data-theme="dark"] .btn { background: var(--surface-raised); border-color: var(--control-border); color: var(--ink); }
+:root[data-theme="dark"] .btn:hover:not(:disabled):where(:not(.danger)) { background: var(--surface-hover); border-color: var(--green); color: var(--ink); }
+:root[data-theme="dark"] .btn.primary { background: var(--action-bg); border-color: var(--control-border); color: var(--ink); }
 :root[data-theme="dark"] .btn.primary:hover:not(:disabled):where(:not(.danger)),
-:root[data-theme="dark"] .btn.primary:focus-visible:where(:not(.danger)) { background: #d0e7ac; border-color: #d0e7ac; color: #15291d; }
+:root[data-theme="dark"] .btn.primary:focus-visible:where(:not(.danger)) { background: var(--surface-hover); border-color: var(--green); color: var(--ink); }
 :root[data-theme="dark"] .btn.link { background: transparent; color: var(--green); border-color: transparent; }
 :root[data-theme="dark"] .btn.link:hover:not(:disabled):where(:not(.danger)) { background: transparent; color: #d0e7ac; border-color: transparent; }
 :root[data-theme="dark"] .btn.danger { color: var(--negative-ink); background: #34271f; border-color: var(--negative-border); }
 :root[data-theme="dark"] .btn.danger:hover:not(:disabled),
 :root[data-theme="dark"] .btn.danger:focus-visible { color: var(--negative-strong); background: var(--negative-bg); border-color: var(--negative-ink); }
 :root[data-theme="dark"] .topbar .icon-button,
-:root[data-theme="dark"] .topbar .nav-toggle { background: transparent; color: #d5dfcd; border-color: #7d927c; }
+:root[data-theme="dark"] .topbar .nav-toggle { background: transparent; color: #d5dfcd; border-color: var(--control-border); }
 :root[data-theme="dark"] .topbar .icon-button:hover:not(:disabled),
-:root[data-theme="dark"] .topbar .nav-toggle:hover:not(:disabled) { background: #2d4637; color: #fffef2; border-color: #b5c69e; }
+:root[data-theme="dark"] .topbar .nav-toggle:hover:not(:disabled) { background: var(--surface-hover); color: #fffef2; border-color: var(--green); }
 :root[data-theme="dark"] .field,
 :root[data-theme="dark"] .check-group label { color: var(--ink); }
 :root[data-theme="dark"] input,
@@ -83,21 +85,21 @@
 :root[data-theme="dark"] textarea::placeholder { color: var(--muted); }
 :root[data-theme="dark"] input[readonly],
 :root[data-theme="dark"] input[type="file"] { background: var(--surface-soft); color: var(--ink); }
-:root[data-theme="dark"] input::file-selector-button { background: #2b3d2e; border: 1px solid var(--control-border); border-radius: 5px; color: var(--ink); }
+:root[data-theme="dark"] input::file-selector-button { background: var(--surface-raised); border: 1px solid var(--control-border); border-radius: 5px; color: var(--ink); }
 :root[data-theme="dark"] input:autofill { background: var(--control-bg); color: var(--ink); }
 :root[data-theme="dark"] input:-webkit-autofill { -webkit-text-fill-color: var(--ink); caret-color: var(--green); box-shadow: 0 0 0 100px var(--control-bg) inset; }
 :root[data-theme="dark"] .compare-control:hover { background: var(--surface-hover); }
 
 /* Tables, disclosures, and supporting surfaces retain clear scan lines. */
 :root[data-theme="dark"] .panel,
-:root[data-theme="dark"] .panel-head,
-:root[data-theme="dark"] .admin-dashboard .panel-head,
 :root[data-theme="dark"] .pagination,
 :root[data-theme="dark"] .empty { border-color: var(--line); background: var(--paper); }
+:root[data-theme="dark"] .panel-head,
+:root[data-theme="dark"] .admin-dashboard .panel-head { border-color: var(--line); background: var(--surface-raised); }
 :root[data-theme="dark"] th,
-:root[data-theme="dark"] .admin-dashboard th { background: #29382b; color: #ced7c2; }
+:root[data-theme="dark"] .admin-dashboard th { background: #213638; color: var(--muted); }
 :root[data-theme="dark"] td,
-:root[data-theme="dark"] .admin-dashboard td { border-color: #38493b; }
+:root[data-theme="dark"] .admin-dashboard td { border-color: var(--line); }
 :root[data-theme="dark"] tbody tr:hover,
 :root[data-theme="dark"] tbody tr:focus-within { background: var(--surface-hover); }
 :root[data-theme="dark"] td small,
@@ -143,8 +145,8 @@
 :root[data-theme="dark"] .badge.good { background: #30462c; color: #d0e7ac; }
 :root[data-theme="dark"] .badge.warn { background: #443923; color: #f0cc8e; }
 :root[data-theme="dark"] .badge.bad { background: var(--negative-bg); color: var(--negative-ink); }
-:root[data-theme="dark"] .badge.neutral { background: #344033; color: #cbd3c0; }
-:root[data-theme="dark"] .info { background: #283c29; border-color: #617854; color: #d2dfbf; }
+:root[data-theme="dark"] .badge.neutral { background: var(--surface-raised); color: #cbd8d1; }
+:root[data-theme="dark"] .info { background: var(--surface-raised); border-color: #67877b; color: #d2e0d8; }
 :root[data-theme="dark"] .info.warn { background: #3b3222; border-color: #8e754a; color: #f0cc8e; }
 :root[data-theme="dark"] .info.error,
 :root[data-theme="dark"] .form-error:not(:empty) { background: var(--negative-bg); border-color: var(--negative-border); color: var(--negative-ink); }
@@ -152,18 +154,20 @@
 :root[data-theme="dark"] #notice.error { background: var(--negative-bg); color: var(--negative-strong); }
 
 /* Dialogs sit one surface above the planning desk. */
-:root[data-theme="dark"] dialog { background: #223429; box-shadow: 0 24px 70px #0007; }
-:root[data-theme="dark"] dialog::backdrop { background: #08130cb8; }
-:root[data-theme="dark"] .modal-head { background: #2b3d2e; border-color: var(--line); }
+:root[data-theme="dark"] dialog { background: var(--surface-raised); box-shadow: 0 24px 70px #0007; }
+:root[data-theme="dark"] dialog::backdrop { background: #09181ab8; }
+:root[data-theme="dark"] .modal-head { background: var(--surface-raised); border-color: var(--line); }
 :root[data-theme="dark"] .close { color: var(--ink); }
-:root[data-theme="dark"] .close:hover { background: #40513a; }
+:root[data-theme="dark"] .close:hover { background: var(--surface-hover); }
 :root[data-theme="dark"] .invitation-content textarea[readonly] { background: var(--control-bg); border-color: var(--control-border); color: var(--ink); }
 
 /* The overview keeps its forest, sage, sand, and copper relationships. */
-:root[data-theme="dark"] .planning-hero { background: #234a38; }
+:root[data-theme="dark"] .planning-hero { background: #1d483c; }
 :root[data-theme="dark"] .planning-hero .btn { background: #e5edc1; color: #20452e; border-color: #e5edc1; }
-:root[data-theme="dark"] .planning-hero .btn:hover:not(:disabled) { background: #f7f1d5; color: #173d34; border-color: #f7f1d5; }
+:root[data-theme="dark"] .planning-hero .btn:hover:not(:disabled):where(:not(.link)) { background: #f7f1d5; color: #173d34; border-color: #f7f1d5; }
 :root[data-theme="dark"] .planning-hero .btn.link { color: #f3eaca; background: transparent; border-color: transparent; }
+:root[data-theme="dark"] .planning-hero .btn.link:hover:not(:disabled),
+:root[data-theme="dark"] .planning-hero .btn.link:focus-visible { color: #fff8dd; background: transparent; border-color: transparent; }
 :root[data-theme="dark"] .planning-route { border-color: var(--line); background: var(--sage); }
 :root[data-theme="dark"] .planning-route > a { --route-hover-bg: #233226; color: var(--ink); background: #2b3d2e; border-color: var(--line); }
 :root[data-theme="dark"] .planning-route > a:nth-child(2) { --route-hover-bg: #302d21; background: #3a3628; }
@@ -185,7 +189,7 @@
 :root[data-theme="dark"] .work-symbol { background: var(--sage); color: #c0d69f; }
 :root[data-theme="dark"] .work-symbol.copper { background: #493426; color: #e6b18b; }
 :root[data-theme="dark"] .work-open { color: var(--green); }
-:root[data-theme="dark"] .work-summary { background: #343628; }
+:root[data-theme="dark"] .work-summary { background: var(--surface-raised); }
 :root[data-theme="dark"] .work-summary > div,
 :root[data-theme="dark"] .work-summary > a,
 :root[data-theme="dark"] .work-summary > span { color: #c4c9b2; }
@@ -210,8 +214,8 @@
 :root[data-theme="dark"] .chart-context,
 :root[data-theme="dark"] .chart-context span:first-child { color: var(--muted); }
 :root[data-theme="dark"] .chart-context,
-:root[data-theme="dark"] .workbench .chart-context { background: #253628; border-color: var(--line); }
-:root[data-theme="dark"] .chart svg line:not(.chart-guide) { stroke: #465442; }
+:root[data-theme="dark"] .workbench .chart-context { background: var(--surface-soft); border-color: var(--line); }
+:root[data-theme="dark"] .chart svg line:not(.chart-guide) { stroke: var(--line); }
 :root[data-theme="dark"] .chart [stroke="#23786a"] { stroke: var(--chart-0); }
 :root[data-theme="dark"] .chart [stroke="#b28142"] { stroke: var(--chart-1); }
 :root[data-theme="dark"] .chart [stroke="#7b9b92"] { stroke: var(--chart-2); }
@@ -226,23 +230,25 @@
 :root[data-theme="dark"] .chart .line-2 { --line: var(--chart-2); }
 :root[data-theme="dark"] .chart .line-3 { --line: var(--chart-3); }
 :root[data-theme="dark"] .chart .line-4 { --line: var(--chart-4); }
-:root[data-theme="dark"] .chart-tooltip { background: #122c24; border-color: #879d75; box-shadow: 0 6px 20px #0004; }
+:root[data-theme="dark"] .chart-tooltip { background: var(--nav); border-color: var(--control-border); box-shadow: 0 6px 20px #0004; }
 
 /* Portraits and product photography remain natural; their framing is themed. */
 :root[data-theme="dark"] .product-thumbnail,
-:root[data-theme="dark"] .product-card-image .product-thumbnail { background: #3d3026; }
+:root[data-theme="dark"] .product-card-image .product-thumbnail { background: var(--surface-raised); }
 :root[data-theme="dark"] .product-card-image .product-thumbnail:has(img) { background: #f2e5dc; }
 :root[data-theme="dark"] .product-thumbnail img { background: #dcd6c5; }
 :root[data-theme="dark"] .product-card-image img { background: transparent; }
 :root[data-theme="dark"] .catalogue-view .btn { background: transparent; border-color: transparent; }
-:root[data-theme="dark"] .catalogue-view .btn[aria-pressed="true"] { background: var(--sage); color: var(--ink); }
-:root[data-theme="dark"] .profile-roles span { border-color: #82946b; }
+:root[data-theme="dark"] .catalogue-view .btn[aria-pressed="true"],
+:root[data-theme="dark"] .catalogue-view .btn[aria-pressed="true"]:hover:not(:disabled),
+:root[data-theme="dark"] .catalogue-view .btn[aria-pressed="true"]:focus-visible { background: var(--action-bg); color: var(--ink); }
+:root[data-theme="dark"] .profile-roles span { border-color: var(--control-border); }
 :root[data-theme="dark"] .profile-photo-editor > summary:hover { color: var(--green); }
 :root[data-theme="dark"] .profile-photo-fields input { background: var(--control-bg); }
 :root[data-theme="dark"] .profile-photo-fields input::file-selector-button { background: var(--sage); color: var(--ink); border-color: var(--control-border); }
 
-/* Login keeps its quiet paper-to-forest composition in a lower-light register. */
-:root[data-theme="dark"] .login { background: #10271f; }
+/* Login shares the petrol canvas and retains its forest and sage artwork. */
+:root[data-theme="dark"] .login { background: var(--bg); }
 :root[data-theme="dark"] .login-panel { background: var(--paper); }
 :root[data-theme="dark"] .login-brand,
 :root[data-theme="dark"] .login-entry h1,
@@ -256,3 +262,4 @@
 :root[data-theme="dark"] .login-entry input { background: var(--control-bg); color: var(--ink); border-color: var(--control-border); }
 :root[data-theme="dark"] .login-panel-header .theme-toggle { background: transparent; color: var(--muted); border-color: var(--control-border); }
 :root[data-theme="dark"] .login-panel-header .theme-toggle:hover { background: var(--surface-hover); color: var(--ink); }
+:root[data-theme="dark"] .login-art [fill="#173c31"] { fill: var(--bg); }

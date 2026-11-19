@@ -28,7 +28,7 @@ export function createThemeController({ page = globalThis.document, browser = gl
     // Automatic preferences and keyboard activation settle without icon motion.
     page.documentElement.dataset.themeMotion = String(animate && !page.hidden);
     page.documentElement.dataset.theme = theme;
-    page.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#122c24' : '#173d34');
+    page.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#123c35' : '#173d34');
     page.querySelectorAll('[data-theme-toggle]').forEach(button => {
       button.setAttribute('aria-pressed', String(dark));
       button.setAttribute('title', dark ? 'Ativar modo claro' : 'Ativar modo escuro');

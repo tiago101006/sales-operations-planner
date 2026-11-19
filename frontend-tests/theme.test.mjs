@@ -37,7 +37,7 @@ test('theme follows the system until a person selects an explicit preference', (
   f.media.emit('change');
   assert.equal(f.page.documentElement.dataset.theme, 'dark');
   assert.equal(f.button.attributes.title, 'Ativar modo claro');
-  assert.equal(f.meta.content, '#122c24');
+  assert.equal(f.meta.content, '#123c35');
   f.controller.destroy();
 });
 

@@ -33,8 +33,9 @@
 .profile-security :focus-visible,
 .form-grid :focus-visible,
 details :focus-visible { outline-offset: -3px; }
-/* Theme foreground and fill change together, without a pale-on-pale interval. */
-.profile-security .btn { transition: none; }
+/* Theme foreground and fill change together, without a low-contrast interval.
+   Icon and navigation motion is handled separately from control colors. */
+.btn { transition: none; }
 
 #notice {
   align-items: flex-start;
