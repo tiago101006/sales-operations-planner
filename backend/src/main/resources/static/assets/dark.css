@@ -59,12 +59,12 @@
 
 /* Shared controls and their hover/focus states. */
 :root[data-theme="dark"] .btn { background: #26382c; border-color: var(--control-border); color: var(--ink); }
-:root[data-theme="dark"] .btn:hover:not(:disabled) { background: #364b37; border-color: #b5c69e; color: var(--ink); }
+:root[data-theme="dark"] .btn:hover:not(:disabled):where(:not(.danger)) { background: #364b37; border-color: #b5c69e; color: var(--ink); }
 :root[data-theme="dark"] .btn.primary { background: var(--green); border-color: var(--green); color: #15291d; }
-:root[data-theme="dark"] .btn.primary:hover:not(:disabled),
-:root[data-theme="dark"] .btn.primary:focus-visible { background: #d0e7ac; border-color: #d0e7ac; color: #15291d; }
+:root[data-theme="dark"] .btn.primary:hover:not(:disabled):where(:not(.danger)),
+:root[data-theme="dark"] .btn.primary:focus-visible:where(:not(.danger)) { background: #d0e7ac; border-color: #d0e7ac; color: #15291d; }
 :root[data-theme="dark"] .btn.link { background: transparent; color: var(--green); border-color: transparent; }
-:root[data-theme="dark"] .btn.link:hover:not(:disabled) { background: transparent; color: #d0e7ac; border-color: transparent; }
+:root[data-theme="dark"] .btn.link:hover:not(:disabled):where(:not(.danger)) { background: transparent; color: #d0e7ac; border-color: transparent; }
 :root[data-theme="dark"] .btn.danger { color: var(--negative-ink); background: #34271f; border-color: var(--negative-border); }
 :root[data-theme="dark"] .btn.danger:hover:not(:disabled),
 :root[data-theme="dark"] .btn.danger:focus-visible { color: var(--negative-strong); background: var(--negative-bg); border-color: var(--negative-ink); }
@@ -163,11 +163,12 @@
 :root[data-theme="dark"] .planning-hero .btn:hover:not(:disabled) { background: #f7f1d5; color: #173d34; border-color: #f7f1d5; }
 :root[data-theme="dark"] .planning-hero .btn.link { color: #f3eaca; background: transparent; border-color: transparent; }
 :root[data-theme="dark"] .planning-route { border-color: var(--line); background: var(--sage); }
-:root[data-theme="dark"] .planning-route > a { color: var(--ink); background: #2b3d2e; border-color: var(--line); }
-:root[data-theme="dark"] .planning-route > a:nth-child(2) { background: #3a3628; }
-:root[data-theme="dark"] .planning-route > a:nth-child(3) { background: #402f25; }
-:root[data-theme="dark"] .planning-route > a:last-child { background: #2e412b; }
-:root[data-theme="dark"] .planning-route > a:hover { background: #3b5036; }
+:root[data-theme="dark"] .planning-route > a { --route-hover-bg: #233226; color: var(--ink); background: #2b3d2e; border-color: var(--line); }
+:root[data-theme="dark"] .planning-route > a:nth-child(2) { --route-hover-bg: #302d21; background: #3a3628; }
+:root[data-theme="dark"] .planning-route > a:nth-child(3) { --route-hover-bg: #35271f; background: #402f25; }
+:root[data-theme="dark"] .planning-route > a:last-child { --route-hover-bg: #263624; background: #2e412b; }
+:root[data-theme="dark"] .planning-route > a:hover,
+:root[data-theme="dark"] .planning-route > a:focus-visible { background: var(--route-hover-bg); }
 :root[data-theme="dark"] .route-number { border-color: #82946b; }
 :root[data-theme="dark"] .planning-route > a:nth-child(3) .route-number { border-color: #b88562; color: #e8b28a; }
 :root[data-theme="dark"] .route-label small,

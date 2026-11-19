@@ -78,13 +78,14 @@ h2 { font-size: 16px; letter-spacing: -.4px; font-weight: 600; }
 .page-heading .heading-reference { margin-top: 6px; color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
 .actions { gap: 8px; }
 .btn { color: #284b3c; background: #fafbf6; border-color: #ccd4c4; border-radius: 6px; font-weight: 600; padding: 10px 15px; box-shadow: none; }
-.btn:hover:not(:disabled) { color: #173d34; background: #e5ebda; border-color: #b3c1a5; }
+.btn:hover:not(:disabled):where(:not(.danger)) { color: #173d34; background: #e5ebda; border-color: #b3c1a5; }
 .btn.primary{ background: var(--green); color: #fffdf0; border-color: var(--green); }
 .btn.primary:hover:not(:disabled), .btn.primary:focus-visible{ background: #173d34; color: #fffdf0; border-color: #173d34; }
 .btn.link { background: transparent; color: #29664c; box-shadow: none; }
 .btn.link:hover:not(:disabled) { background: transparent; text-decoration: underline; }
 .btn.danger { color: var(--negative-ink); border-color: var(--negative-border); background: #fff8f4; }
 .btn.danger:hover:not(:disabled), .btn.danger:focus-visible { color: var(--negative-strong); background: var(--negative-bg); border-color: var(--negative-ink); }
+.btn.danger:focus-visible { outline-color: var(--negative-ink); }
 .btn.small { font-size: 12px; min-height: 36px; padding: 7px 11px; }
 .btn { min-height: 42px; transition: background-color .15s ease-out, border-color .15s ease-out; }
 .panel { background: var(--paper); border: 1px solid #d8ddce; border-radius: 12px; box-shadow: none; margin-bottom: 22px; overflow: hidden; }
