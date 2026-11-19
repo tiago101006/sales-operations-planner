@@ -23,8 +23,10 @@ export function createThemeController({ page = globalThis.document, browser = gl
   media ??= browser.matchMedia?.('(prefers-color-scheme: dark)');
   let preference = readThemePreference(storage);
 
-  const apply = () => {
+  const apply = (animate = false) => {
     const theme = resolveTheme(preference, !!media?.matches), dark = theme === 'dark';
+    // Automatic preferences and keyboard activation settle without icon motion.
+    page.documentElement.dataset.themeMotion = String(animate && !page.hidden);
     page.documentElement.dataset.theme = theme;
     page.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#122c24' : '#173d34');
     page.querySelectorAll('[data-theme-toggle]').forEach(button => {
@@ -32,14 +34,14 @@ export function createThemeController({ page = globalThis.document, browser = gl
       button.setAttribute('title', dark ? 'Ativar modo claro' : 'Ativar modo escuro');
     });
   };
-  const toggle = () => {
+  const toggle = (animate = false) => {
     preference = page.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
     try { storage?.setItem(themePreferenceKey, preference); } catch { /* The switch still works for this session. */ }
-    apply();
+    apply(animate);
   };
   const onClick = event => {
     const button = event.target.closest?.('[data-theme-toggle]');
-    if (button && !button.disabled) toggle();
+    if (button && !button.disabled) toggle(event.detail > 0);
   };
   const onSystemChange = () => { if (!preference) apply(); };
   const onStorage = event => {
@@ -58,6 +60,7 @@ export function createThemeController({ page = globalThis.document, browser = gl
       page.removeEventListener('click', onClick);
       media?.removeEventListener('change', onSystemChange);
       browser.removeEventListener('storage', onStorage);
+      delete page.documentElement.dataset.themeMotion;
     },
   };
 }

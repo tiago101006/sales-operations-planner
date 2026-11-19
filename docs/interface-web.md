@@ -112,6 +112,10 @@ Em ecrãs pequenos, apresenta apenas o painel de entrada.
 ### Movimento e feedback
 
 As janelas abrem com uma transição curta de 180 ms, com o fundo a acompanhar.
+O botão de tema troca entre lua e sol com uma rotação e uma transição de opacidade
+de até 220 ms. O tema e o estado acessível mudam imediatamente. A animação do ícone
+só acompanha a escolha por rato ou toque; não se repete ao abrir a página nem nas
+alterações automáticas de preferência, e respeita o movimento reduzido.
 Ao escolher outra área da navegação com o rato, o destaque verde encolhe na opção
 anterior (90 ms) e cresce na nova (150 ms), sem deslocar o texto nem atrasar a
 página. Cliques rápidos interrompem a sequência anterior e mantêm a última

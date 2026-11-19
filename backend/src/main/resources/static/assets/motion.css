@@ -64,6 +64,10 @@ details :focus-visible { outline-offset: -3px; }
 .nav-toggle[aria-expanded="true"] span:last-child { transform: translateY(-3px) rotate(-45deg); }
 
 @media (prefers-reduced-motion: no-preference) {
+  html[data-motion-input="pointer"][data-theme-motion="true"] .theme-toggle .theme-moon,
+  html[data-motion-input="pointer"][data-theme-motion="true"] .theme-toggle .theme-sun {
+    transition: transform 220ms var(--motion-arrive), opacity 160ms ease-out;
+  }
   dialog[open][data-motion-open] {
     animation: dialog-arrive var(--motion-surface) var(--motion-arrive);
     transform-origin: center;
@@ -99,6 +103,7 @@ details :focus-visible { outline-offset: -3px; }
 @keyframes saved-confirmation { from { opacity: .4; transform: scale(.8); } to { opacity: 1; transform: scale(1); } }
 
 @media (prefers-reduced-motion: reduce) {
+  .theme-toggle .theme-moon, .theme-toggle .theme-sun { transition: none; }
   dialog[open], dialog[open]::backdrop, .sidebar.open nav, #notice.success .notice-symbol { animation: none; }
   .nav-toggle span, .btn.primary > svg { transition: none; }
 }

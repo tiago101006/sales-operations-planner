@@ -71,6 +71,60 @@ test('cross-tab preference changes synchronize and removing a choice restores sy
   assert.equal(f.page.documentElement.dataset.theme, 'light');
 });
 
+test('pointer toggles apply immediately and keep motion enabled through rapid reversals', () => {
+  const f = themeFixture({ preference: 'light' });
+  assert.equal(f.page.documentElement.dataset.themeMotion, 'false');
+  for (const theme of ['dark', 'light', 'dark']) {
+    f.page.emit('click', { detail: 1, target: { closest: () => f.button } });
+    assert.equal(f.page.documentElement.dataset.theme, theme);
+    assert.equal(f.page.documentElement.dataset.themeMotion, 'true');
+    assert.equal(f.button.attributes['aria-pressed'], String(theme === 'dark'));
+    assert.equal(f.storage.getItem(themePreferenceKey), theme);
+  }
+});
+
+test('keyboard and programmatic toggles clear motion from a previous pointer change', () => {
+  const f = themeFixture({ preference: 'light' });
+  for (const toggle of [
+    () => f.page.emit('click', { detail: 0, target: { closest: () => f.button } }),
+    () => f.controller.toggle(),
+  ]) {
+    f.page.emit('click', { detail: 1, target: { closest: () => f.button } });
+    assert.equal(f.page.documentElement.dataset.themeMotion, 'true');
+    toggle();
+    assert.equal(f.page.documentElement.dataset.theme, 'light');
+    assert.equal(f.page.documentElement.dataset.themeMotion, 'false');
+  }
+});
+
+test('startup, storage and system updates apply without theme motion', () => {
+  const f = themeFixture({ preference: 'light', systemDark: true });
+  assert.equal(f.page.documentElement.dataset.themeMotion, 'false');
+  f.page.emit('click', { detail: 1, target: { closest: () => f.button } });
+  assert.equal(f.page.documentElement.dataset.themeMotion, 'true');
+  f.storage.setItem(themePreferenceKey, 'light');
+  f.browser.emit('storage', { key: themePreferenceKey, storageArea: f.storage });
+  assert.equal(f.page.documentElement.dataset.theme, 'light');
+  assert.equal(f.page.documentElement.dataset.themeMotion, 'false');
+  f.values.delete(themePreferenceKey);
+  f.browser.emit('storage', { key: themePreferenceKey, storageArea: f.storage });
+  assert.equal(f.page.documentElement.dataset.theme, 'dark');
+  assert.equal(f.page.documentElement.dataset.themeMotion, 'false');
+  f.media.matches = false;f.media.emit('change');
+  assert.equal(f.page.documentElement.dataset.theme, 'light');
+  assert.equal(f.page.documentElement.dataset.themeMotion, 'false');
+});
+
+test('hidden pages switch immediately without motion and destroy removes the motion gate', () => {
+  const f = themeFixture({ preference: 'light' });
+  f.page.hidden = true;
+  f.page.emit('click', { detail: 1, target: { closest: () => f.button } });
+  assert.equal(f.page.documentElement.dataset.theme, 'dark');
+  assert.equal(f.page.documentElement.dataset.themeMotion, 'false');
+  f.controller.destroy();
+  assert.equal(f.page.documentElement.dataset.themeMotion, undefined);
+});
+
 test('invalid preferences use the system and the toggle has a stable accessible name', () => {
   assert.equal(resolveTheme('invalid', true), 'dark');
   assert.equal(readThemePreference({ getItem: () => 'invalid' }), null);

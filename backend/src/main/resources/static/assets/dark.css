@@ -1,9 +1,11 @@
 /* Theme controls belong to the same warm planning desk in both appearances. */
 :root { color-scheme: light; }
 .theme-toggle { min-width: 44px; min-height: 44px; flex-shrink: 0; }
-.theme-sun { display: none; }
-[data-theme="dark"] .theme-moon { display: none; }
-[data-theme="dark"] .theme-sun { display: initial; }
+.theme-toggle .theme-moon, .theme-toggle .theme-sun { transform-box: view-box; transform-origin: center; }
+.theme-toggle .theme-moon { opacity: 1; transform: rotate(0deg) scale(1); }
+.theme-toggle .theme-sun { opacity: 0; transform: rotate(-70deg) scale(.55); }
+[data-theme="dark"] .theme-toggle .theme-moon { opacity: 0; transform: rotate(70deg) scale(.55); }
+[data-theme="dark"] .theme-toggle .theme-sun { opacity: 1; transform: rotate(0deg) scale(1); }
 .topbar .theme-toggle { width: 44px; height: 44px; min-height: 44px; }
 .login-panel-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
 .login-panel-header .theme-toggle { background: transparent; font-size: 11px; padding: 9px 10px; }
