@@ -164,6 +164,24 @@ test('all interruption events immediately cancel effects and release temporary s
   }
 });
 
+test('navigation can settle opening and closing layouts before measuring a scroll destination', () => {
+  const f = fixture();f.click();
+  const opening = f.details.animations[0];opening.sample = 80;
+  f.controller.finish();
+  assert.equal(f.details.open, true);
+  assert.equal(f.details.getBoundingClientRect().height, f.details.openHeight);
+  assert.equal(opening.cancelled, true);
+  assert.equal(f.details.hasAttribute('style'), false);
+  f.click();
+  f.controller.finish();
+  assert.equal(f.details.open, false);
+  assert.equal(f.details.getBoundingClientRect().height, f.details.closedHeight);
+  assert.equal(f.body.hasAttribute('inert'), false);
+  assert.equal(f.body.hasAttribute('aria-hidden'), false);
+  assert.equal(f.summary.hasAttribute('aria-expanded'), false);
+  f.controller.finish();
+});
+
 test('destroy removes every listener, settles native intention, and leaves later mutations immediate', () => {
   const f = fixture();f.details.open = true;f.click();
   f.controller.destroy();f.controller.destroy();

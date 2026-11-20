@@ -1,5 +1,13 @@
 // Operational UI: only occasional, user-initiated feedback moves.
 // The data tables and chart values always update immediately.
+export function revealContent(element, { block = 'start', focus = false, animate = true, browser = window } = {}) {
+  if (!element?.isConnected) return;
+  // Focusing must not jump ahead of the browser's native, interruptible scroll.
+  if (focus) element.focus({ preventScroll: true });
+  const reduced = browser.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  element.scrollIntoView({ block, behavior: animate && !reduced ? 'smooth' : 'instant' });
+}
+
 export function createMotionController({ page = document, browser = window } = {}) {
   const media = browser.matchMedia('(prefers-reduced-motion: reduce)');
   const running = new Map();

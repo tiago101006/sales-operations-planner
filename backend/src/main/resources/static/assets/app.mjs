@@ -3,7 +3,7 @@ import { esc, date, month, quantity as q, factorValue, revisionCaption, label, b
 import { createViews } from './views.mjs';
 import { accountAvatar, accountPage, mountAccountPage, closePasswordEditor, requireCurrentPassword } from './profile.mjs';
 import { themeButton } from './theme.mjs';
-import { createMotionController } from './motion.mjs';
+import { createMotionController, revealContent } from './motion.mjs';
 import { startBusyFeedback } from './busy.mjs';
 import { createDisclosureController } from './disclosure.mjs';
 import { mountInsightPage } from './insight.mjs';
@@ -296,7 +296,7 @@ async function render({ pagination, preserveFocus } = {}) {
     if (current.name === 'analise') {
       const start = state.insightStartId === current.id;
       delete state.insightStartId;
-      disposeInsight = mountInsightPage(main, { api, assessment: state.insightAssessment, initial: state.insightReport, start });
+      disposeInsight = mountInsightPage(main, { api, assessment: state.insightAssessment, initial: state.insightReport, start, settleLayout: disclosures.finish });
     }
     if (interaction) {
       window.scrollTo({ top: scrollTop, behavior: 'instant' });
@@ -331,7 +331,7 @@ function formError(form, error) {
   if (error.status === 409 && error.problem?.currentVersion !== undefined) {
     const refresh = document.createElement('button');refresh.type = 'button';refresh.className = 'btn small';refresh.dataset.action = 'refresh-stale';refresh.textContent = 'Atualizar os dados';box.append(document.createElement('br'), refresh);
   }
-  box.scrollIntoView({ block: 'nearest' });
+  revealContent(box, { block: 'nearest', animate: motion.allowed() });
 }
 function formHtml(kind, title, content, submit, context = {}, submitStyle = 'primary') {
   hideChartTooltip();
@@ -710,7 +710,7 @@ document.addEventListener('submit', async event => {
   }
 });
 document.addEventListener('click', async event => {
-  if (event.target.closest('.skip')) { event.preventDefault();document.querySelector('#conteudo')?.focus();return; }
+  if (event.target.closest('.skip')) { event.preventDefault();revealContent(document.querySelector('#conteudo'), { focus: true, animate: event.detail !== 0 });return; }
   const target = event.target.closest('[data-action]');if (!target || target.disabled) return;
   const action = target.dataset.action;
   try {

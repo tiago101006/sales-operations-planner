@@ -1,6 +1,30 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createMotionController } from '../backend/src/main/resources/static/assets/motion.mjs';
+import { createMotionController, revealContent } from '../backend/src/main/resources/static/assets/motion.mjs';
+
+test('content navigation focuses without jumping, then scrolls smoothly to the destination', () => {
+  const calls = [];
+  const element = { isConnected: true, focus: options => calls.push(['focus', options]), scrollIntoView: options => calls.push(['scroll', options]) };
+  revealContent(element, { focus: true, browser: { matchMedia: () => ({ matches: false }) } });
+  assert.deepEqual(calls, [['focus', { preventScroll: true }], ['scroll', { block: 'start', behavior: 'smooth' }]]);
+});
+
+test('content navigation respects reduced motion and immediate keyboard navigation on each call', () => {
+  const calls = [], media = { matches: true };
+  const element = { isConnected: true, scrollIntoView: options => calls.push(options) };
+  const browser = { matchMedia: () => media };
+  revealContent(element, { browser });
+  media.matches = false;
+  revealContent(element, { animate: false, block: 'nearest', browser });
+  assert.deepEqual(calls, [{ block: 'start', behavior: 'instant' }, { block: 'nearest', behavior: 'instant' }]);
+  revealContent(element, { browser });
+  assert.equal(calls.at(-1).behavior, 'smooth');
+});
+
+test('a stale or missing content destination cannot move the page', () => {
+  revealContent(null, { browser: {} });
+  revealContent({ isConnected: false }, { browser: {} });
+});
 
 function fixture({ reduced = false } = {}) {
   const events = () => {

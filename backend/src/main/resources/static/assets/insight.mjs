@@ -1,4 +1,5 @@
 import { esc, date, month, quantity as q, percent, label, icon, button as b } from './ui.mjs';
+import { revealContent } from './motion.mjs';
 
 const statusCopy = {
   POR_GERAR: ['Uma leitura completa do plano', 'A análise reúne a precisão, os resultados operacionais e as limitações de todos os produtos desta avaliação.'],
@@ -86,7 +87,7 @@ export function createInsightSession({ api, id, onChange, schedule = setTimeout,
   return { load, generate: () => request(true), watch, dispose() { stopped = true;clear(); } };
 }
 
-export function mountInsightPage(main, { api, assessment, initial, start = false }) {
+export function mountInsightPage(main, { api, assessment, initial, start = false, settleLayout = () => {} }) {
   const host = main.querySelector('[data-insight-report]');
   if (!host) return () => {};
   let report = initial, selectedProduct = '', page = 0, closed = false;
@@ -115,7 +116,9 @@ export function mountInsightPage(main, { api, assessment, initial, start = false
     const link = event.target.closest('[data-insight-section]');
     if (link) {
       const heading = host.querySelector(`#insight-section-${CSS.escape(link.dataset.insightSection)}`);
-      heading?.focus({ preventScroll: true });heading?.scrollIntoView({ block: 'start', behavior: 'instant' });return;
+      if (!heading) return;
+      settleLayout();
+      revealContent(heading, { focus: true, animate: event.detail !== 0 });return;
     }
     const pager = event.target.closest('[data-insight-page]');
     if (pager && !pager.disabled) {

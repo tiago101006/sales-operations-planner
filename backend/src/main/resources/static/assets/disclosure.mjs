@@ -149,6 +149,8 @@ export function createDisclosureController({ page = document, browser = window, 
 
   return {
     change: (element, mutate) => change(element, mutate),
+    // A navigation destination must be measured after pending height changes.
+    finish: stop,
     destroy() {
       if (destroyed) return;
       destroyed = true;
