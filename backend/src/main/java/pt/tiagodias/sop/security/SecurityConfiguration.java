@@ -74,6 +74,7 @@ public class SecurityConfiguration {
                         .requestMatchers("/api/v1/utilizadores", "/api/v1/utilizadores/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/v1/avaliacoes", "/api/v1/avaliacoes/**").hasAnyRole("ADMIN", "PLANEADOR", "COMERCIAL", "APROVADOR", "CONSUMIDOR")
                         .requestMatchers(HttpMethod.POST, "/api/v1/avaliacoes").hasAnyRole("ADMIN", "PLANEADOR")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/avaliacoes/*/analise-inteligente").hasAnyRole("ADMIN", "PLANEADOR", "COMERCIAL", "APROVADOR", "CONSUMIDOR")
                         .requestMatchers("/api/v1/avaliacoes", "/api/v1/avaliacoes/**").denyAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/revisoes/*/submissao").hasAnyRole("ADMIN", "PLANEADOR")
                         .requestMatchers(HttpMethod.POST, "/api/v1/revisoes/*/aprovacao", "/api/v1/revisoes/*/devolucao").hasRole("APROVADOR")

@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.*;
 class PlanningOperationLimitsTests {
     private static final List<String> POSTS = List.of(
             "/api/v1/cenarios", "/api/v1/cenarios/42/revisoes",
-            "/api/v1/revisoes/42/aprovacao", "/api/v1/utilizadores");
+            "/api/v1/revisoes/42/aprovacao", "/api/v1/utilizadores", "/api/v1/avaliacoes/42/analise-inteligente");
 
     @AfterEach void clearContext() { SecurityContextHolder.clearContext(); }
 

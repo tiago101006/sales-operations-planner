@@ -19,7 +19,7 @@ final class RequestLimitsFilter extends OncePerRequestFilter {
             "/api/v1/lotes", "/api/v1/backtests", "/api/v1/execucoes-previsao", "/api/v1/avaliacoes",
             "/api/v1/cenarios", "/api/v1/utilizadores");
     private static final Pattern EXPENSIVE_TRANSITIONS = Pattern.compile(
-            "/api/v1/(?:cenarios/[0-9]+/revisoes|revisoes/[0-9]+/aprovacao)");
+            "/api/v1/(?:cenarios/[0-9]+/revisoes|revisoes/[0-9]+/aprovacao|avaliacoes/[0-9]+/analise-inteligente)");
     private final Semaphore operations = new Semaphore(2);
     private final Set<String> activeAccounts = ConcurrentHashMap.newKeySet();
 

@@ -41,6 +41,35 @@ def site_url():
     return f'http://127.0.0.1:{match.group(1)}'
 
 
+def ai_configuration():
+    model = json.loads(compose('config', '--format', 'json', capture=True))
+    environment = model['services']['backend']['environment']
+    enabled = str(environment.get('SOP_AI_ENABLED', 'false')).lower() == 'true'
+    return enabled, str(environment.get('SOP_AI_MODEL', 'qwen3.5:4b-q4_K_M'))
+
+
+def prepare_ai():
+    if not (ROOT / '.env').is_file():
+        raise RuntimeError('Prepara o ficheiro .env conforme o README antes de instalar a IA.')
+    with operation_lock():
+        _, model = ai_configuration()
+        print('A preparar a IA local. O primeiro download do modelo ocupa cerca de 3,3 GB, '
+              'além da imagem Docker. Não requer uma conta paga.', flush=True)
+        compose('up', '-d', '--wait', '--wait-timeout', '180', 'ollama')
+        compose('exec', '-T', 'ollama', 'ollama', 'pull', model)
+        # Preserve the private configuration; only opt in after a successful pull.
+        env_path = ROOT / '.env'
+        content = env_path.read_text(encoding='utf-8')
+        setting = 'SOP_AI_ENABLED=true'
+        if re.search(r'^SOP_AI_ENABLED=.*$', content, re.MULTILINE):
+            content = re.sub(r'^SOP_AI_ENABLED=.*$', setting, content, flags=re.MULTILINE)
+        else:
+            content = content.rstrip('\n') + '\n' + setting + '\n'
+        env_path.write_text(content, encoding='utf-8')
+    print('Modelo preparado. A iniciar a aplicação com a Análise Inteligente.', flush=True)
+    start(False)
+
+
 def validate_local_setup():
     marker = ROOT / '.nexoplan-local.json'
     if not marker.is_file():
@@ -101,6 +130,13 @@ def start(open_site=True):
         )
     with operation_lock():
         print('A iniciar a NexoPlan. Na primeira utilização a compilação pode demorar.', flush=True)
+        ai_enabled, ai_model = ai_configuration()
+        if ai_enabled:
+            compose('up', '-d', '--wait', '--wait-timeout', '180', 'ollama')
+            try:
+                compose('exec', '-T', 'ollama', 'ollama', 'show', ai_model, capture=True)
+            except subprocess.CalledProcessError:
+                raise RuntimeError('O modelo de IA ainda não foi descarregado. Executa ./nexoplan preparar-ia.') from None
         compose('up', '-d', '--build', '--wait', '--wait-timeout', '180', 'db', 'backend')
         url = site_url()
         try:
@@ -143,7 +179,7 @@ def install_shortcut():
 def main():
     parser = argparse.ArgumentParser(description='Inicia e abre a NexoPlan com os dados locais existentes.')
     parser.add_argument('comando', nargs='?', default='iniciar',
-                        choices=['iniciar', 'abrir', 'parar', 'estado', 'logs', 'instalar-atalho'])
+                        choices=['iniciar', 'abrir', 'parar', 'estado', 'logs', 'instalar-atalho', 'preparar-ia'])
     parser.add_argument('--sem-navegador', action='store_true', help='iniciar sem abrir o navegador')
     args = parser.parse_args()
     if args.comando == 'instalar-atalho':
@@ -153,14 +189,16 @@ def main():
     validate_local_setup()
     if args.comando in ('iniciar', 'abrir'):
         start(not args.sem_navegador)
+    elif args.comando == 'preparar-ia':
+        prepare_ai()
     elif args.comando == 'parar':
         with operation_lock():
-            compose('stop', 'backend', 'db')
+            compose('stop', 'backend', 'db', 'ollama')
         print('NexoPlan parada. Os dados foram conservados.')
     elif args.comando == 'estado':
         compose('ps', '-a')
     elif args.comando == 'logs':
-        compose('logs', '--tail=100', '-f', 'backend', 'db')
+        compose('logs', '--tail=100', '-f', 'backend', 'db', 'ollama')
 
 
 if __name__ == '__main__':

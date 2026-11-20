@@ -1,4 +1,5 @@
 import { esc, quantity as q, factorValue, revisionCaption, percent, date, month, label, badge, icon, button as b, field, select, input, table, panel, metric, pager, empty, lineChart, independent, role, memberAvatar, productThumbnail } from './ui.mjs';
+import { renderInsightContent } from './insight.mjs';
 
 const rowAction = (text, action, id) => b(text, action, `data-id="${esc(id)}"`, 'small');
 const meta = values => `<div class="detail-meta">${values.map(([name, value]) => `<div><small>${name}</small><p>${value}</p></div>`).join('')}</div>`;
@@ -297,13 +298,21 @@ export function createViews(ctx) {
     // A published forecast spans at most 12 months per product; chart data remains complete across list pages.
     const allCells = await api.all(`/avaliacoes/${id}/celulas`);const points = allCells.filter(c => c.produtoId === selected?.produtoId);
     const m = selected?.metricas;
-    return back('monitorizacao', 'Monitorização') + heading('Avaliação #' + esc(id), 'Resultados do plano #' + esc(a.planoId), 'Compara base e aprovado sobre os mesmos pares elegíveis. Os dados em falta permanecem visíveis.') +
+    return back('monitorizacao', 'Monitorização') + heading('Avaliação #' + esc(id), 'Resultados do plano #' + esc(a.planoId), 'Compara base e aprovado sobre os mesmos pares elegíveis. Os dados em falta permanecem visíveis.', b('Análise Inteligente', 'intelligent-analysis', `data-id="${esc(id)}"`, 'primary')) +
       panel('Contexto da avaliação', '', meta([['Plano', `<a href="#/plano/${esc(a.planoId)}">Plano #${esc(a.planoId)}</a>`], ['Realizados', 'Lote #' + esc(a.loteRealizadosId)], ['Operacionais', a.loteOperacionalId ? 'Lote #' + esc(a.loteOperacionalId) : 'Não selecionados'], ['Corte', esc(date(a.corteRealizados))]]) + `<div class="toolbar">${field('Produto / unidade', select('monitorProduct', groups.map(g => [g.produtoId, `${g.produto} · ${g.unidade}`]), state.monitorProduct))}</div>`) +
       (m ? `${m.paresMae === 0 ? info('Sem pares elegíveis para medir a precisão. Consulta os motivos de exclusão: um mês pode ainda não estar fechado, o plano ter sido publicado tarde ou faltar o realizado.', true) : ''}<div class="metrics">${metric('MAE base / aprovado', `${q(m.maeBase)} / ${q(m.maeAprovado)}`, `Unidade: ${selected.unidade}`, 'compact')}${metric('MAPE base / aprovado', `${percent(m.mapeBase)} / ${percent(m.mapeAprovado)}`, `${m.paresMape} pares · ${m.zerosExcluidosMape} zeros excluídos`, 'compact')}${metric('Cobertura da precisão', percent(m.coberturaPercentagem), `${m.paresMae} de ${m.candidatos} células`, 'highlight')}${metric('Ganho do ajuste', q(m.ganhoAjuste), 'MAE base − MAE aprovado', 'compact')}</div>` : '') +
       panel('Procura e plano' + (selected ? ' · ' + esc(selected.produto) : ''), 'As faltas não são substituídas por zero. Valores conhecidos após o corte não entram no gráfico.', lineChart(points.map(p => p.periodo), [{ name: 'Base', values: points.map(p => p.quantidadeBase) }, { name: 'Aprovado', values: points.map(p => p.quantidadeAprovada) }, { name: 'Realizado conhecido', values: points.map(p => p.quantidadeRealizada) }])) +
       `<div class="subheading">Resultados operacionais · ${esc(selected?.produto || '')}</div><div class="metrics">${metric('Nível de serviço', percent(op?.nivelServicoPercentagem), `${op?.paresServico || 0} pares conhecidos`, 'compact')}${metric('Taxa de rutura', percent(op?.ruturaPercentagem), `${op?.paresRutura || 0} pares de dias conhecidos`, 'compact')}${metric('Excesso médio de stock', q(op?.excessoStockMedio), `${op?.paresStock || 0} células com stock e limite`, 'compact')}${metric('Unidades perdidas', q(op?.unidadesPerdidasTotal), `${op?.registosPerdas || 0} registos conhecidos`, 'compact')}</div>` +
       panel('Detalhe e cobertura', 'Todas as células da avaliação, incluindo exclusões. Os indicadores operacionais exigem dados próprios.', table(['Produto / mês', 'Base / aprovado', 'Realizado', 'Elegibilidade da precisão', 'Serviço / rutura', 'Excesso / perdas'], cells.items.map(c => [`<strong>${esc(c.produto)}</strong><small>${esc(month(c.periodo))} · ${esc(c.unidade)}</small>`, `${q(c.quantidadeBase)} / ${q(c.quantidadeAprovada)}`, q(c.quantidadeRealizada), c.elegivelPrecisao ? badge('VALIDADO').replace('Validado', 'Elegível') : `<span class="reason">${esc(label(c.motivoExclusao))}</span>`, c.operacional ? `${percent(c.operacional.nivelServicoPercentagem)} / ${percent(c.operacional.ruturaPercentagem)}` : `<span class="reason">${esc(label(c.motivoOperacional))}</span>`, c.operacional ? `${q(c.operacional.excessoStock)} / ${q(c.operacional.unidadesPerdidas)}` : 'Indisponível'])) + pager(cells, 'assessmentCells')) +
       `<details class="secondary-details"><summary>Precisão por horizonte</summary>${table(['Horizonte', 'Pares / candidatos', 'MAE base', 'MAE aprovado', 'MAPE base', 'MAPE aprovado', 'Cobertura'], (selected?.porHorizonte || []).map(h => [esc(h.horizonte) + ' meses', `${h.metricas.paresMae} / ${h.metricas.candidatos}`, q(h.metricas.maeBase), q(h.metricas.maeAprovado), percent(h.metricas.mapeBase), percent(h.metricas.mapeAprovado), percent(h.metricas.coberturaPercentagem)]))}</details>`;
+  }
+
+  async function intelligentAnalysis(id) {
+    const [assessment, report] = await Promise.all([api.get(`/avaliacoes/${encodeURIComponent(id)}`), api.get(`/avaliacoes/${encodeURIComponent(id)}/analise-inteligente`)]);
+    return {
+      context: { insightAssessment: assessment, insightReport: report },
+      html: `<div class="insight-page">${back('avaliacao/' + esc(id), 'Voltar aos resultados do plano')}${heading('', 'Análise Inteligente', '', '<a class="btn" href="#/plano/' + esc(assessment.planoId) + '">Consultar plano #' + esc(assessment.planoId) + '</a>')}<p class="insight-introduction">Plano #${esc(assessment.planoId)} · avaliação #${esc(assessment.id)}. Uma leitura de todos os produtos e meses desta avaliação.</p><p class="visually-hidden" data-insight-live role="status" aria-live="polite"></p><div data-insight-report>${renderInsightContent(assessment, report)}</div></div>`
+    };
   }
 
   async function team() {
@@ -331,5 +340,5 @@ export function createViews(ctx) {
       </details>`;
   }
 
-  return { visao: overview, produtos: products, importacoes: imports, lote: lot, previsoes: forecasts, previsao: forecast, backtests, backtest, cenarios: scenarios, cenario: scenario, revisao: revision, planos: plans, plano: plan, monitorizacao: monitoring, avaliacao: assessment, equipa: team };
+  return { visao: overview, produtos: products, importacoes: imports, lote: lot, previsoes: forecasts, previsao: forecast, backtests, backtest, cenarios: scenarios, cenario: scenario, revisao: revision, planos: plans, plano: plan, monitorizacao: monitoring, avaliacao: assessment, analise: intelligentAnalysis, equipa: team };
 }

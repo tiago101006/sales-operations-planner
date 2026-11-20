@@ -6,6 +6,7 @@ import { themeButton } from './theme.mjs';
 import { createMotionController } from './motion.mjs';
 import { startBusyFeedback } from './busy.mjs';
 import { createDisclosureController } from './disclosure.mjs';
+import { mountInsightPage } from './insight.mjs';
 
 const motion = createMotionController();
 const disclosures = createDisclosureController({ shouldAnimate: motion.allowed });
@@ -24,6 +25,7 @@ const internal = () => role(state.user, 'ADMIN', 'PLANEADOR', 'COMERCIAL', 'APRO
 const approver = () => role(state.user, 'APROVADOR');
 const views = createViews({ api, state, writer, internal, approver });
 let epoch = 0, dialogContext = null, noticeTimer;
+let disposeInsight = () => {};
 let activeChartPoint = null, activeChartTitle = '', touchedChartPoint = null, activeChartIndex = 0;
 function hideChartTooltip() {
   if (activeChartPoint) {
@@ -79,7 +81,7 @@ const routes = [
   ['equipa', 'Equipa', 'people', () => role(state.user, 'ADMIN')],
   ['conta', 'A minha conta', 'people', () => true],
 ];
-const aliases = { lote: 'importacoes', previsao: 'previsoes', backtest: 'backtests', cenario: 'cenarios', revisao: 'cenarios', plano: 'planos', avaliacao: 'monitorizacao' };
+const aliases = { lote: 'importacoes', previsao: 'previsoes', backtest: 'backtests', cenario: 'cenarios', revisao: 'cenarios', plano: 'planos', avaliacao: 'monitorizacao', analise: 'monitorizacao' };
 const route = () => {
   const url = new URL(location.hash.slice(1) || '/visao', location.origin);
   const [name, id] = url.pathname.replace(/^\//, '').split('/');
@@ -164,6 +166,7 @@ function showInvitation(invite) {
   modal.querySelector('[name=invitationLink]').focus();
 }
 function logoutView(message = '', loggedIn = false) {
+  disposeInsight();disposeInsight = () => {};
   hideChartTooltip();
   document.title = 'Entrar — NexoPlan';
   const { productView } = state;
@@ -254,9 +257,11 @@ function setNavigation(open) {
   } else change();
 }
 async function render({ pagination, preserveFocus } = {}) {
+  disposeInsight();disposeInsight = () => {};
   if (!state.user) return;
   if (!document.querySelector('.shell')) shell();
   const current = route(), active = aliases[current.name] || current.name;
+  if (current.name !== 'analise') delete state.insightStartId;
   const permission = routes.find(r => r[0] === active);
   state.tableFilters = {};
   for (const [name, value] of current.params) {
@@ -288,6 +293,11 @@ async function render({ pagination, preserveFocus } = {}) {
       main.innerHTML = html.html;
     }
     if (active === 'conta') mountAccountPage(main, { change: disclosures.change });
+    if (current.name === 'analise') {
+      const start = state.insightStartId === current.id;
+      delete state.insightStartId;
+      disposeInsight = mountInsightPage(main, { api, assessment: state.insightAssessment, initial: state.insightReport, start });
+    }
     if (interaction) {
       window.scrollTo({ top: scrollTop, behavior: 'instant' });
       if (restoreFocus && preserveFocus) {
@@ -708,6 +718,7 @@ document.addEventListener('click', async event => {
       case 'toggle-nav': setNavigation(target.getAttribute('aria-expanded') !== 'true');break;
       case 'close-dialog': if (!modal.querySelector('[data-busy]')) closeDialog();break;
       case 'refresh': await render();break;
+      case 'intelligent-analysis': state.insightStartId = target.dataset.id;navigate('analise/' + encodeURIComponent(target.dataset.id));break;
       case 'refresh-stale': closeDialog();await render();break;
       case 'lot-errors': closeDialog();break;
       case 'logout': target.disabled = true;await api.send('/auth/logout', {});logoutView();break;
@@ -907,8 +918,8 @@ document.addEventListener('change', async event => {
 });
 modal.addEventListener('cancel', event => { if (modal.querySelector('[data-busy]')) event.preventDefault(); });
 modal.addEventListener('close', () => { if (!modal.open) { modal.innerHTML = '';dialogContext = null; } });
-window.addEventListener('pagehide', () => closePasswordEditor());
-window.addEventListener('pageshow', () => closePasswordEditor());
+window.addEventListener('pagehide', () => { closePasswordEditor();disposeInsight(); });
+window.addEventListener('pageshow', event => { closePasswordEditor();if (event.persisted && state.user && route().name === 'analise') render(); });
 window.addEventListener('hashchange', () => { if (modal.querySelector('[data-busy]')) return;closeDialog();setNavigation(false);state.pages = {};if (activationRequested()) logoutView('', Boolean(state.user));else if (state.user) render();else { activationToken = '';logoutView(); } });
 document.addEventListener('keydown', event => {
   if (event.key === 'Escape' && !modal.open && document.querySelector('.sidebar.open')) {

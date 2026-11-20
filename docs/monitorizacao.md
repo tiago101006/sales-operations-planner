@@ -1,8 +1,9 @@
 # Monitorização de planos publicados
 
-O backend da fase 6 importa realizados/operacionais e cria avaliações reproduzíveis
-de planos publicados. A interface e a avaliação final de usabilidade/desempenho
-permanecem para os próximos blocos.
+O módulo importa realizados/operacionais e cria avaliações reproduzíveis
+de planos publicados. A interface permite explorar os indicadores e pedir uma
+[Análise Inteligente local](analise-inteligente.md), com explicações baseadas nos
+cálculos e recomendações elegíveis ordenadas com apoio de IA.
 
 ## Experimentar na conta local
 

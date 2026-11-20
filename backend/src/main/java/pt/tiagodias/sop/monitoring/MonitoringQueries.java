@@ -78,6 +78,20 @@ public class MonitoringQueries {
     }
     public Pagina<Precisao> precision(long id,int page,int size) { var groups=groups(id,page,size);return new Pagina<>(groups.cells().stream().map(MonitoringMetrics::precision).toList(),page,size,groups.count(),pages(groups.count(),size)); }
     public Pagina<Operacao> operation(long id,int page,int size) { var groups=groups(id,page,size);return new Pagina<>(groups.cells().stream().map(MonitoringMetrics::operation).toList(),page,size,groups.count(),pages(groups.count(),size)); }
+    /** A complete stable AI evidence snapshot, independent of table search and pagination. */
+    public InsightDtos.Snapshot insightSnapshot(long id) {
+        var a = get(id);
+        if (a.totalCelulas() > 10_000) throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+                "A análise local aceita até 10 000 células por avaliação. Cria uma avaliação com uma janela menor.");
+        var cells = jdbc.query(CELLS + "WHERE c.avaliacao_id=? ORDER BY p.codigo_produto,c.produto_id,c.periodo", this::mapCell, id);
+        if (cells.isEmpty()) throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "A avaliação não contém células para analisar.");
+        var grouped = new LinkedHashMap<String,List<Celula>>();
+        for (var cell : cells) grouped.computeIfAbsent(cell.produtoId(), key -> new ArrayList<>()).add(cell);
+        var products = grouped.values().stream().map(rows -> new InsightDtos.Produto(
+                MonitoringMetrics.precision(rows), MonitoringMetrics.operation(rows), List.copyOf(rows))).toList();
+        return new InsightDtos.Snapshot(new InsightDtos.Contexto(a.id(),a.planoId(),a.loteRealizadosId(),a.loteOperacionalId(),
+                a.periodoInicio(),a.periodoFim(),a.corteRealizados(),a.versaoCalculo()),products);
+    }
     private static String month(ResultSet rs,String column)throws SQLException { return rs.getDate(column).toLocalDate().toString().substring(0,7); }
     private static int pages(long count,int size) { return (int)((count+size-1)/size); }
 }

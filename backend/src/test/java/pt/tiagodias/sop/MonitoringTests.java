@@ -6,6 +6,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.time.*;
 import java.util.*;
+import java.util.concurrent.*;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -14,14 +15,18 @@ import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import pt.tiagodias.sop.identity.*;
+import pt.tiagodias.sop.monitoring.*;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.anyString;
 
 @Import(TestcontainersConfiguration.class)
 @SpringBootTest(webEnvironment=SpringBootTest.WebEnvironment.RANDOM_PORT,
-        properties={"MYSQL_PASSWORD=test-only","spring.application.name=sop-monitoring-tests"})
+        properties={"MYSQL_PASSWORD=test-only","spring.application.name=sop-monitoring-tests","sop.ai.enabled=true"})
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class MonitoringTests {
     private static final String PASSWORD="Password-monitoring-123";
@@ -34,6 +39,8 @@ class MonitoringTests {
     @LocalServerPort private int port;
     @Autowired private IdentityService users;
     @Autowired private JdbcTemplate jdbc;
+    @Autowired private MonitoringQueries monitoringQueries;
+    @MockitoBean private LocalInsightGenerator insightGenerator;
     private Browser admin,consumer,planner,commercial;private long product;
 
     @BeforeAll void fixtures()throws Exception {
@@ -168,5 +175,77 @@ class MonitoringTests {
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM avaliacao",Long.class)).isEqualTo(before);
         String id=evaluate(plan,real,null),other=upload("REALIZADOS",real());long foreign=jdbc.queryForObject("SELECT MIN(id) FROM observacao WHERE lote_id=?",Long.class,Long.valueOf(other));
         assertThatThrownBy(()->jdbc.update("UPDATE avaliacao_celula SET observacao_id=? WHERE avaliacao_id=? AND periodo='2025-02-01'",foreign,Long.valueOf(id))).isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class);
+    }
+    private JsonNode awaitInsight(String path,String expected)throws Exception {
+        long end=System.nanoTime()+TimeUnit.SECONDS.toNanos(10);
+        JsonNode value;
+        do { value=consumer.get(path);if(value.get("estado").asText().equals(expected)) return value;Thread.sleep(30); }
+        while(System.nanoTime()<end);
+        throw new AssertionError("Analysis did not reach "+expected+": "+value);
+    }
+    private void addSecondPlanProduct(String plan) {
+        jdbc.update("INSERT INTO produto(codigo,nome,unidade) VALUES ('MONITOR2','Produto 2','kg')");long other=key("produto");
+        long revision=jdbc.queryForObject("SELECT revisao_id FROM plano_publicado WHERE id=?",Long.class,Long.valueOf(plan));
+        long execution=jdbc.queryForObject("SELECT execucao_id FROM revisao_cenario WHERE id=?",Long.class,revision);
+        jdbc.update("INSERT INTO execucao_produto(execucao_id,produto_id,metodo_aplicado,parametros_aplicados,estado) VALUES (?,?,'MEDIA_MOVEL','{}','PREVISTO')",execution,other);
+        jdbc.update("INSERT INTO linha_previsao SELECT execucao_id,?,periodo,quantidade_base FROM linha_previsao WHERE execucao_id=? AND produto_id=?",other,execution,product);
+        jdbc.update("INSERT INTO linha_cenario SELECT revisao_id,execucao_id,?,periodo,quantidade_calculada,quantidade_final FROM linha_cenario WHERE revisao_id=? AND produto_id=?",other,revision,product);
+        jdbc.update("INSERT INTO linha_plano SELECT plano_id,revisao_id,?,periodo,'MONITOR2','kg',quantidade_base,quantidade_aprovada FROM linha_plano WHERE plano_id=? AND produto_id=?",other,Long.valueOf(plan),product);
+    }
+    @Test void localInsightPreservesAllEvidenceIgnoresSearchAndIsCached()throws Exception {
+        String plan=plan();addSecondPlanProduct(plan);
+        String id=evaluate(plan,upload("REALIZADOS",real()),upload("OPERACIONAL",operational()));
+        String path="/api/v1/avaliacoes/"+id+"/analise-inteligente";
+        var entered=new CountDownLatch(1);var release=new CountDownLatch(1);
+        when(insightGenerator.generate(anyString(),anyList())).thenAnswer(call -> {
+            entered.countDown();assertThat(release.await(10,TimeUnit.SECONDS)).isTrue();
+            List<pt.tiagodias.sop.monitoring.GroundedInsightReport.Recommendation> catalog=call.getArgument(1);
+            return catalog.stream().map(pt.tiagodias.sop.monitoring.GroundedInsightReport.Recommendation::id).toList();
+        });
+        try {
+            response(new Browser().request("GET",path,null,false),401);
+            response(consumer.request("POST",path,Map.of(),false),403);
+            for(var browser:List.of(admin,planner,commercial,consumer,login("aprovador"))) {
+                assertThat(browser.get(path).get("estado").asText()).isEqualTo("POR_GERAR");
+            }
+            // Even malformed table-only filters must not hide evidence from the analysis endpoint.
+            response(consumer.post(path+"?busca=does-not-exist&desde=not-a-month&page=99&size=1",Map.of()),202);
+            assertThat(entered.await(5,TimeUnit.SECONDS)).isTrue();
+            response(admin.post(path,Map.of()),202);
+            String other=evaluate(plan(),upload("REALIZADOS",real()),null);
+            response(admin.post("/api/v1/avaliacoes/"+other+"/analise-inteligente",Map.of()),429);
+        } finally { release.countDown(); }
+        var complete=awaitInsight(path,"CONCLUIDA");
+        assertThat(complete.get("produtos").size()).isEqualTo(2);
+        assertThat(complete.get("produtos").get(0).get("celulas").size()).isEqualTo(3);
+        var metrics=complete.get("produtos").get(0).get("precisao").get("metricas");
+        assertThat(metrics.get("maeBase").asText()).isEqualTo("10.0000");
+        assertThat(metrics.get("maeAprovado").asText()).isEqualTo("5.0000");
+        assertThat(metrics.get("zerosExcluidosMape").asInt()).isEqualTo(1);
+        assertThat(complete.get("produtos").get(1).get("precisao").get("unidade").asText()).isEqualTo("kg");
+        assertThat(complete.get("produtos").get(1).get("precisao").get("metricas").get("maeBase").isNull()).isTrue();
+        assertThat(complete.get("hashDados").asText()).matches("[a-f0-9]{64}");
+        assertThat(complete.get("geradoEm").isNull()).isFalse();
+        assertThat(complete.get("analise").get("secoes").size()).isEqualTo(6);
+        assertThat(complete.get("analise").toString()).contains("MAE base 10,0000 un", "aprovado 5,0000 un", "a IA local apenas ordena");
+        assertThat(response(admin.post(path,Map.of()),200)).isEqualTo(complete);
+        verify(insightGenerator,times(1)).generate(argThat(text -> text.contains("MONITOR2") && !text.contains("@monitor.test") && !text.contains("fixture.csv")),anyList());
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM analise_inteligente WHERE avaliacao_id=?",Long.class,Long.valueOf(id))).isEqualTo(1);
+        response(consumer.request("DELETE",path,null,true),403);
+    }
+    @Test void localInsightFailureCanBeRetriedAfterCooldownAndStaleJobsRecover()throws Exception {
+        String id=evaluate(plan(),upload("REALIZADOS",real()),null),path="/api/v1/avaliacoes/"+id+"/analise-inteligente";
+        when(insightGenerator.generate(anyString(),anyList())).thenThrow(new LocalInsightGenerator.InsightFailure("Modelo local indisponível."));
+        var start=admin.post(path,Map.of());assertThat(start.statusCode()).isIn(200,202);
+        assertThat(awaitInsight(path,"FALHOU").get("mensagem").asText()).isEqualTo("Modelo local indisponível.");
+        response(admin.post(path,Map.of()),429);
+        jdbc.update("UPDATE analise_inteligente SET estado='EM_CURSO',solicitado_em='2020-01-01' WHERE avaliacao_id=?",Long.valueOf(id));
+        assertThat(consumer.get(path).get("estado").asText()).isEqualTo("FALHOU");
+        doAnswer(call -> {
+            List<pt.tiagodias.sop.monitoring.GroundedInsightReport.Recommendation> catalog=call.getArgument(1);
+            return catalog.stream().map(pt.tiagodias.sop.monitoring.GroundedInsightReport.Recommendation::id).toList();
+        }).when(insightGenerator).generate(anyString(),anyList());
+        var retry=admin.post(path,Map.of());assertThat(retry.statusCode()).isIn(200,202);
+        assertThat(awaitInsight(path,"CONCLUIDA").get("produtos").size()).isEqualTo(1);
     }
 }

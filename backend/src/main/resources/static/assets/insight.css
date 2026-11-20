@@ -1,0 +1,79 @@
+/* The report extends the planning desk with a quieter, readable document surface. */
+.insight-page { max-width: 1280px; margin-inline: auto; }
+.insight-page .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+.insight-page .page-heading { margin-bottom: 10px; }
+.insight-introduction { color: var(--muted); font-size: 14px; line-height: 1.7; margin: 0 0 28px; }
+.insight-status { max-width: 760px; padding: 40px; margin: 36px auto 0; background: var(--paper); border: 1px solid var(--line); border-radius: 12px; }
+.insight-status-symbol { display: inline-flex; margin-bottom: 20px; color: var(--green); }
+.insight-status h2 { font-size: 23px; margin-bottom: 12px; line-height: 1.35; }
+.insight-status p { max-width: 68ch; line-height: 1.8; margin-bottom: 18px; color: var(--muted); }
+.insight-status .insight-status-detail { color: var(--ink); }
+.insight-status .actions { margin-top: 28px; gap: 12px; }
+.insight-status .insight-live { font-size: 12px; margin: 20px 0 0; }
+.insight-status .insight-live:empty { display: none; }
+.insight-report-layout { display: grid; grid-template-columns: 235px minmax(0, 1fr); gap: 40px; align-items: start; }
+.insight-outline { padding-top: 24px; position: sticky; top: 24px; }
+.insight-outline h2 { font-size: 13px; margin-bottom: 14px; color: var(--muted); }
+.insight-outline-menu > summary { display: none; }
+.insight-outline nav { display: flex; flex-direction: column; gap: 6px; }
+.insight-outline button { text-align: left; background: transparent; color: var(--ink); border: 0; border-radius: 6px; padding: 11px 10px; font: inherit; font-size: 13px; line-height: 1.5; min-height: 42px; overflow-wrap: anywhere; }
+.insight-outline button:hover { color: var(--green); background: var(--sage); }
+.insight-scope { display: grid; gap: 18px; border-top: 1px solid var(--line); padding-top: 24px; margin-top: 24px; }
+.insight-scope dt { font-size: 11px; color: var(--muted); margin-bottom: 5px; }
+.insight-scope dd { margin: 0; font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
+.insight-reading { min-width: 0; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); padding: 40px; }
+.insight-reading-header h2 { font-size: 25px; line-height: 1.35; letter-spacing: -.02em; overflow-wrap: anywhere; max-width: 35ch; }
+.insight-reading-header p { color: var(--muted); font-size: 12px; line-height: 1.6; margin-top: 12px; }
+.insight-reading .insight-review-note { border-bottom: 1px solid var(--line); padding-bottom: 28px; margin: 16px 0 0; color: var(--muted); font-size: 12px; }
+.insight-section { margin-top: 36px; }
+.insight-section h3, .insight-evidence h3 { color: var(--ink); font-size: 20px; font-weight: 650; line-height: 1.4; margin-bottom: 14px; scroll-margin-top: 24px; overflow-wrap: anywhere; }
+.insight-section p, .insight-evidence > p { font-size: 15px; line-height: 1.85; max-width: 72ch; margin-bottom: 16px; overflow-wrap: anywhere; white-space: pre-line; }
+.insight-section p:last-child { margin-bottom: 0; }
+.insight-evidence { margin-top: 40px; padding-top: 32px; border-top: 1px solid var(--line); }
+.insight-evidence > p { color: var(--muted); font-size: 13px; }
+.insight-product-label { display: block; font-size: 12px; font-weight: 550; color: var(--ink); margin: 22px 0 9px; }
+.insight-evidence select { margin-bottom: 20px; }
+.insight-product-detail { border-bottom: 1px solid var(--line); }
+.insight-product-detail > summary { padding: 16px 0; font-size: 13px; line-height: 1.6; color: var(--ink); }
+.insight-product-detail > summary:hover { color: var(--green); }
+.insight-product-detail > summary > span { color: var(--muted); font-size: 11px; margin-left: 14px; }
+.insight-values { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; margin: 10px 0 28px; }
+.insight-values div { min-width: 0; }
+.insight-values dt { font-size: 11px; color: var(--muted); margin-bottom: 7px; }
+.insight-values dd { margin: 0; font-size: 13px; color: var(--ink); line-height: 1.7; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.insight-values small { display: block; margin-top: 6px; color: var(--muted); font-size: 11px; }
+.insight-horizon { border-top: 1px solid var(--line); padding: 16px 0; }
+.insight-horizon h4, .insight-months h4 { font-size: 13px; font-weight: 600; color: var(--ink); }
+.insight-horizon p { font-size: 12px; line-height: 1.8; margin: 8px 0 0; }
+.insight-months { margin-top: 28px; }
+.insight-months h4 { margin-bottom: 8px; }
+.insight-evidence-pagination { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-top: 18px; color: var(--muted); font-size: 11px; }
+.insight-evidence-pagination > div { display: flex; gap: 8px; }
+.insight-provenance { border-top: 1px solid var(--line); padding-top: 22px; margin-top: 36px; }
+.insight-provenance > summary { font-size: 12px; }
+.insight-provenance dl { display: grid; gap: 16px; margin-top: 22px; }
+.insight-provenance dt { color: var(--muted); font-size: 11px; margin-bottom: 5px; }
+.insight-provenance dd { margin: 0; color: var(--ink); font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
+.insight-provenance p { margin-top: 22px; font-size: 12px; line-height: 1.8; }
+.insight-fingerprint { font-variant-numeric: tabular-nums; }
+@media (max-width: 1000px) {
+  .insight-report-layout { grid-template-columns: 190px minmax(0, 1fr); gap: 24px; }
+  .insight-reading { padding: 30px; }
+}
+@media (max-width: 800px) {
+  .insight-report-layout { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  .insight-outline { position: static; padding-top: 0; }
+  .insight-outline > h2 { display: none; }
+  .insight-outline-menu > summary { display: list-item; padding-block: 12px; color: var(--ink); font-size: 13px; }
+  .insight-outline nav { flex-direction: row; flex-wrap: wrap; gap: 6px 12px; }
+  .insight-outline button { border: 1px solid var(--line); padding: 10px 12px; max-width: 100%; }
+  .insight-scope { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 18px; padding-top: 18px; }
+  .insight-reading { padding: 28px 22px; }
+  .insight-reading-header h2 { font-size: 22px; }
+  .insight-status { margin-top: 24px; padding: 28px 24px; }
+}
+@media (max-width: 480px) {
+  .insight-values { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  .insight-product-detail > summary > span { display: block; margin: 4px 0 0 16px; }
+  .insight-status .actions { align-items: stretch; flex-direction: column; }
+}

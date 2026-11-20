@@ -30,6 +30,7 @@ replay_pid*
 # Capturas, sessões e relatórios temporários do navegador
 output/playwright/
 .playwright-cli/
+.impeccable/review/
 .ipynb_checkpoints/
 
 # Configuração local do editor

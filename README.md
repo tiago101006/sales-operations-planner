@@ -16,6 +16,26 @@ O comando compila as alterações, inicia o MySQL e o backend, espera que esteja
 prontos e abre o site no navegador. Podes repeti-lo mesmo com os serviços iniciados.
 A primeira compilação pode demorar mais. Não precisas de abrir o VS Code para usar o site.
 
+### Análise Inteligente local
+
+Na primeira utilização, prepara o modelo local:
+
+```bash
+./nexoplan preparar-ia
+```
+
+O comando descarrega o modelo (cerca de 3,3 GB, além da imagem Docker), ativa
+`SOP_AI_ENABLED=true` no `.env` privado e inicia a aplicação. Não usa uma API paga
+nem exige uma chave. Depois, o arranque habitual `./nexoplan` também inicia o serviço
+de IA. O modelo fica guardado num volume Docker e não volta a ser descarregado em
+cada arranque. A geração usa CPU/RAM locais e pode demorar vários minutos.
+
+Abre **Monitorização → Analisar → Análise Inteligente**. O relatório guardado
+inclui explicações detalhadas e evidência por produto e mês. O backend constrói
+os factos e as explicações dos indicadores; a IA local ordena recomendações de
+um catálogo de ações compatíveis com esses dados. Não se publica texto livre do
+modelo como conclusão técnica. Consulta o [guia da análise](docs/analise-inteligente.md).
+
 Para teres uma entrada no menu de aplicações do Linux, instala o atalho uma vez:
 
 ```bash
@@ -32,6 +52,7 @@ Outros comandos:
 ./nexoplan estado            # Mostra o estado dos serviços
 ./nexoplan logs              # Acompanha as mensagens de diagnóstico (Ctrl+C para sair)
 ./nexoplan --sem-navegador    # Inicia sem abrir o navegador
+./nexoplan preparar-ia       # Descarrega e ativa o modelo local, uma única vez
 ```
 
 O endereço habitual é [http://127.0.0.1:8080](http://127.0.0.1:8080). O lançador
@@ -116,6 +137,7 @@ As [migrações SQL](backend/src/main/resources/db/migration/) são a fonte do e
 - [Arquitetura e modelo relacional](docs/arquitetura.md), [autenticação](docs/autenticacao.md) e [catálogo](docs/catalogo.md).
 - [Importação CSV](docs/importacao-historicos.md), [Média Móvel](docs/previsao-media-movel.md), [ETS](docs/previsao-ets.md) e [comparação de modelos](docs/backtesting.md).
 - [Cenários e ajustes](docs/cenarios-ajustes.md), [aprovação e publicação](docs/aprovacao-publicacao.md) e [monitorização](docs/monitorizacao.md).
+- [Análise Inteligente local dos resultados](docs/analise-inteligente.md).
 - [Dados de demonstração](docs/dados-demonstracao.md), [simulação de uma empresa NexoPlan](docs/simulacao-empresa.md), [backup e restauro](docs/backup-restauro.md) e [plano de adoção](docs/plano-adocao.md).
 - [Equipa fictícia com retratos e emails empresariais](docs/equipa-demonstracao.md).
 - [Validação funcional](docs/validacao-piloto.md), [desempenho](docs/desempenho.md) e [protocolo de usabilidade](docs/usabilidade.md).
