@@ -89,7 +89,7 @@ public class InsightService {
             var catalog=GroundedInsightReport.recommendations(snapshot);
             var order=generator.generate(evidence,catalog);
             var report=GroundedInsightReport.compose(snapshot,order);
-            String reportJson=json.writeValueAsString(report);
+            String reportJson=InsightReportCache.encode(report,order,json);
             if(reportJson.getBytes(StandardCharsets.UTF_8).length>128*1024)
                 throw new LocalInsightGenerator.InsightFailure("O relatório completo excede o tamanho permitido. Usa uma avaliação com uma janela menor; não foi guardado texto parcial.");
             jdbc.update("UPDATE analise_inteligente SET estado='CONCLUIDA',analise_json=?,gerado_em=?,mensagem=NULL WHERE avaliacao_id=? AND execucao_token=? AND estado='EM_CURSO'",
@@ -113,7 +113,7 @@ public class InsightService {
         return jdbc.query("SELECT * FROM analise_inteligente WHERE avaliacao_id=?",(rs,index) -> {
             boolean complete=rs.getString("estado").equals("CONCLUIDA");
             var snapshot=complete ? json.readValue(rs.getString("dados_json"),Snapshot.class) : null;
-            var analysis=complete ? json.readValue(rs.getString("analise_json"),Analise.class) : null;
+            var analysis=complete ? InsightReportCache.read(snapshot,rs.getString("analise_json"),json) : null;
             return new Stored(new Relatorio(rs.getString("estado"),rs.getString("mensagem"),ImportQueries.instant(rs,"gerado_em"),
                     rs.getString("modelo"),rs.getString("versao_prompt"),rs.getString("hash_dados"),analysis,
                     snapshot==null?List.of():snapshot.produtos()),ImportQueries.instant(rs,"solicitado_em"));

@@ -9,7 +9,8 @@ import static pt.tiagodias.sop.monitoring.MonitoringDtos.*;
 
 /** All claims and quantities come from the immutable assessment; AI may only order eligible actions. */
 public final class GroundedInsightReport {
-    private static final int SUMMARY_PRODUCTS = 8;
+    private static final int SUMMARY_PRODUCTS = 2;
+    private static final int SUMMARY_ACTIONS = 3;
     private GroundedInsightReport() {}
     public record Recommendation(String id, String titulo, String texto) {}
 
@@ -67,61 +68,59 @@ public final class GroundedInsightReport {
         var catalog=recommendations(s);validateOrder(catalog,ids);
         var products=s.produtos();var cells=products.stream().flatMap(p->p.celulas().stream()).toList();var c=s.contexto();
         int mae=products.stream().mapToInt(p->p.precisao().metricas().paresMae()).sum();
-        int mape=products.stream().mapToInt(p->p.precisao().metricas().paresMape()).sum();
         int zero=products.stream().mapToInt(p->p.precisao().metricas().zerosExcluidosMape()).sum();
         int ops=products.stream().mapToInt(p->p.operacao().registosConhecidos()).sum();
         var sections=new ArrayList<Secao>();
-        sections.add(section(0,List.of(
-                "Esta análise corresponde ao plano #"+c.planoId()+", avaliação #"+c.avaliacaoId()+", de "+c.periodoInicio()+" a "+c.periodoFim()+". Abrange "+products.size()+" produto(s) e "+cells.size()+" células produto/mês. O corte de disponibilidade dos resultados é "+c.corteRealizados()+"; foram usados o lote de realizados #"+c.loteRealizadosId()+" e "+(c.loteOperacionalId()==null?"nenhum lote operacional":"o lote operacional #"+c.loteOperacionalId())+".",
-                mae==0?"Não existem pares elegíveis para medir a precisão nesta avaliação. Isto impede concluir se a previsão base ou o plano aprovado ficaram mais próximos do realizado. Os produtos e as quantidades planeadas existem; os motivos concretos de exclusão são apresentados abaixo. Indicador indisponível não significa zero nem plano vazio.":"Existem "+mae+" pares elegíveis para MAE e "+mape+" para MAPE. A comparação base/aprovado usa exatamente os mesmos pares em cada produto; a cobertura e os realizados zero podem tornar as populações dos dois indicadores diferentes. Os resultados descrevem a amostra observada, sem demonstrar causalidade ou desempenho futuro.",
-                "Produtos e unidades: "+codes(products)+". Todos os produtos e meses estão preservados no anexo, incluindo valores base, aprovados, realizados, métricas por horizonte e motivos de exclusão. Não se somam erros ou quantidades de produtos diferentes. Os indicadores e a explicação factual são calculados pela aplicação; a IA local apenas ordena as recomendações elegíveis da última secção.")));
-
-        var coverage=new ArrayList<String>();
-        coverage.add("A cobertura da precisão é "+percent(mae,cells.size())+": "+mae+" pares MAE em "+cells.size()+" células candidatas. Mede disponibilidade de comparação, não percentagem de acerto. Para MAPE existem "+mape+" pares e "+zero+" realizado(s) zero excluído(s); estes zeros continuam a participar no MAE quando temporalmente elegíveis.");
-        coverage.add("Exclusões da precisão: "+reasonCounts(cells,false)+". Cada célula conserva o motivo determinado pelas regras de elegibilidade. Se uma regra temporal já excluiu o mês, esse motivo não permite concluir que o ficheiro de realizados está vazio ou que faltam dados noutros períodos.");
-        var months=new TreeMap<String,List<Celula>>();for(var cell:cells)months.computeIfAbsent(cell.periodo(),k->new ArrayList<>()).add(cell);
-        for(var month:months.entrySet())coverage.add("Mês "+month.getKey()+": "+month.getValue().size()+" célula(s), "+month.getValue().stream().filter(Celula::elegivelPrecisao).count()+" elegível(is) para precisão. Motivos de exclusão: "+reasonCounts(month.getValue(),false)+".");
-        coverage.add("A avaliação é uma cópia fixa por rastreabilidade, independentemente de ter dados disponíveis. Fechar um mês ou importar novos resultados não altera esta avaliação: é necessário criar outra com lotes e corte adequados. Uma publicação tardia permanece tardia na célula afetada, inclusive numa nova avaliação; não é corrigida por novos dados ou por esperar.");
-        sections.add(section(1,coverage));
+        var summary=new ArrayList<String>();
+        summary.add("Plano #"+c.planoId()+" · "+c.periodoInicio()+" a "+c.periodoFim()+" · "+products.size()+" produto(s). Cobertura da precisão: "+percent(mae,cells.size())+" ("+mae+"/"+cells.size()+" pares elegíveis). Cobertura mede dados comparáveis, não acerto.");
+        if(mae<cells.size())summary.add("Exclusões: "+reasonCounts(cells,false)+". Indisponível não significa zero nem plano vazio.");
+        sections.add(section(0,summary));
 
         var precision=new ArrayList<String>();
-        precision.add("O MAE é a média dos erros absolutos e mantém a unidade do produto: quanto menor, menor o erro médio observado. O MAPE é a média dos erros percentuais absolutos sobre realizados não nulos e diferentes de zero. Compara base e aprovado dentro de cada produto e sobre os mesmos pares; não há MAE global que misture produtos ou unidades.");
-        precision.add("O ganho do ajuste é MAE base menos MAE aprovado. Um valor positivo corresponde a melhoria observada, um valor negativo a agravamento e zero a igualdade à precisão apresentada. Sem pares elegíveis, MAE, MAPE e ganho ficam indisponíveis. A precisão depende dos realizados e das regras temporais; a ausência de registos operacionais não impede o seu cálculo.");
-        for(var p:products.stream().limit(SUMMARY_PRODUCTS).toList()) {
-            var m=p.precisao().metricas();precision.add(product(p)+": "+m.paresMae()+"/"+m.candidatos()+" pares MAE; cobertura "+value(m.coberturaPercentagem(),"%")+". MAE base "+value(m.maeBase(),p.precisao().unidade())+", aprovado "+value(m.maeAprovado(),p.precisao().unidade())+"; ganho "+value(m.ganhoAjuste(),p.precisao().unidade())+". MAPE base "+value(m.mapeBase(),"%")+", aprovado "+value(m.mapeAprovado(),"%")+", com "+m.paresMape()+" pares e "+m.zerosExcluidosMape()+" zero(s) excluído(s). "+gainMeaning(m));
+        long improved=products.stream().filter(p->sign(p.precisao().metricas().ganhoAjuste())>0).count();
+        long worsened=products.stream().filter(p->negative(p.precisao().metricas().ganhoAjuste())).count();
+        long equal=products.stream().filter(p->"0.0000".equals(p.precisao().metricas().ganhoAjuste())).count();
+        precision.add(mae==0?"MAE, MAPE e ganho indisponíveis: não existem pares elegíveis para comparar a previsão com o realizado."
+                :"Nos produtos avaliáveis, o ajuste reduziu o MAE em "+improved+", aumentou em "+worsened+" e manteve-o em "+equal+". Compara-se sempre nos mesmos pares, por produto.");
+        for(var p:products.stream().filter(v->v.precisao().metricas().paresMae()>0)
+                .sorted(Comparator.comparingInt((Produto v)->negative(v.precisao().metricas().ganhoAjuste())?0:1)
+                        .thenComparing(v->v.precisao().produto())).limit(SUMMARY_PRODUCTS).toList()) {
+            var m=p.precisao().metricas();
+            precision.add(product(p)+": MAE base "+value(m.maeBase(),p.precisao().unidade())+", aprovado "+value(m.maeAprovado(),p.precisao().unidade())+"; MAPE base "+value(m.mapeBase(),"%")+", aprovado "+value(m.mapeAprovado(),"%")+".");
         }
-        addRemainder(precision,products.size());sections.add(section(2,precision));
+        if(zero>0)precision.add(zero+" realizado(s) zero excluído(s) apenas do MAPE; continuam no MAE.");
+        sections.add(section(1,precision));
 
         var operation=new ArrayList<String>();
-        operation.add("Existem "+ops+" registos operacionais elegíveis conhecidos em "+cells.size()+" células candidatas. A cobertura operacional é independente da cobertura da precisão: serviço, rutura, excesso de stock e perdas podem ter denominadores e campos disponíveis diferentes, mesmo para o mesmo produto e mês. Motivos operacionais: "+reasonCounts(cells,true)+".");
-        operation.add("O nível de serviço divide unidades satisfeitas no prazo por unidades solicitadas. A taxa de rutura divide dias com procura sem stock por dias observados com procura. Os rácios são ponderados pelos denominadores, sem média simples das percentagens mensais; um denominador zero deixa o rácio indisponível. O excesso de stock é a média da diferença positiva entre stock de fecho e limite, e as perdas são a soma das unidades perdidas conhecidas.");
-        for(var p:products.stream().limit(SUMMARY_PRODUCTS).toList()) {
-            var o=p.operacao();operation.add(product(p)+": "+o.registosConhecidos()+" registo(s) operacional(is) conhecido(s) em "+o.candidatos()+" células. Nível de serviço "+value(o.nivelServicoPercentagem(),"%")+" ("+o.paresServico()+" pares); rutura "+value(o.ruturaPercentagem(),"%")+" ("+o.paresRutura()+" pares de dias). Excesso médio "+value(o.excessoStockMedio(),p.precisao().unidade())+" ("+o.paresStock()+" células com stock e limite); perdas totais "+value(o.unidadesPerdidasTotal(),p.precisao().unidade())+" ("+o.registosPerdas()+" registos). Estes valores não estabelecem uma causa nem cumprimento de metas que não foram fornecidas.");
-        }
-        addRemainder(operation,products.size());sections.add(section(3,operation));
+        operation.add(ops==0?"Indicadores operacionais indisponíveis: nenhum registo elegível conhecido nesta avaliação. Isto não impede calcular a precisão quando existem realizados elegíveis."
+                :ops+"/"+cells.size()+" registos operacionais conhecidos; serviço, rutura, stock e perdas podem ter coberturas diferentes.");
+        products.stream().filter(p->p.operacao().registosConhecidos()>0).sorted(Comparator.comparing(p->p.precisao().produto())).findFirst().ifPresent(p->{
+            var o=p.operacao();operation.add(product(p)+": serviço "+value(o.nivelServicoPercentagem(),"%")+"; rutura "+value(o.ruturaPercentagem(),"%")+"; excesso médio "+value(o.excessoStockMedio(),p.precisao().unidade())+"; perdas "+value(o.unidadesPerdidasTotal(),p.precisao().unidade())+".");
+        });
+        sections.add(section(2,operation));
 
-        var priorities=new ArrayList<String>();
-        priorities.add("As prioridades abaixo identificam condições verificáveis por produto, sem classificar artificialmente produtos sem resultados. Primeiro distinguem-se limitações de dados e agravamentos observados dos ajustes; não se usa o MAE absoluto para ordenar produtos com escalas ou unidades diferentes. O detalhe integral permite verificar a população e cada mês antes de agir.");
-        var prioritized=products.stream().sorted(Comparator.comparingInt(GroundedInsightReport::attention).thenComparing(p->p.precisao().produto())).toList();
-        for(var p:prioritized.stream().limit(SUMMARY_PRODUCTS).toList()) {
-            var m=p.precisao().metricas();var o=p.operacao();
-            priorities.add(product(p)+": "+(m.paresMae()==0?"preparar uma comparação elegível, pois não existem pares MAE; não é possível classificar o desempenho da previsão":"conferir "+m.paresMae()+" pares MAE e o efeito do ajuste: "+gainMeaning(m))+". Exclusões da precisão: "+reasonCounts(p.celulas(),false)+". Operação: "+o.registosConhecidos()+"/"+o.candidatos()+" registos conhecidos; "+(o.registosConhecidos()==0?"verificar os motivos operacionais sem os confundir com a precisão da previsão":"conferir os denominadores de serviço/rutura e a cobertura de stock/perdas no anexo")+".");
-        }
-        addRemainder(priorities,products.size());
-        priorities.add("Sem metas, custos, margens ou contexto causal não se conclui que exista um nível aceitável de serviço, uma poupança, uma causa de rutura ou uma recomendação ótima de compras. As ações são verificações sustentadas pelos dados desta avaliação, mantendo a decisão e a justificação com a equipa responsável.");
-        sections.add(section(4,priorities));
-
-        var recommendations=new ArrayList<String>();
-        recommendations.add("A IA local priorizou as ações seguintes entre recomendações cuja aplicabilidade foi verificada pela aplicação. A IA não escreveu as conclusões quantitativas nem alterou valores, motivos de exclusão ou regras de elegibilidade. Todas as ações elegíveis foram mantidas, sem omissões; a ordem é uma sugestão para apoiar a equipa e não uma decisão automática.");
-        var byId=catalog.stream().collect(Collectors.toMap(Recommendation::id,r->r));
-        for(int i=0;i<ids.size();i++){var r=byId.get(ids.get(i));recommendations.add((i+1)+". "+r.titulo()+". "+r.texto());}
-        sections.add(section(5,recommendations));
-        return new Analise("Análise dos resultados do plano #"+c.planoId(),List.copyOf(sections));
+        var actions=new ArrayList<String>();
+        for(int i=0;i<Math.min(SUMMARY_ACTIONS,ids.size());i++)actions.add((i+1)+". "+shortAction(ids.get(i)));
+        actions.add("Destaques selecionados; todos os produtos, meses e indicadores permanecem em Conferir os dados. Sem metas ou causas fornecidas, estes resultados não comprovam objetivos nem causalidade.");
+        sections.add(section(3,actions));
+        return new Analise("Resumo dos resultados do plano #"+c.planoId(),List.copyOf(sections));
     }
     private static Secao section(int n,List<String> paragraphs){return new Secao(InsightPrompt.SECTIONS.get(n),List.copyOf(paragraphs));}
-    private static void addRemainder(List<String> paragraphs,int count){if(count>SUMMARY_PRODUCTS)paragraphs.add("O resumo apresenta "+SUMMARY_PRODUCTS+" produtos; os restantes "+(count-SUMMARY_PRODUCTS)+" e todos os meses constam no anexo calculado, sem omissões. Usa o seletor Produto a conferir para consultar os valores individuais e as métricas por horizonte.");}
-    private static int attention(Produto p){var m=p.precisao().metricas();return m.paresMae()==0?0:negative(m.ganhoAjuste())?1:2;}
-    private static String gainMeaning(Metricas m){if(m.ganhoAjuste()==null)return "Ganho indisponível por falta de pares elegíveis.";int sign=new BigDecimal(m.ganhoAjuste()).signum();return sign>0?"O ajuste reduziu o MAE nesta amostra.":sign<0?"O ajuste aumentou o MAE nesta amostra.":"O MAE base e aprovado é igual à precisão apresentada.";}
+    private static int sign(String n){return n==null?0:new BigDecimal(n).signum();}
+    private static String shortAction(String id){return switch(id){
+        case "PRESERVAR_EXCLUSAO_TARDIA"->"Publica planos futuros antes do início do mês. Esperar ou importar resultados não corrige uma publicação tardia; a exclusão histórica mantém-se.";
+        case "AVALIAR_MESES_FECHADOS"->"Cria outra avaliação quando os meses fecharem, com lotes e corte adequados. A avaliação atual fica fixa; as restantes regras continuam aplicáveis.";
+        case "COMPLETAR_REALIZADOS"->"Importa os realizados em falta num lote validado e cria outra avaliação. Não substituas valores desconhecidos por zero.";
+        case "REVER_CORTE_REALIZADOS"->"Confere a disponibilidade dos realizados. Para os incluir, cria outra avaliação com um corte adequado, preservando as datas originais.";
+        case "INTERPRETAR_ZEROS_MAPE"->"Usa o MAE para os realizados zero e confere os pares de cada indicador. MAPE indisponível não significa erro nulo.";
+        case "REVER_AJUSTES_COM_PIOR_MAE"->"Revê os produtos cujo ajuste aumentou o MAE e consulta as justificações antes de alterar planos futuros.";
+        case "ACOMPANHAR_AJUSTES_AVALIAVEIS"->"Acompanha o ganho dos ajustes em novas avaliações, nos mesmos pares elegíveis. Uma melhoria nesta amostra não garante resultados futuros.";
+        case "COMPLETAR_OPERACAO"->"Confere os motivos de exclusão operacional e reúne os registos aplicáveis antes de criar outra avaliação.";
+        case "CONFERIR_SERVICO_RUTURA"->"Confere serviço e rutura com os respetivos denominadores. Sem metas definidas, não classifiques os valores como aceitáveis ou insuficientes.";
+        case "CONFERIR_EXCESSO_STOCK"->"Compara o stock de fecho com os limites de cada mês. O excesso observado não explica a sua causa nem o custo.";
+        case "CONFERIR_PERDAS"->"Confere as perdas e a cobertura por produto. Meses sem registo não equivalem a perdas zero.";
+        case "PRESERVAR_RASTREABILIDADE"->"Conserva o plano, a avaliação, os lotes e o corte. Confere os dados antes de decidir.";
+        default->throw new IllegalArgumentException("Recomendação desconhecida.");};}
     private static boolean negative(String n){return n!=null&&new BigDecimal(n).signum()<0;}
     private static String value(String n,String unit){return n==null?"indisponível":n.replace('.',',')+(unit.equals("%")?"%":" "+unit);}
     private static String product(Produto p){return p.precisao().produto()+" ("+p.precisao().unidade()+")";}

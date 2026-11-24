@@ -226,8 +226,8 @@ class MonitoringTests {
         assertThat(complete.get("produtos").get(1).get("precisao").get("metricas").get("maeBase").isNull()).isTrue();
         assertThat(complete.get("hashDados").asText()).matches("[a-f0-9]{64}");
         assertThat(complete.get("geradoEm").isNull()).isFalse();
-        assertThat(complete.get("analise").get("secoes").size()).isEqualTo(6);
-        assertThat(complete.get("analise").toString()).contains("MAE base 10,0000 un", "aprovado 5,0000 un", "a IA local apenas ordena");
+        assertThat(complete.get("analise").get("secoes").size()).isEqualTo(4);
+        assertThat(complete.get("analise").toString()).contains("MAE base 10,0000 un", "aprovado 5,0000 un", "Próximos passos");
         assertThat(response(admin.post(path,Map.of()),200)).isEqualTo(complete);
         verify(insightGenerator,times(1)).generate(argThat(text -> text.contains("MONITOR2") && !text.contains("@monitor.test") && !text.contains("fixture.csv")),anyList());
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM analise_inteligente WHERE avaliacao_id=?",Long.class,Long.valueOf(id))).isEqualTo(1);

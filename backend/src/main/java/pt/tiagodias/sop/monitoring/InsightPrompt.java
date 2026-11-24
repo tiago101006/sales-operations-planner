@@ -8,9 +8,9 @@ import static pt.tiagodias.sop.monitoring.InsightDtos.*;
 
 public final class InsightPrompt {
     public static final String VERSION = "monitoring-local-v6";
-    public static final List<String> SECTION_KEYS=List.of("sintese","cobertura","precisao","operacao","prioridades","recomendacoes");
-    public static final List<String> SECTIONS=List.of("Síntese do plano","Qualidade e cobertura dos dados",
-            "Precisão e impacto dos ajustes","Resultados operacionais","Prioridades por produto","Recomendações e limites");
+    public static final List<String> SECTION_KEYS=List.of("resumo","precisao","operacao","acoes");
+    public static final List<String> SECTIONS=List.of("Resumo do plano","Precisão dos ajustes",
+            "Resultados operacionais","Próximos passos");
     // The appendix retains every cell; the model receives all product indicators, without raw employee/catalogue text.
     public static final int MAX_INPUT_CHARS = 40_000;
     private InsightPrompt() {}

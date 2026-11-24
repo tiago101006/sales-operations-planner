@@ -311,7 +311,7 @@ export function createViews(ctx) {
     const [assessment, report] = await Promise.all([api.get(`/avaliacoes/${encodeURIComponent(id)}`), api.get(`/avaliacoes/${encodeURIComponent(id)}/analise-inteligente`)]);
     return {
       context: { insightAssessment: assessment, insightReport: report },
-      html: `<div class="insight-page">${back('avaliacao/' + esc(id), 'Voltar aos resultados do plano')}${heading('', 'Análise Inteligente', '', '<a class="btn" href="#/plano/' + esc(assessment.planoId) + '">Consultar plano #' + esc(assessment.planoId) + '</a>')}<p class="insight-introduction">Plano #${esc(assessment.planoId)} · avaliação #${esc(assessment.id)}. Uma leitura de todos os produtos e meses desta avaliação.</p><p class="visually-hidden" data-insight-live role="status" aria-live="polite"></p><div data-insight-report>${renderInsightContent(assessment, report)}</div></div>`
+      html: `<div class="insight-page">${back('avaliacao/' + esc(id), 'Voltar aos resultados do plano')}${heading('', 'Análise Inteligente', '', '<a class="btn" href="#/plano/' + esc(assessment.planoId) + '">Consultar plano #' + esc(assessment.planoId) + '</a>')}<p class="insight-introduction">Plano #${esc(assessment.planoId)} · avaliação #${esc(assessment.id)}. Conclusões do plano e dados de apoio.</p><p class="visually-hidden" data-insight-live role="status" aria-live="polite"></p><div data-insight-report>${renderInsightContent(assessment, report)}</div></div>`
     };
   }
 

@@ -1,6 +1,6 @@
 # Análise Inteligente local
 
-A Análise Inteligente apresenta um relatório detalhado de uma avaliação de um
+A Análise Inteligente apresenta um resumo de uma avaliação de um
 plano publicado. A NexoPlan constrói os factos e as explicações dos indicadores;
 um modelo executado no computador através do Ollama ajuda a ordenar recomendações
 compatíveis com esses dados. Não modifica o plano, não aprova decisões e não
@@ -29,18 +29,22 @@ o relatório concluído. Atualizar ou reabrir a página não inicia outra geraç
 
 ## Conteúdo do relatório
 
-- Contexto: plano, avaliação, janela temporal e corte dos resultados.
-- Qualidade dos dados: cobertura, realizados em falta, zeros e exclusões.
-- Precisão: base e aprovado sobre os mesmos pares elegíveis, separados por produto.
-- Operação: serviço, ruturas, excesso e perdas com a cobertura de cada indicador.
-- Interpretação, limitações e ações a investigar, sem afirmar causas desconhecidas.
-- Evidência completa por produto e mês para conferir a interpretação.
+- Resumo do plano: contexto, cobertura e motivos de exclusão.
+- Precisão dos ajustes: produtos com melhoria, agravamento ou igualdade de MAE,
+  com até dois destaques individuais.
+- Resultados operacionais: cobertura e um destaque com indicadores conhecidos.
+- Próximos passos: até três recomendações prioritárias e limites da interpretação.
+
+O resumo tem extensão limitada, mesmo com muitos produtos. O detalhe completo
+continua em **Conferir os dados**, com os valores por produto, mês e horizonte.
+Os destaques não representam um total ou uma média dos erros entre produtos.
 
 O texto técnico é construído a partir dos resultados calculados, para manter
 corretas as quantidades, as exclusões e as relações entre indicadores. A IA
 recebe um catálogo de recomendações elegíveis e devolve a sua ordenação por
 identificadores. A aplicação valida essa resposta e apresenta os textos das
-ações correspondentes. Não se mostra prosa livre do modelo como se fosse uma
+três ações prioritárias correspondentes, mantendo internamente a ordem completa
+validada. Não se mostra prosa livre do modelo como se fosse uma
 conclusão verificada.
 
 A análise abrange a avaliação completa, independentemente da página ou dos
@@ -53,6 +57,12 @@ mas não permite concluir que o plano melhorou ou piorou a precisão.
 O corte e as exclusões da avaliação ficam fixos. Quando houver novos realizados
 ou meses entretanto fechados, cria outra avaliação; o relatório antigo conserva
 o contexto original.
+
+Relatórios já gerados também passam a apresentar o resumo. A aplicação reutiliza
+o snapshot e a priorização guardados, sem pedir outra inferência ao modelo nem
+alterar o plano ou a avaliação. Os relatórios v6 anteriores conservam a ordem
+original através das recomendações numeradas; novos relatórios guardam essa
+ordem como metadados internos, sem os expor na resposta pública.
 
 ## Funcionamento técnico
 

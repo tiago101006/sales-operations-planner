@@ -2,7 +2,7 @@ import { esc, date, month, quantity as q, percent, label, icon, button as b } fr
 import { revealContent } from './motion.mjs';
 
 const statusCopy = {
-  POR_GERAR: ['Uma leitura completa do plano', 'A análise reúne a precisão, os resultados operacionais e as limitações de todos os produtos desta avaliação.'],
+  POR_GERAR: ['Resumo do plano', 'Consulta as conclusões principais e as recomendações para esta avaliação.'],
   EM_CURSO: ['A analisar os resultados…', 'A IA local está a ordenar recomendações compatíveis com os dados. O relatório pode demorar alguns minutos neste computador. Podes continuar a trabalhar e voltar aqui mais tarde.'],
   DESATIVADA: ['A análise ainda não está disponível', 'Pede ao administrador para ativar a análise inteligente nesta instalação. Os indicadores da monitorização continuam disponíveis.'],
   FALHOU: ['Não foi possível concluir a análise', 'Os dados da avaliação estão preservados. Podes voltar a tentar gerar o relatório.']
@@ -33,13 +33,16 @@ export function renderInsightContent(assessment, report, { error = '', productId
       <dl class="insight-scope"><div><dt>Âmbito</dt><dd>${esc(products.length)} produtos · ${esc(cells)} células</dd></div><div><dt>Janela</dt><dd>${esc(month(assessment.periodoInicio))} — ${esc(month(assessment.periodoFim))}</dd></div><div><dt>Corte dos dados</dt><dd>${esc(date(assessment.corteRealizados))}</dd></div></dl>
       </details>
     </aside>
+    <div class="insight-document">
+    <div class="insight-playback"><button type="button" class="btn small" data-insight-skip hidden>Mostrar texto completo</button></div>
     <article class="insight-reading" aria-label="Relatório da análise inteligente">
-      <header class="insight-reading-header"><h2>${esc(report.analise.titulo)}</h2><p>Gerado em ${esc(date(report.geradoEm))} · avaliação #${esc(assessment.id)}</p></header>
-      <p class="insight-review-note">Indicadores e explicações calculados pela NexoPlan; recomendações ordenadas com apoio de IA local. Confere os dados antes de tomar decisões.</p>
-      ${sections.map((section, i) => `<section class="insight-section" aria-labelledby="insight-section-${i}"><h3 id="insight-section-${i}" tabindex="-1">${esc(section.titulo)}</h3>${(section.paragrafos || []).map(paragraph => `<p>${esc(paragraph)}</p>`).join('')}</section>`).join('')}
+      <header class="insight-reading-header"><h2 tabindex="-1">${esc(report.analise.titulo)}</h2><p>Gerado em ${esc(date(report.geradoEm))} · avaliação #${esc(assessment.id)}</p></header>
+      <div class="insight-review"><p class="insight-review-note">A IA local ordena as recomendações.</p></div>
+      ${sections.map((section, i) => `<section class="insight-section" aria-labelledby="insight-section-${i}"><h3 id="insight-section-${i}" tabindex="-1" data-insight-line><span>${esc(section.titulo)}</span></h3>${(section.paragrafos || []).map(paragraph => `<p data-insight-line><span>${esc(paragraph)}</span></p>`).join('')}</section>`).join('')}
       <section class="insight-evidence" aria-labelledby="insight-section-evidence"><h3 id="insight-section-evidence" tabindex="-1">Conferir os dados</h3><p>Valores calculados pela NexoPlan, por produto e mês. Abrangem toda a avaliação, independentemente dos filtros da página de monitorização.</p><div data-insight-evidence>${renderInsightEvidence(products, productId, page)}</div></section>
       <details class="insight-provenance"><summary>Origem e método da análise</summary><dl><div><dt>Modelo local</dt><dd>${esc(report.modelo)}</dd></div><div><dt>Versão da análise</dt><dd>${esc(report.versaoPrompt)}</dd></div><div><dt>Versão do cálculo</dt><dd>${esc(assessment.versaoCalculo)}</dd></div><div><dt>Referência dos dados</dt><dd class="insight-fingerprint">${esc(report.hashDados)}</dd></div></dl><p>Esta análise refere-se à avaliação guardada. Novos dados ou um novo corte exigem outra avaliação. Não são alteradas previsões, quantidades ou aprovações.</p></details>
     </article>
+    </div>
   </div>`;
 }
 
@@ -87,10 +90,92 @@ export function createInsightSession({ api, id, onChange, schedule = setTimeout,
   return { load, generate: () => request(true), watch, dispose() { stopped = true;clear(); } };
 }
 
+function typeInsight(host) {
+  const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const skip = host.querySelector('[data-insight-skip]');
+  if (!skip || preference.matches || document.hidden) return () => {};
+
+  const segmenter = Intl.Segmenter && new Intl.Segmenter('pt', { granularity: 'grapheme' });
+  const layout = skip.closest('.insight-report-layout');
+  const outline = new Map([...layout.querySelectorAll('[data-insight-section]')]
+    .map(button => [`insight-section-${button.dataset.insightSection}`, button]));
+  const lines = [...layout.querySelectorAll('[data-insight-line]')]
+    .filter(line => line.textContent)
+    .map(line => ({
+      line,
+      letters: segmenter ? Array.from(segmenter.segment(line.textContent), part => part.segment) : Array.from(line.textContent),
+    }));
+  if (!lines.length) return () => {};
+
+  let frame, preview, stopped = false;
+  let index = 0, lineStarted = performance.now() + 250, shown = 0;
+  const restoreLine = line => {
+    preview?.remove();
+    preview = null;
+    line?.classList.remove('insight-line-writing');
+  };
+  const finish = () => {
+    if (stopped) return;
+    stopped = true;
+    cancelAnimationFrame(frame);
+    restoreLine(lines[index]?.line);
+    for (const { line } of lines) line.hidden = false;
+    for (const button of outline.values()) button.disabled = false;
+    layout.classList.remove('insight-writing');
+    if (document.activeElement === skip && host.isConnected) {
+      layout.querySelector('.insight-reading-header h2')?.focus({ preventScroll: true });
+    }
+    skip.hidden = true;
+    preference.removeEventListener('change', finish);
+    document.removeEventListener('visibilitychange', finish);
+  };
+
+  for (const { line } of lines) line.hidden = true;
+  for (const button of outline.values()) button.disabled = true;
+  layout.classList.add('insight-writing', 'insight-has-playback');
+  skip.hidden = false;
+  preference.addEventListener('change', finish);
+  document.addEventListener('visibilitychange', finish);
+
+  const step = now => {
+    if (!host.isConnected || index === lines.length) {
+      finish();
+      return;
+    }
+    const { line, letters } = lines[index];
+    if (now >= lineStarted) {
+      if (!preview) {
+        preview = document.createElement('span');
+        preview.setAttribute('aria-hidden', 'true');
+        line.classList.add('insight-line-writing');
+        line.append(preview);
+        line.hidden = false;
+      }
+      const count = Math.min(letters.length, 1 + Math.floor((now - lineStarted) / 30));
+      if (count !== shown) {
+        preview.textContent = letters.slice(0, count).join('');
+        shown = count;
+      }
+      if (count === letters.length) {
+        restoreLine(line);
+        const topic = outline.get(line.id);
+        if (topic) topic.disabled = false;
+        index++;
+        lineStarted = now + 210;
+        shown = 0;
+      }
+    }
+    frame = requestAnimationFrame(step);
+  };
+  frame = requestAnimationFrame(step);
+  return finish;
+}
+
 export function mountInsightPage(main, { api, assessment, initial, start = false, settleLayout = () => {} }) {
   const host = main.querySelector('[data-insight-report]');
   if (!host) return () => {};
   let report = initial, selectedProduct = '', page = 0, closed = false;
+  let finishTyping = () => {};
   const compact = window.matchMedia('(max-width: 800px)');
   const syncOutline = () => {
     const menu = host.querySelector('.insight-outline-menu');
@@ -100,14 +185,20 @@ export function mountInsightPage(main, { api, assessment, initial, start = false
     if (closed || !host.isConnected) return;
     if (next) report = next;
     const scrollTop = window.scrollY;
+    finishTyping();
     host.innerHTML = renderInsightContent(assessment, report, { error: error?.message, productId: selectedProduct, page });
     syncOutline();
+    if (!error) finishTyping = typeInsight(host);
     window.scrollTo({ top: scrollTop, behavior: 'instant' });
     const live = main.querySelector('[data-insight-live]');
     if (live) live.textContent = error ? 'A ligação foi interrompida. Usa Verificar estado para consultar o resultado.' : report.estado === 'CONCLUIDA' ? 'Análise concluída. O relatório está pronto para leitura.' : report.estado === 'FALHOU' ? 'Não foi possível concluir a análise. Podes voltar a tentar.' : '';
   };
   const session = createInsightSession({ api, id: assessment.id, onChange: update });
   const click = event => {
+    if (event.target.closest('[data-insight-skip]')) {
+      finishTyping();
+      return;
+    }
     const generate = event.target.closest('[data-action="insight-generate"]');
     if (generate && !generate.disabled) {
       generate.disabled = true;report = { ...report, estado: 'EM_CURSO', mensagem: null };update(report);session.generate();return;
@@ -116,7 +207,7 @@ export function mountInsightPage(main, { api, assessment, initial, start = false
     const link = event.target.closest('[data-insight-section]');
     if (link) {
       const heading = host.querySelector(`#insight-section-${CSS.escape(link.dataset.insightSection)}`);
-      if (!heading) return;
+      if (link.disabled || !heading || heading.hidden) return;
       settleLayout();
       revealContent(heading, { focus: true, animate: event.detail !== 0 });return;
     }
@@ -136,6 +227,9 @@ export function mountInsightPage(main, { api, assessment, initial, start = false
   compact.addEventListener('change', syncOutline);syncOutline();
   if (start && ['POR_GERAR', 'FALHOU'].includes(report.estado)) {
     report = { ...report, estado: 'EM_CURSO', mensagem: null };update(report);session.generate();
-  } else session.watch(report);
-  return () => { closed = true;session.dispose();host.removeEventListener('click', click);host.removeEventListener('change', change);compact.removeEventListener('change', syncOutline); };
+  } else {
+    finishTyping = typeInsight(host);
+    session.watch(report);
+  }
+  return () => { closed = true;finishTyping();session.dispose();host.removeEventListener('click', click);host.removeEventListener('change', change);compact.removeEventListener('change', syncOutline); };
 }
